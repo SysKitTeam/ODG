@@ -5,6 +5,10 @@ VisualStudioVersion = 16.0.29409.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SysKit.ODG.App", "SysKit.ODG.App\SysKit.ODG.App.csproj", "{F8A500B5-9940-47AF-8A55-3AEC09A5890F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SysKit.ODG.Authentication", "SysKit.ODG.Authentication\SysKit.ODG.Authentication.csproj", "{6F321E3E-C6E5-424C-A51F-644BC3EA4E6C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SysKit.ODG.Base", "SysKit.ODG.Base\SysKit.ODG.Base.csproj", "{AFE4A235-B9B3-41F3-858E-55722CB7ECF9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{F8A500B5-9940-47AF-8A55-3AEC09A5890F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F8A500B5-9940-47AF-8A55-3AEC09A5890F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F8A500B5-9940-47AF-8A55-3AEC09A5890F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F321E3E-C6E5-424C-A51F-644BC3EA4E6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F321E3E-C6E5-424C-A51F-644BC3EA4E6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F321E3E-C6E5-424C-A51F-644BC3EA4E6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F321E3E-C6E5-424C-A51F-644BC3EA4E6C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AFE4A235-B9B3-41F3-858E-55722CB7ECF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFE4A235-B9B3-41F3-858E-55722CB7ECF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFE4A235-B9B3-41F3-858E-55722CB7ECF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AFE4A235-B9B3-41F3-858E-55722CB7ECF9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
