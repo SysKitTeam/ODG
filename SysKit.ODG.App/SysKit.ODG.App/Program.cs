@@ -8,8 +8,10 @@ using SysKit.ODG.Authentication;
 using SysKit.ODG.Base.Authentication;
 using SysKit.ODG.Base.DTO;
 using SysKit.ODG.Base.Interfaces;
+using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
 using Unity;
+using Unity.Lifetime;
 
 namespace SysKit.ODG.App
 {
@@ -18,12 +20,14 @@ namespace SysKit.ODG.App
         static void Main(string[] args)
         {
             var unityContainer = UnityManager.CreateUnityContainer();
-            var generationService = unityContainer.Resolve<IGenerationService>();
 
             var userCredentials = new SimpleUserCredentials("admin@M365x314861.onmicrosoft.com", "1iH1Z8BwLM");
             var generationOptions = new GenerationOptionsDTO(userCredentials);
-            var accessTokenManager =
-                new AccessTokenManager(unityContainer.Resolve<IAppConfigManager>(), userCredentials);
+            var accessTokenManager = new AccessTokenManager(unityContainer.Resolve<IAppConfigManager>(), userCredentials);
+
+            unityContainer.RegisterInstance<IAccessTokenManager>(accessTokenManager, new SingletonLifetimeManager());
+
+            var generationService = unityContainer.Resolve<IGenerationService>();
 
             generationService.Start(accessTokenManager, generationOptions);
         }

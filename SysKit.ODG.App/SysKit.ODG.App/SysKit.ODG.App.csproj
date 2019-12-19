@@ -81,6 +81,10 @@
       <Project>{A751356E-08AE-4347-A4B2-F97837EE358E}</Project>
       <Name>SysKit.ODG.Generation</Name>
     </ProjectReference>
+    <ProjectReference Include="..\SysKit.ODG.Office365Service\SysKit.ODG.Office365Service.csproj">
+      <Project>{D007589C-2428-42F7-A017-3F0C3E00BEB3}</Project>
+      <Name>SysKit.ODG.Office365Service</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

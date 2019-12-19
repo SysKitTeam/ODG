@@ -4,19 +4,22 @@ using System.Collections.Generic;
 using System.Text;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
+using SysKit.ODG.Base.Interfaces.Office365Service;
 
 namespace SysKit.ODG.Generation
 {
     public class GenerationService: IGenerationService
     {
         private readonly IAppConfigManager _configManager;
-        private IAccessTokenManager _accessTokenManager;
+        private readonly IUserGraphApiClient _userGraphApiClient;
 
+        private IAccessTokenManager _accessTokenManager;
         private IGenerationOptions _generationOptions;
 
-        public GenerationService(IAppConfigManager configManager)
+        public GenerationService(IAppConfigManager configManager, IUserGraphApiClient userGraphApiClient)
         {
             _configManager = configManager;
+            _userGraphApiClient = userGraphApiClient;
         }
 
         public void Start(IAccessTokenManager accessTokenManager, IGenerationOptions generationOptions)
@@ -24,8 +27,7 @@ namespace SysKit.ODG.Generation
             _accessTokenManager = accessTokenManager;
             _generationOptions = generationOptions;
 
-            var firstToken = _accessTokenManager.GetGraphToken().GetAwaiter().GetResult();
-            var secondToken = _accessTokenManager.GetGraphToken().GetAwaiter().GetResult();
+            _userGraphApiClient.GetAllTenantUsers();
 
             Console.WriteLine(_configManager.ClientId);
             Console.ReadLine();
