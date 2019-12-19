@@ -4,35 +4,12 @@ using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SysKit.ODG.Base.Interfaces;
 
 namespace SysKit.ODG.App.Configuration
 {
-    public class AppConfigManager: ConfigurationSection
+    public class AppConfigManager: IAppConfigManager
     {
-        public static AppConfigManager Create()
-        {
-            string section = "CustomSettings";
-            ConfigurationManager.RefreshSection(section);
-
-            AppConfigManager config = (AppConfigManager)ConfigurationManager.GetSection(section);
-            if (config == null)
-            {
-                throw new ArgumentException("CustomSettings must be supplied. Check README for detailed instructions");
-            }
-
-            return config;
-        }
-
-        public override bool IsReadOnly()
-        {
-            return true;
-        }
-
-        [ConfigurationProperty("clientId", IsRequired = true)]
-        public string ClientId
-        {
-            get => (string)this["clientId"];
-            set => this["clientId"] = value;
-        }
+        public string ClientId => (string)ConfigurationManager.AppSettings["clientId"];
     }
 }
