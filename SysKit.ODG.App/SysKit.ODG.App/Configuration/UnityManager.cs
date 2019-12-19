@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SysKit.ODG.Authentication;
 using SysKit.ODG.Base.Interfaces;
+using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Generation;
 using Unity;
@@ -18,6 +20,8 @@ namespace SysKit.ODG.App.Configuration
 
             container.RegisterSingleton<IAppConfigManager, AppConfigManager>();
             container.RegisterSingleton<IGenerationService, GenerationService>();
+
+            container.RegisterSingleton<IAccessTokenManager, AccessTokenManager>();
 
             return container;
         }

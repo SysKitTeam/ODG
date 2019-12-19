@@ -63,6 +63,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\SysKit.ODG.Authentication\SysKit.ODG.Authentication.csproj">
+      <Project>{6F321E3E-C6E5-424C-A51F-644BC3EA4E6C}</Project>
+      <Name>SysKit.ODG.Authentication</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SysKit.ODG.Base\SysKit.ODG.Base.csproj">
       <Project>{AFE4A235-B9B3-41F3-858E-55722CB7ECF9}</Project>
       <Name>SysKit.ODG.Base</Name>

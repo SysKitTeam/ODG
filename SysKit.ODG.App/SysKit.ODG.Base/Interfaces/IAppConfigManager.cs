@@ -7,5 +7,6 @@ namespace SysKit.ODG.Base.Interfaces
     public interface IAppConfigManager
     {
         string ClientId { get; }
+        string[] Scopes { get; }
     }
 }
