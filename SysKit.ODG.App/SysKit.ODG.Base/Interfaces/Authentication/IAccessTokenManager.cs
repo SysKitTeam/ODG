@@ -8,6 +8,6 @@ namespace SysKit.ODG.Base.Interfaces.Authentication
 {
     public interface IAccessTokenManager
     {
-        Task<AuthToken> GetGraphToken(SimpleUserCredentials userCredentials);
+        Task<AuthToken> GetGraphToken();
     }
 }

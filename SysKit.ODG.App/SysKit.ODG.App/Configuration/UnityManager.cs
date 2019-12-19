@@ -9,6 +9,7 @@ using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Generation;
 using Unity;
+using Unity.Injection;
 
 namespace SysKit.ODG.App.Configuration
 {
@@ -20,8 +21,6 @@ namespace SysKit.ODG.App.Configuration
 
             container.RegisterSingleton<IAppConfigManager, AppConfigManager>();
             container.RegisterSingleton<IGenerationService, GenerationService>();
-
-            container.RegisterSingleton<IAccessTokenManager, AccessTokenManager>();
 
             return container;
         }

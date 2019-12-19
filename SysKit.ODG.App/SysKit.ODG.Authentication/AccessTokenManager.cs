@@ -13,24 +13,27 @@ namespace SysKit.ODG.Authentication
     public class AccessTokenManager: IAccessTokenManager
     {
         private readonly IAppConfigManager _appConfigManager;
+        private readonly SimpleUserCredentials _userCredentials;
+
         private IPublicClientApplication _app;
         private const string _authorityFormat = "https://login.microsoftonline.com/{0}/v2.0";
 
-        public AccessTokenManager(IAppConfigManager appConfigManager)
+        public AccessTokenManager(IAppConfigManager appConfigManager, SimpleUserCredentials userCredentials)
         {
             _appConfigManager = appConfigManager;
+            _userCredentials = userCredentials;
             initializeApp();
         }
 
         private void initializeApp()
         {
-            string authority = "https://login.microsoftonline.com/contoso.com";
+            string authority = "https://login.microsoftonline.com/organizations/oauth2/v2.0";
             _app = PublicClientApplicationBuilder.Create(_appConfigManager.ClientId)
                 .WithAuthority(authority)
                 .Build();
         }
 
-        public async Task<AuthToken> GetGraphToken(SimpleUserCredentials userCredentials)
+        public async Task<AuthToken> GetGraphToken()
         {
             var accounts = await _app.GetAccountsAsync();
 
@@ -46,8 +49,8 @@ namespace SysKit.ODG.Authentication
             {
 
                 result = await _app.AcquireTokenByUsernamePassword(_appConfigManager.Scopes,
-                        userCredentials.Username,
-                        userCredentials.Password)
+                        _userCredentials.Username,
+                        _userCredentials.Password)
                     .ExecuteAsync();
                 return new AuthToken { Token = result.AccessToken };
             }
