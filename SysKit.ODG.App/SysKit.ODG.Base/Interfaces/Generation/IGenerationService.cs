@@ -7,6 +7,6 @@ namespace SysKit.ODG.Base.Interfaces.Generation
 {
     public interface IGenerationService
     {
-        void Start(IAccessTokenManager accessTokenManager, IGenerationOptions generationOptions);
+        void Start(IGenerationOptions generationOptions);
     }
 }

@@ -19,17 +19,12 @@ namespace SysKit.ODG.App
     {
         static void Main(string[] args)
         {
-            var unityContainer = UnityManager.CreateUnityContainer();
-
             var userCredentials = new SimpleUserCredentials("admin@M365x314861.onmicrosoft.com", "1iH1Z8BwLM");
             var generationOptions = new GenerationOptionsDTO(userCredentials);
-            var accessTokenManager = new AccessTokenManager(unityContainer.Resolve<IAppConfigManager>(), userCredentials);
-
-            unityContainer.RegisterInstance<IAccessTokenManager>(accessTokenManager, new SingletonLifetimeManager());
+            var unityContainer = UnityManager.CreateUnityContainer(userCredentials);
 
             var generationService = unityContainer.Resolve<IGenerationService>();
-
-            generationService.Start(accessTokenManager, generationOptions);
+            generationService.Start(generationOptions);
         }
     }
 }

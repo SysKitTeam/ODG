@@ -22,9 +22,8 @@ namespace SysKit.ODG.Generation
             _userGraphApiClient = userGraphApiClient;
         }
 
-        public void Start(IAccessTokenManager accessTokenManager, IGenerationOptions generationOptions)
+        public void Start(IGenerationOptions generationOptions)
         {
-            _accessTokenManager = accessTokenManager;
             _generationOptions = generationOptions;
 
             _userGraphApiClient.GetAllTenantUsers();
