@@ -1,4 +1,5 @@
-﻿using Microsoft.Graph;
+﻿using AutoMapper;
+using Microsoft.Graph;
 using OfficeDevPnP.Core.Framework.Graph;
 using SysKit.ODG.Authentication;
 using SysKit.ODG.Base.Authentication;
@@ -21,6 +22,7 @@ namespace SysKit.ODG.App.Configuration
         {
             var container = new UnityContainer();
 
+            container.RegisterInstance<IMapper>(AutomapperManager.ConfigureMapper(), new SingletonLifetimeManager());
             container.RegisterSingleton<IAppConfigManager, AppConfigManager>();
             container.RegisterInstance<IAccessTokenManager>(new AccessTokenManager(container.Resolve<IAppConfigManager>(), userCredentials), new SingletonLifetimeManager());
             container.RegisterSingleton<IHttpProvider, PnPHttpProvider>(new InjectionConstructor(10, 500, userAgent));

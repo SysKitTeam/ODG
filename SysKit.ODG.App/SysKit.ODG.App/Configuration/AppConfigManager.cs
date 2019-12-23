@@ -28,5 +28,7 @@ namespace SysKit.ODG.App.Configuration
                 return _scopes;
             }
         }
+
+        public string DefaultUserPassword => "1iH1Z8BwLM";
     }
 }

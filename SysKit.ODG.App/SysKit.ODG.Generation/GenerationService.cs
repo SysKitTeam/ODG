@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.Office365Service;
@@ -26,7 +27,21 @@ namespace SysKit.ODG.Generation
         {
             _generationOptions = generationOptions;
 
-            _userGraphApiClient.GetAllTenantUsers();
+            var testUsers = new List<UserEntry>();
+
+            for (var i = 11; i < 20; i++)
+            {
+                testUsers.Add(new UserEntry
+                {
+                    AccountEnabled = i > 8,
+                    DisplayName = $"Test User {i}",
+                    UserPrincipalName = $"testUser{i}@M365x314861.onmicrosoft.com",
+                    MailNickname = $"testUser{i}",
+                    Password = _configManager.DefaultUserPassword
+                });
+            }
+
+            _userGraphApiClient.CreateTenantUsers(testUsers).GetAwaiter().GetResult();
 
             Console.WriteLine(_configManager.ClientId);
             Console.ReadLine();
