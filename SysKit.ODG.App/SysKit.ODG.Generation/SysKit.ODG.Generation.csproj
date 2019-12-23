@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SysKit.ODG.Base\SysKit.ODG.Base.csproj" />
+    <ProjectReference Include="..\SysKit.ODG.XMLSpecification\SysKit.ODG.XMLSpecification.csproj" />
   </ItemGroup>
 
 </Project>

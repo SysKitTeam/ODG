@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
+using SysKit.ODG.Generation.Users;
 using SysKit.ODG.Office365Service;
 
 namespace SysKit.ODG.App.Configuration
@@ -15,6 +16,7 @@ namespace SysKit.ODG.App.Configuration
             return new MapperConfiguration(config =>
             {
                 config.AddProfile<Office365MapProfile>();
+                config.AddProfile<UserMapProfile>();
             }).CreateMapper();
         }
     }

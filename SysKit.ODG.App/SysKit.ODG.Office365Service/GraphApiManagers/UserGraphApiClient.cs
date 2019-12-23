@@ -60,13 +60,11 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             }
 
             // Send batch request with BatchRequestContent.
-            var batchHttpRequest = new HttpRequestMessage(HttpMethod.Post, "https://graph.microsoft.com/v1.0/$batch")
-            { Content = batch };
+            var batchHttpRequest = new HttpRequestMessage(HttpMethod.Post, "https://graph.microsoft.com/v1.0/$batch") { Content = batch };
             batchHttpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer",
                 _accessTokenManager.GetGraphToken().GetAwaiter().GetResult().Token);
 
             HttpResponseMessage batchRequest = await _httpProvider.SendAsync(batchHttpRequest);
-
 
             var batchResponseContent = new BatchResponseContent(batchRequest);
             Dictionary<string, HttpResponseMessage> responses = await batchResponseContent.GetResponsesAsync();
