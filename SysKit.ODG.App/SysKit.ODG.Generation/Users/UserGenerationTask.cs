@@ -21,7 +21,12 @@ namespace SysKit.ODG.Generation.Users
         public async Task Execute(IGenerationOptions options)
         {
             var users = _dataGenerationFactory.GetUserData(options);
-            await _userGraphApiClient.CreateTenantUsers(users);
+
+            foreach (var user in users)
+            {
+                var test = user;
+            }
+            //await _userGraphApiClient.CreateTenantUsers(users);
 
             // TODO: assign licences
             // TODO: add external users

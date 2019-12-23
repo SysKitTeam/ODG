@@ -23,7 +23,7 @@ namespace SysKit.ODG.Generation
         {
             if (options is XmlGenerationOptions xmlOptions)
             {
-                return new UserDataGeneration(_mapper, xmlOptions.XmlTemplate).CreateUsers();
+                return new UserDataGeneration(_mapper).CreateUsers(xmlOptions.XmlTemplate);
             }
 
             throw new ArgumentException("There is no user data generator for specified IGenerationOptions type");

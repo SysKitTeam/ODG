@@ -31,7 +31,9 @@ namespace SysKit.ODG.Generation.Users
 
         private UserEntry mapXmlToUserEntry(XmlUser xmlUser)
         {
-            return _mapper.Map<XmlUser, UserEntry>(xmlUser);
+            var userEntry = _mapper.Map<XmlUser, UserEntry>(xmlUser);
+            var defaultValues = createSampleUserEntry();
+            return _mapper.Map(userEntry, defaultValues);
         }
 
         /// <summary>
@@ -40,7 +42,11 @@ namespace SysKit.ODG.Generation.Users
         /// <returns></returns>
         private UserEntry createSampleUserEntry()
         {
-            return null;
+            return new UserEntry
+            {
+                DisplayName = "funny guy",
+                MailNickname = "funny guy 2"
+            };
         }
     }
 }

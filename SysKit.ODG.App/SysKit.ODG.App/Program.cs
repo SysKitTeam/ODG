@@ -25,6 +25,18 @@ namespace SysKit.ODG.App
 
             var xmlTemplate = new XmlODGSpecification();
 
+            xmlTemplate.UserCollection = new XmlUserCollection
+            {
+                Users = new XmlUser[]
+                {
+                    new XmlUser
+                    {
+                        DisplayName = "Test name"
+                    },
+                    new XmlUser()
+                }
+            }; 
+
             var generationOptions = new XmlGenerationOptions(userCredentials, xmlTemplate);
             var unityContainer = UnityManager.CreateUnityContainer(userCredentials);
 
