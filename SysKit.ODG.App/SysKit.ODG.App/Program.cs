@@ -10,6 +10,8 @@ using SysKit.ODG.Base.DTO;
 using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
+using SysKit.ODG.XMLSpecification;
+using SysKit.ODG.XMLSpecification.Model;
 using Unity;
 using Unity.Lifetime;
 
@@ -20,10 +22,15 @@ namespace SysKit.ODG.App
         static void Main(string[] args)
         {
             var userCredentials = new SimpleUserCredentials("admin@M365x314861.onmicrosoft.com", "1iH1Z8BwLM");
-            var generationOptions = new GenerationOptionsDTO(userCredentials);
+
+            var xmlTemplate = new XmlODGSpecification();
+
+            var generationOptions = new XmlGenerationOptions(userCredentials, xmlTemplate);
             var unityContainer = UnityManager.CreateUnityContainer(userCredentials);
 
             var generationService = unityContainer.Resolve<IGenerationService>();
+
+            generationService.AddGenerationTask(unityContainer.Resolve<IGenerationTask>("userTask"));
             generationService.Start(generationOptions);
         }
     }

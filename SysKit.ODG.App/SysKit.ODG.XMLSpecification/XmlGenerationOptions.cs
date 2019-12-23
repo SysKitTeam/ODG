@@ -3,18 +3,20 @@ using System.Collections.Generic;
 using System.Text;
 using SysKit.ODG.Base.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
+using SysKit.ODG.XMLSpecification.Model;
 
-namespace SysKit.ODG.Base.DTO
+namespace SysKit.ODG.XMLSpecification
 {
-    public class GenerationOptionsDTO: IGenerationOptions
+    public class XmlGenerationOptions: IGenerationOptions
     {
         public SimpleUserCredentials UserCredentials { get; }
-        public string TemplateFilePath { get; set; }
         public string DefaultPassword { get; set; }
+        public XmlODGSpecification XmlTemplate { get; }
 
-        public GenerationOptionsDTO(SimpleUserCredentials userCredentials)
+        public XmlGenerationOptions(SimpleUserCredentials userCredentials, XmlODGSpecification template)
         {
             UserCredentials = userCredentials;
+            XmlTemplate = template;
         }
     }
 }

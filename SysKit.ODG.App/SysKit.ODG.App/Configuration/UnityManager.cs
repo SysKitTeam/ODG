@@ -8,6 +8,7 @@ using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Generation;
+using SysKit.ODG.Generation.Users;
 using SysKit.ODG.Office365Service;
 using SysKit.ODG.Office365Service.GraphApiManagers;
 using Unity;
@@ -30,6 +31,8 @@ namespace SysKit.ODG.App.Configuration
             #region Generation services
             
             container.RegisterSingleton<IGenerationService, GenerationService>();
+            container.RegisterSingleton<IDataGenerationFactory, DataGenerationFactory>();
+            container.RegisterType<IGenerationTask, UserGenerationTask>("userTask");
             
             #endregion Generation services
 

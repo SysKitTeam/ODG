@@ -7,14 +7,10 @@ using SysKit.ODG.XMLSpecification.Model;
 
 namespace SysKit.ODG.Generation.Users
 {
-    public interface IUserDataGeneration
-    {
-        IEnumerable<UserEntry> CreateUsers(XmlODGSpecification xmlSpecification);
-    }
-
-    public class UserDataGeneration : IUserDataGeneration
+    public class UserDataGeneration
     {
         private readonly IMapper _mapper;
+
         public UserDataGeneration(IMapper mapper)
         {
             _mapper = mapper;
@@ -36,6 +32,15 @@ namespace SysKit.ODG.Generation.Users
         private UserEntry mapXmlToUserEntry(XmlUser xmlUser)
         {
             return _mapper.Map<XmlUser, UserEntry>(xmlUser);
+        }
+
+        /// <summary>
+        /// Returns user entry populated with sample data
+        /// </summary>
+        /// <returns></returns>
+        private UserEntry createSampleUserEntry()
+        {
+            return null;
         }
     }
 }

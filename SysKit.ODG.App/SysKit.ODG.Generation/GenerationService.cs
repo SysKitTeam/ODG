@@ -11,40 +11,43 @@ namespace SysKit.ODG.Generation
 {
     public class GenerationService: IGenerationService
     {
-        private readonly IAppConfigManager _configManager;
-        private readonly IUserGraphApiClient _userGraphApiClient;
+        private readonly List<IGenerationTask> _generationTasks = new List<IGenerationTask>();
 
-        private IAccessTokenManager _accessTokenManager;
-        private IGenerationOptions _generationOptions;
-
-        public GenerationService(IAppConfigManager configManager, IUserGraphApiClient userGraphApiClient)
+        public GenerationService()
         {
-            _configManager = configManager;
-            _userGraphApiClient = userGraphApiClient;
+
+        }
+
+        public void AddGenerationTask(IGenerationTask task)
+        {
+            _generationTasks.Add(task);
         }
 
         public void Start(IGenerationOptions generationOptions)
         {
-            _generationOptions = generationOptions;
-
-            var testUsers = new List<UserEntry>();
-
-            for (var i = 21; i < 23; i++)
+            foreach (var task in _generationTasks)
             {
-                testUsers.Add(new UserEntry
-                {
-                    AccountEnabled = i > 8,
-                    DisplayName = $"Test User {i}",
-                    UserPrincipalName = $"testUser{i}@M365x314861.onmicrosoft.com",
-                    MailNickname = $"testUser{i}",
-                    Password = _configManager.DefaultUserPassword
-                });
+                task.Execute(generationOptions);
             }
 
-            _userGraphApiClient.CreateTenantUsers(testUsers).GetAwaiter().GetResult();
+            //var testUsers = new List<UserEntry>();
 
-            Console.WriteLine(_configManager.ClientId);
-            Console.ReadLine();
+            //for (var i = 21; i < 23; i++)
+            //{
+            //    testUsers.Add(new UserEntry
+            //    {
+            //        AccountEnabled = i > 8,
+            //        DisplayName = $"Test User {i}",
+            //        UserPrincipalName = $"testUser{i}@M365x314861.onmicrosoft.com",
+            //        MailNickname = $"testUser{i}",
+            //        Password = _configManager.DefaultUserPassword
+            //    });
+            //}
+
+            //_userGraphApiClient.CreateTenantUsers(testUsers).GetAwaiter().GetResult();
+
+            //Console.WriteLine(_configManager.ClientId);
+            //Console.ReadLine();
         }
     }
 }
