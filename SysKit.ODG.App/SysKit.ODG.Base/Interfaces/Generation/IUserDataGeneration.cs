@@ -5,8 +5,8 @@ using SysKit.ODG.Base.DTO.Generation;
 
 namespace SysKit.ODG.Base.Interfaces.Generation
 {
-    public interface IDataGenerationFactory
+    public interface IUserDataGeneration
     {
-        IEnumerable<UserEntry> GetUserData(IGenerationOptions options);
+        IEnumerable<UserEntry> CreateUsers(IGenerationOptions generationOptions);
     }
 }

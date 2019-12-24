@@ -27,7 +27,7 @@ namespace SysKit.ODG.Generation
         {
             foreach (var task in _generationTasks)
             {
-                task.Execute(generationOptions);
+                task.Execute(generationOptions).GetAwaiter().GetResult();
             }
 
             //var testUsers = new List<UserEntry>();

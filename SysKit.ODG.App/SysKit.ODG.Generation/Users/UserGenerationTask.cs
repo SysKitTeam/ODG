@@ -9,24 +9,28 @@ namespace SysKit.ODG.Generation.Users
 {
     public class UserGenerationTask: IGenerationTask
     {
-        private readonly IDataGenerationFactory _dataGenerationFactory;
+        private readonly IUserDataGeneration _userDataGenerationService;
         private readonly IUserGraphApiClient _userGraphApiClient;
 
-        public UserGenerationTask(IDataGenerationFactory dataGenerationFactory, IUserGraphApiClient userGraphApiClient)
+        public UserGenerationTask(IUserDataGeneration userDataGenerationService, IUserGraphApiClient userGraphApiClient)
         {
-            _dataGenerationFactory = dataGenerationFactory;
+            _userDataGenerationService = userDataGenerationService;
             _userGraphApiClient = userGraphApiClient;
         }
 
         public async Task Execute(IGenerationOptions options)
         {
-            var users = _dataGenerationFactory.GetUserData(options);
+            var users = _userDataGenerationService.CreateUsers(options);
 
-            foreach (var user in users)
+            try
             {
-                var test = user;
+                await _userGraphApiClient.CreateTenantUsers(users);
             }
-            //await _userGraphApiClient.CreateTenantUsers(users);
+            catch (Exception e)
+            {
+                throw;
+            }
+            
 
             // TODO: assign licences
             // TODO: add external users

@@ -10,6 +10,7 @@ namespace SysKit.ODG.XMLSpecification
     public class XmlGenerationOptions: IGenerationOptions
     {
         public SimpleUserCredentials UserCredentials { get; }
+        public string TenantDomain { get; private set; }
         public string DefaultPassword { get; set; }
         public XmlODGSpecification XmlTemplate { get; }
 
@@ -17,6 +18,7 @@ namespace SysKit.ODG.XMLSpecification
         {
             UserCredentials = userCredentials;
             XmlTemplate = template;
+            TenantDomain = userCredentials.Username.Split('@')[1];
         }
     }
 }

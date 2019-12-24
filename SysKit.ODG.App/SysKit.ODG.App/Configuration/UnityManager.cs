@@ -7,10 +7,12 @@ using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.Office365Service;
+using SysKit.ODG.Base.Interfaces.SampleData;
 using SysKit.ODG.Generation;
 using SysKit.ODG.Generation.Users;
 using SysKit.ODG.Office365Service;
 using SysKit.ODG.Office365Service.GraphApiManagers;
+using SysKit.ODG.SampleData;
 using Unity;
 using Unity.Injection;
 using Unity.Lifetime;
@@ -28,11 +30,15 @@ namespace SysKit.ODG.App.Configuration
             container.RegisterInstance<IAccessTokenManager>(new AccessTokenManager(container.Resolve<IAppConfigManager>(), userCredentials), new SingletonLifetimeManager());
             container.RegisterSingleton<IHttpProvider, PnPHttpProvider>(new InjectionConstructor(10, 500, userAgent));
 
+            container.RegisterSingleton<ISampleDataService, SampleDataService>();
+
             #region Generation services
             
             container.RegisterSingleton<IGenerationService, GenerationService>();
-            container.RegisterSingleton<IDataGenerationFactory, DataGenerationFactory>();
             container.RegisterType<IGenerationTask, UserGenerationTask>("userTask");
+
+            // DataGeneration
+            container.RegisterType<IUserDataGeneration, UserDataGeneration>();
             
             #endregion Generation services
 

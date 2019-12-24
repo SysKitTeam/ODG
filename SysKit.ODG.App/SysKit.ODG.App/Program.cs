@@ -10,6 +10,7 @@ using SysKit.ODG.Base.DTO;
 using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
+using SysKit.ODG.Base.Options;
 using SysKit.ODG.XMLSpecification;
 using SysKit.ODG.XMLSpecification.Model;
 using Unity;
@@ -22,28 +23,21 @@ namespace SysKit.ODG.App
         static void Main(string[] args)
         {
             var userCredentials = new SimpleUserCredentials("admin@M365x314861.onmicrosoft.com", "1iH1Z8BwLM");
-
-            var xmlTemplate = new XmlODGSpecification();
-
-            xmlTemplate.UserCollection = new XmlUserCollection
+            var randomOptions = new RandomGenerationOptions(userCredentials, "M365x314861.onmicrosoft.com")
             {
-                Users = new XmlUser[]
+                DefaultPassword = "1iH1Z8BwLM",
+                UserOptions =
                 {
-                    new XmlUser
-                    {
-                        DisplayName = "Test name"
-                    },
-                    new XmlUser()
+                    NumberOfUsers = 10
                 }
-            }; 
+            };
 
-            var generationOptions = new XmlGenerationOptions(userCredentials, xmlTemplate);
             var unityContainer = UnityManager.CreateUnityContainer(userCredentials);
 
             var generationService = unityContainer.Resolve<IGenerationService>();
 
             generationService.AddGenerationTask(unityContainer.Resolve<IGenerationTask>("userTask"));
-            generationService.Start(generationOptions);
+            generationService.Start(randomOptions);
         }
     }
 }
