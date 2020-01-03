@@ -12,6 +12,7 @@ using SysKit.ODG.Generation;
 using SysKit.ODG.Generation.Users;
 using SysKit.ODG.Office365Service;
 using SysKit.ODG.Office365Service.GraphApiManagers;
+using SysKit.ODG.Office365Service.Utils;
 using SysKit.ODG.SampleData;
 using Unity;
 using Unity.Injection;
@@ -28,7 +29,7 @@ namespace SysKit.ODG.App.Configuration
             container.RegisterInstance<IMapper>(AutomapperManager.ConfigureMapper(), new SingletonLifetimeManager());
             container.RegisterSingleton<IAppConfigManager, AppConfigManager>();
             container.RegisterInstance<IAccessTokenManager>(new AccessTokenManager(container.Resolve<IAppConfigManager>(), userCredentials), new SingletonLifetimeManager());
-            container.RegisterSingleton<IHttpProvider, PnPHttpProvider>(new InjectionConstructor(10, 500, userAgent));
+            container.RegisterSingleton<IHttpProvider, CustomHttpProvider>(new InjectionConstructor(10, userAgent));
 
             container.RegisterSingleton<ISampleDataService, SampleDataService>();
 
