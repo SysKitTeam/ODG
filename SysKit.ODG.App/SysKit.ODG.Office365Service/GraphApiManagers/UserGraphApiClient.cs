@@ -20,7 +20,10 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 {
     public class UserGraphApiClient: BaseGraphApiClient, IUserGraphApiClient
     {
-        public UserGraphApiClient(IAppConfigManager appConfigManager, IGraphServiceCreator graphServiceCreator, IMapper autoMapper, IGraphHttpProvider httpProvider, IAccessTokenManager accessTokenManager) : base(appConfigManager, accessTokenManager, httpProvider, graphServiceCreator, autoMapper)
+        public UserGraphApiClient(IAccessTokenManager accessTokenManager,
+            IGraphHttpProviderFactory graphHttpProviderFactory,
+            IGraphServiceCreator graphServiceCreator,
+            IMapper autoMapper) : base(accessTokenManager, graphHttpProviderFactory, graphServiceCreator, autoMapper)
         {
 
         }
@@ -49,7 +52,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     };
                 }));
 
-                batchEntries.Add(new GraphBatchRequest(graphUser.UserPrincipalName, "https://graph.microsoft.com/v1.0/users", HttpMethod.Post, graphUser));
+                batchEntries.Add(new GraphBatchRequest(graphUser.UserPrincipalName, "users", HttpMethod.Post, graphUser));
             }
 
             var tokenRessult = await _accessTokenManager.GetGraphToken();

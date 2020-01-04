@@ -10,19 +10,19 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider.Dto
     public class GraphBatchRequest
     {
         public string Id { get; set; }
-        public string Url { get; set; }
+        public string RelativeUrl { get; set; }
         public HttpMethod Method { get; set; }
         public object Content { get; set; }
 
-        public GraphBatchRequest(string id, string url): this(id, url, HttpMethod.Get)
+        public GraphBatchRequest(string id, string relativeUrl) : this(id, relativeUrl, HttpMethod.Get)
         {
 
         }
 
-        public GraphBatchRequest(string id, string url, HttpMethod method, object content = null)
+        public GraphBatchRequest(string id, string relativeUrl, HttpMethod method, object content = null)
         {
             Id = id;
-            Url = url;
+            RelativeUrl = relativeUrl.TrimStart('/');
             Method = method;
             Content = content;
         }

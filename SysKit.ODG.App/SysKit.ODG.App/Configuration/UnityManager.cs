@@ -31,8 +31,6 @@ namespace SysKit.ODG.App.Configuration
             container.RegisterSingleton<IAppConfigManager, AppConfigManager>();
             container.RegisterInstance<IAccessTokenManager>(new AccessTokenManager(container.Resolve<IAppConfigManager>(), userCredentials), new SingletonLifetimeManager());
             
-            container.RegisterSingleton<IHttpProvider, GraphHttpProvider>(new InjectionConstructor(10, userAgent));
-
             container.RegisterSingleton<ISampleDataService, SampleDataService>();
 
             #region Generation services
@@ -47,8 +45,8 @@ namespace SysKit.ODG.App.Configuration
 
             #region Office365 services
 
-            container.RegisterSingleton<IGraphHttpProviderFactory, GraphHttpProviderFactory>();
-            container.RegisterInstance<IGraphHttpProvider>(container.Resolve<IGraphHttpProviderFactory>().CreateHttpProvider(5), new SingletonLifetimeManager());
+            // we dont want to make this singelton since we could have DNS problem with static HttpClientHandler (once we transition to .net core and HttpClientFactory this can be mitigated)
+            container.RegisterType<IGraphHttpProviderFactory, GraphHttpProviderFactory>(new PerResolveLifetimeManager());
             container.RegisterSingleton<IGraphServiceCreator, GraphServiceCreator>();
             container.RegisterType<IUserGraphApiClient, UserGraphApiClient>();
 

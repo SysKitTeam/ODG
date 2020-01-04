@@ -8,6 +8,6 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
 {
     public interface IGraphHttpProviderFactory
     {
-        IGraphHttpProvider CreateHttpProvider(int retryCount, string userAgent = null);
+        IGraphHttpProvider CreateHttpProvider();
     }
 }

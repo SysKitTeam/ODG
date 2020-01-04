@@ -14,7 +14,6 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 {
     public abstract class BaseGraphApiClient
     {
-        protected readonly IAppConfigManager _appConfigManager;
         protected readonly IMapper _autoMapper;
         /// <summary>
         /// Used to ping v1 Graph API
@@ -28,12 +27,15 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
         protected readonly IAccessTokenManager _accessTokenManager;
 
-        protected BaseGraphApiClient(IAppConfigManager appConfigManager, IAccessTokenManager accessTokenManager, IGraphHttpProvider httpProvider, IGraphServiceCreator graphServiceCreator, IMapper autoMapper)
+        protected BaseGraphApiClient(IAccessTokenManager accessTokenManager,
+            IGraphHttpProviderFactory graphHttpProviderFactory,
+            IGraphServiceCreator graphServiceCreator, 
+            IMapper autoMapper)
         {
             _graphServiceClient = graphServiceCreator.CreateGraphServiceClient(accessTokenManager, false);
             _graphServiceBetaClient = graphServiceCreator.CreateGraphServiceClient(accessTokenManager, true);
             _autoMapper = autoMapper;
-            _httpProvider = httpProvider;
+            _httpProvider = graphHttpProviderFactory.CreateHttpProvider();
             _accessTokenManager = accessTokenManager;
         }
 

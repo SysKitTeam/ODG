@@ -11,6 +11,7 @@ namespace SysKit.ODG.App.Configuration
     // TODO: throw not configured errors if something is empty
     public class AppConfigManager: IAppConfigManager
     {
+        public string UserAgent => (string)ConfigurationManager.AppSettings["userAgent"];
         public string ClientId => (string)ConfigurationManager.AppSettings["clientId"];
 
         private string[] _scopes;

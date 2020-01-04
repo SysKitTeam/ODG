@@ -23,10 +23,10 @@ namespace SysKit.ODG.Office365Service
 
     public class GraphServiceCreator : IGraphServiceCreator
     {
-        private readonly IGraphHttpProvider _graphHttpProvider;
-        public GraphServiceCreator(IGraphHttpProvider graphHttpProvider)
+        private readonly IGraphHttpProviderFactory _graphHttpProviderFactory;
+        public GraphServiceCreator(IGraphHttpProviderFactory graphHttpProviderFactory)
         {
-            _graphHttpProvider = graphHttpProvider;
+            _graphHttpProviderFactory = graphHttpProviderFactory;
         }
 
         /// <inheritdoc />
@@ -43,7 +43,7 @@ namespace SysKit.ODG.Office365Service
                 {
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessTokenManager.GetGraphToken().GetAwaiter().GetResult().Token);
                     return Task.FromResult(0);
-                }), _graphHttpProvider);
+                }), _graphHttpProviderFactory.CreateHttpProvider());
         }
     }
 }
