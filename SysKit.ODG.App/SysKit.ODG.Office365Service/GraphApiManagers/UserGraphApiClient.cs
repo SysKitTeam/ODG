@@ -13,17 +13,15 @@ using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Office365Service;
+using SysKit.ODG.Office365Service.GraphHttpProvider;
 
 namespace SysKit.ODG.Office365Service.GraphApiManagers
 {
     public class UserGraphApiClient: BaseGraphApiClient, IUserGraphApiClient
     {
-        private readonly IHttpProvider _httpProvider;
-        private readonly IAccessTokenManager _accessTokenManager;
-        public UserGraphApiClient(IAppConfigManager appConfigManager, IGraphServiceCreator graphServiceCreator, IMapper autoMapper, IHttpProvider httpProvider, IAccessTokenManager accessTokenManager) : base(appConfigManager, graphServiceCreator, autoMapper)
+        public UserGraphApiClient(IAppConfigManager appConfigManager, IGraphServiceCreator graphServiceCreator, IMapper autoMapper, IGraphHttpProvider httpProvider, IAccessTokenManager accessTokenManager) : base(appConfigManager, accessTokenManager, httpProvider, graphServiceCreator, autoMapper)
         {
-            _httpProvider = httpProvider;
-            _accessTokenManager = accessTokenManager;
+
         }
 
         public void GetAllTenantUsers()
@@ -61,8 +59,8 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
             // Send batch request with BatchRequestContent.
             var batchHttpRequest = new HttpRequestMessage(HttpMethod.Post, "https://graph.microsoft.com/v1.0/$batch") { Content = batch };
-            batchHttpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer",
-                _accessTokenManager.GetGraphToken().GetAwaiter().GetResult().Token);
+            //batchHttpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer",
+            //    _accessTokenManager.GetGraphToken().GetAwaiter().GetResult().Token);
 
             HttpResponseMessage batchRequest = await _httpProvider.SendAsync(batchHttpRequest);
 

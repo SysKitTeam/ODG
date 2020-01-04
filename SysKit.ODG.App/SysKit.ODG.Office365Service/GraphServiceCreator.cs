@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Graph;
 using SysKit.ODG.Base.Interfaces.Authentication;
+using SysKit.ODG.Office365Service.GraphHttpProvider;
 
 namespace SysKit.ODG.Office365Service
 {
@@ -14,28 +15,22 @@ namespace SysKit.ODG.Office365Service
         /// <summary>
         /// Creates service client that is used for pinging Graph API
         /// </summary>
-        /// <param name="tokenRetriever"></param>
-        /// <param name="httpProvider"></param>
+        /// <param name="accessTokenManager"></param>
         /// <param name="useBetaEndpoint"></param>
         /// <returns></returns>
-        IGraphServiceClient CreateGraphServiceClient(bool useBetaEndpoint = false);
+        IGraphServiceClient CreateGraphServiceClient(IAccessTokenManager accessTokenManager, bool useBetaEndpoint = false);
     }
 
     public class GraphServiceCreator : IGraphServiceCreator
     {
-        // TODO: real agent
-        private const string USER_AGENT = null;
-        private readonly IAccessTokenManager _accessTokenManager;
-        private readonly IHttpProvider _httpProvider;
-
-        public GraphServiceCreator(IAccessTokenManager accessTokenManager, IHttpProvider httpProvider)
+        private readonly IGraphHttpProvider _graphHttpProvider;
+        public GraphServiceCreator(IGraphHttpProvider graphHttpProvider)
         {
-            _accessTokenManager = accessTokenManager;
-            _httpProvider = httpProvider;
+            _graphHttpProvider = graphHttpProvider;
         }
 
         /// <inheritdoc />
-        public IGraphServiceClient CreateGraphServiceClient(bool useBetaEndpoint = false)
+        public IGraphServiceClient CreateGraphServiceClient(IAccessTokenManager accessTokenManager, bool useBetaEndpoint = false)
         {
             var baseUrl = "https://graph.microsoft.com/v1.0";
             if (useBetaEndpoint)
@@ -46,13 +41,9 @@ namespace SysKit.ODG.Office365Service
             return new GraphServiceClient(baseUrl, new DelegateAuthenticationProvider(
                 request =>
                 {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _accessTokenManager.GetGraphToken().GetAwaiter().GetResult().Token);
-                    if (!string.IsNullOrEmpty(USER_AGENT))
-                    {
-                        request.Headers.Add("User-Agent", USER_AGENT);
-                    }
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessTokenManager.GetGraphToken().GetAwaiter().GetResult().Token);
                     return Task.FromResult(0);
-                }), _httpProvider);
+                }), _graphHttpProvider);
         }
     }
 }

@@ -1,26 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+﻿using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Graph;
-using OfficeDevPnP.Core.Diagnostics;
+using Newtonsoft.Json;
+using SysKit.ODG.Office365Service.GraphHttpProvider.Dto;
+using SysKit.ODG.Office365Service.Utils;
 
-namespace SysKit.ODG.Office365Service.Utils
+namespace SysKit.ODG.Office365Service.GraphHttpProvider
 {
     /// <summary>
     /// Custom implementation of HttpProvider that handles throttling
     /// </summary>
-    public class CustomHttpProvider: HttpProvider, IHttpProvider
+    public class GraphHttpProvider: HttpProvider, IGraphHttpProvider
     {
         private readonly int _retryCount;
         private readonly string _userAgent;
 
-        public CustomHttpProvider(int retryCount, string userAgent = null)
+        public GraphHttpProvider(int retryCount, string userAgent = null): this(new HttpClientHandler(), retryCount, userAgent)
+        {
+
+        }
+
+        public GraphHttpProvider(HttpMessageHandler innerHandler, int retryCount, string userAgent = null): base(innerHandler, true, null)
         {
             _retryCount = retryCount;
             _userAgent = userAgent;
@@ -37,6 +41,36 @@ namespace SysKit.ODG.Office365Service.Utils
             CancellationToken cancellationToken)
         {
             return sendInternal(request, completionOption, cancellationToken, _retryCount);
+        }
+
+        public async Task<BatchResponseContent> SendBatchAsync(IEnumerable<GraphBatchEntry> batchEntries, string token)
+        {
+            var batch = new BatchRequestContent();
+
+            foreach (var entry in batchEntries)
+            {
+                var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "https://graph.microsoft.com/v1.0/users");
+
+                if (entry.Content != null)
+                {
+                    httpRequestMessage.Content = new StringContent(JsonConvert.SerializeObject(entry.Content), Encoding.UTF8, "application/json");
+                }
+                
+                //httpRequestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer",
+                //    _accessTokenManager.GetGraphToken().GetAwaiter().GetResult().Token);
+
+                var batchStep = new BatchRequestStep(entry.Id, httpRequestMessage);
+                batch.AddBatchRequestStep(batchStep);
+            }
+
+            // Send batch request with BatchRequestContent.
+            var batchHttpRequest = new HttpRequestMessage(HttpMethod.Post, "https://graph.microsoft.com/v1.0/$batch") { Content = batch };
+            batchHttpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            HttpResponseMessage batchRequest = await SendAsync(batchHttpRequest);
+
+            var batchResponseContent = new BatchResponseContent(batchRequest);
+            return batchResponseContent;
         }
 
         private async Task<HttpResponseMessage> sendInternal(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationToken cancellationToken, int retryCount)

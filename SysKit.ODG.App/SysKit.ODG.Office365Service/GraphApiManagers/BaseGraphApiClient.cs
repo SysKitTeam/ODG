@@ -8,6 +8,7 @@ using AutoMapper;
 using Microsoft.Graph;
 using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
+using SysKit.ODG.Office365Service.GraphHttpProvider;
 
 namespace SysKit.ODG.Office365Service.GraphApiManagers
 {
@@ -23,12 +24,14 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         /// Used to ping beta endpoint
         /// </summary>
         protected readonly IGraphServiceClient _graphServiceBetaClient;
+        protected readonly IGraphHttpProvider _httpProvider;
 
-        protected BaseGraphApiClient(IAppConfigManager appConfigManager, IGraphServiceCreator graphServiceCreator, IMapper autoMapper)
+        protected BaseGraphApiClient(IAppConfigManager appConfigManager, IAccessTokenManager accessTokenManager, IGraphHttpProvider httpProvider, IGraphServiceCreator graphServiceCreator, IMapper autoMapper)
         {
-            _graphServiceClient = graphServiceCreator.CreateGraphServiceClient(false);
-            _graphServiceBetaClient = graphServiceCreator.CreateGraphServiceClient(true);
+            _graphServiceClient = graphServiceCreator.CreateGraphServiceClient(accessTokenManager, false);
+            _graphServiceBetaClient = graphServiceCreator.CreateGraphServiceClient(accessTokenManager, true);
             _autoMapper = autoMapper;
+            _httpProvider = httpProvider;
         }
 
         #region Request execution helpers

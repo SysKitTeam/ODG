@@ -12,6 +12,7 @@ using SysKit.ODG.Generation;
 using SysKit.ODG.Generation.Users;
 using SysKit.ODG.Office365Service;
 using SysKit.ODG.Office365Service.GraphApiManagers;
+using SysKit.ODG.Office365Service.GraphHttpProvider;
 using SysKit.ODG.Office365Service.Utils;
 using SysKit.ODG.SampleData;
 using Unity;
@@ -29,7 +30,8 @@ namespace SysKit.ODG.App.Configuration
             container.RegisterInstance<IMapper>(AutomapperManager.ConfigureMapper(), new SingletonLifetimeManager());
             container.RegisterSingleton<IAppConfigManager, AppConfigManager>();
             container.RegisterInstance<IAccessTokenManager>(new AccessTokenManager(container.Resolve<IAppConfigManager>(), userCredentials), new SingletonLifetimeManager());
-            container.RegisterSingleton<IHttpProvider, CustomHttpProvider>(new InjectionConstructor(10, userAgent));
+            
+            container.RegisterSingleton<IHttpProvider, GraphHttpProvider>(new InjectionConstructor(10, userAgent));
 
             container.RegisterSingleton<ISampleDataService, SampleDataService>();
 
@@ -40,11 +42,13 @@ namespace SysKit.ODG.App.Configuration
 
             // DataGeneration
             container.RegisterType<IUserDataGeneration, UserDataGeneration>();
-            
+
             #endregion Generation services
 
             #region Office365 services
 
+            container.RegisterSingleton<IGraphHttpProviderFactory, GraphHttpProviderFactory>();
+            container.RegisterInstance<IGraphHttpProvider>(container.Resolve<IGraphHttpProviderFactory>().CreateHttpProvider(5), new SingletonLifetimeManager());
             container.RegisterSingleton<IGraphServiceCreator, GraphServiceCreator>();
             container.RegisterType<IUserGraphApiClient, UserGraphApiClient>();
 

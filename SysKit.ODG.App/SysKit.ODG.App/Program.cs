@@ -35,9 +35,10 @@ namespace SysKit.ODG.App
             var unityContainer = UnityManager.CreateUnityContainer(userCredentials);
 
             var generationService = unityContainer.Resolve<IGenerationService>();
-
             generationService.AddGenerationTask(unityContainer.Resolve<IGenerationTask>("userTask"));
             generationService.Start(randomOptions);
+
+            Console.ReadLine();
         }
     }
 }

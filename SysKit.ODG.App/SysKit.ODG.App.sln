@@ -13,9 +13,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SysKit.ODG.Generation", "Sy
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SysKit.ODG.Office365Service", "SysKit.ODG.Office365Service\SysKit.ODG.Office365Service.csproj", "{D007589C-2428-42F7-A017-3F0C3E00BEB3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SysKit.ODG.XMLSpecification", "SysKit.ODG.XMLSpecification\SysKit.ODG.XMLSpecification.csproj", "{AB09DEAB-6AA6-4389-8BEF-0C84AA696B02}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SysKit.ODG.XMLSpecification", "SysKit.ODG.XMLSpecification\SysKit.ODG.XMLSpecification.csproj", "{AB09DEAB-6AA6-4389-8BEF-0C84AA696B02}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SysKit.ODG.SampleData", "SysKit.ODG.SampleData\SysKit.ODG.SampleData.csproj", "{2B279BD0-B7FB-4B30-B482-8277D050AE00}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SysKit.ODG.SampleData", "SysKit.ODG.SampleData\SysKit.ODG.SampleData.csproj", "{2B279BD0-B7FB-4B30-B482-8277D050AE00}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{884E91F4-FEB1-47F4-9A43-AE5D174AB624}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SysKit.ODG.Office365Service.Tests", "SysKit.ODG.Office365Service.Tests\SysKit.ODG.Office365Service.Tests.csproj", "{491AAACB-C8B1-4659-B67F-8A25248FACAD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,9 +55,16 @@ Global
 		{2B279BD0-B7FB-4B30-B482-8277D050AE00}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2B279BD0-B7FB-4B30-B482-8277D050AE00}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2B279BD0-B7FB-4B30-B482-8277D050AE00}.Release|Any CPU.Build.0 = Release|Any CPU
+		{491AAACB-C8B1-4659-B67F-8A25248FACAD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{491AAACB-C8B1-4659-B67F-8A25248FACAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{491AAACB-C8B1-4659-B67F-8A25248FACAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{491AAACB-C8B1-4659-B67F-8A25248FACAD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{491AAACB-C8B1-4659-B67F-8A25248FACAD} = {884E91F4-FEB1-47F4-9A43-AE5D174AB624}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F07C4548-AB01-4195-B422-30B660F2D56E}
