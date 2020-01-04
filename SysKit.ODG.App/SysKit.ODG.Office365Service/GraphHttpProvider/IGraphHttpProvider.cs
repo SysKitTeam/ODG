@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Graph;
@@ -10,6 +11,6 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
 {
     public interface IGraphHttpProvider: IHttpProvider
     {
-        Task<BatchResponseContent> SendBatchAsync(IEnumerable<GraphBatchEntry> batchEntries, string token);
+        Task<IEnumerable<HttpResponseMessage>> SendBatchAsync(IEnumerable<GraphBatchRequest> batchEntries, string token, bool useBetaEndpoint = false);
     }
 }

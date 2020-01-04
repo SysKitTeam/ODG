@@ -28,7 +28,7 @@ namespace SysKit.ODG.App
                 DefaultPassword = "1iH1Z8BwLM",
                 UserOptions =
                 {
-                    NumberOfUsers = 10
+                    NumberOfUsers = 30
                 }
             };
 

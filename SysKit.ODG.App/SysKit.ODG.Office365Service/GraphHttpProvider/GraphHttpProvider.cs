@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -43,34 +44,56 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
             return sendInternal(request, completionOption, cancellationToken, _retryCount);
         }
 
-        public async Task<BatchResponseContent> SendBatchAsync(IEnumerable<GraphBatchEntry> batchEntries, string token)
+        public async Task<IEnumerable<HttpResponseMessage>> SendBatchAsync(IEnumerable<GraphBatchRequest> batchEntries, string token, bool useBetaEndpoint = false)
         {
-            var batch = new BatchRequestContent();
+            var endpoint = useBetaEndpoint ? "beta" : "v1.0";
+            var allRequests = batchEntries.ToList();
+            var maxRequestCountPerBatch = 20;
+            var page = 0;
 
-            foreach (var entry in batchEntries)
+            var batchResults = new List<HttpResponseMessage>();
+
+            List<GraphBatchRequest> tmpRequests = allRequests.Skip(page * maxRequestCountPerBatch).Take(maxRequestCountPerBatch).ToList();
+
+            do
             {
-                var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "https://graph.microsoft.com/v1.0/users");
+                var requestsToExecute = tmpRequests;
+                var batch = new BatchRequestContent();
 
-                if (entry.Content != null)
+                foreach (var entry in requestsToExecute)
                 {
-                    httpRequestMessage.Content = new StringContent(JsonConvert.SerializeObject(entry.Content), Encoding.UTF8, "application/json");
+                    var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "https://graph.microsoft.com/v1.0/users");
+
+                    if (entry.Content != null)
+                    {
+                        httpRequestMessage.Content = new StringContent(JsonConvert.SerializeObject(entry.Content), Encoding.UTF8, "application/json");
+                    }
+
+                    //httpRequestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer",
+                    //    _accessTokenManager.GetGraphToken().GetAwaiter().GetResult().Token);
+
+                    var batchStep = new BatchRequestStep(entry.Id, httpRequestMessage);
+                    batch.AddBatchRequestStep(batchStep);
                 }
-                
-                //httpRequestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer",
-                //    _accessTokenManager.GetGraphToken().GetAwaiter().GetResult().Token);
 
-                var batchStep = new BatchRequestStep(entry.Id, httpRequestMessage);
-                batch.AddBatchRequestStep(batchStep);
-            }
+                // Send batch request with BatchRequestContent.
+                var batchHttpRequest = new HttpRequestMessage(HttpMethod.Post, $"https://graph.microsoft.com/{endpoint}/$batch") { Content = batch };
+                batchHttpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            // Send batch request with BatchRequestContent.
-            var batchHttpRequest = new HttpRequestMessage(HttpMethod.Post, "https://graph.microsoft.com/v1.0/$batch") { Content = batch };
-            batchHttpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                HttpResponseMessage batchRequest = await SendAsync(batchHttpRequest);
 
-            HttpResponseMessage batchRequest = await SendAsync(batchHttpRequest);
+                var batchResponseContent = new BatchResponseContent(batchRequest);
+                var batchResponses = await batchResponseContent.GetResponsesAsync();
+                foreach (var response in batchResponses)
+                {
+                    batchResults.Add(response.Value);
+                }
 
-            var batchResponseContent = new BatchResponseContent(batchRequest);
-            return batchResponseContent;
+                page++;
+                tmpRequests = allRequests.Skip(page * maxRequestCountPerBatch).Take(maxRequestCountPerBatch).ToList();
+            } while (tmpRequests.Any());
+
+            return batchResults;
         }
 
         private async Task<HttpResponseMessage> sendInternal(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationToken cancellationToken, int retryCount)

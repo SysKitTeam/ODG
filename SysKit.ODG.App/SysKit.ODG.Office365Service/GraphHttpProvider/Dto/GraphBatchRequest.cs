@@ -7,19 +7,19 @@ using System.Threading.Tasks;
 
 namespace SysKit.ODG.Office365Service.GraphHttpProvider.Dto
 {
-    public class GraphBatchEntry
+    public class GraphBatchRequest
     {
         public string Id { get; set; }
         public string Url { get; set; }
         public HttpMethod Method { get; set; }
         public object Content { get; set; }
 
-        public GraphBatchEntry(string id, string url): this(id, url, HttpMethod.Get)
+        public GraphBatchRequest(string id, string url): this(id, url, HttpMethod.Get)
         {
 
         }
 
-        public GraphBatchEntry(string id, string url, HttpMethod method, object content = null)
+        public GraphBatchRequest(string id, string url, HttpMethod method, object content = null)
         {
             Id = id;
             Url = url;

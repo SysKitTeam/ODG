@@ -220,7 +220,7 @@
   <ItemGroup>
     <Compile Include="GraphApiManagers\BaseGraphApiClient.cs" />
     <Compile Include="GraphApiManagers\UserGraphApiClient.cs" />
-    <Compile Include="GraphHttpProvider\Dto\GraphBatchEntry.cs" />
+    <Compile Include="GraphHttpProvider\Dto\GraphBatchRequest.cs" />
     <Compile Include="GraphHttpProvider\Handlers\LoggingHandler.cs" />
     <Compile Include="GraphHttpProvider\IGraphHttpProvider.cs" />
     <Compile Include="GraphHttpProvider\IGraphHttpProviderFactory.cs" />

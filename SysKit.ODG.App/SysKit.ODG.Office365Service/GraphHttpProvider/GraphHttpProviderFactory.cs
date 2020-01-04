@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using Microsoft.Graph;
 using SysKit.ODG.Office365Service.GraphHttpProvider.Handlers;
@@ -14,7 +15,12 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
             var loggingHandler = new LoggingHandler();
 
             var requestPipeline = GraphClientFactory.CreatePipeline(new DelegatingHandler[] {loggingHandler}, requestHandler);
-            return new GraphHttpProvider(requestPipeline, retryCount, userAgent);
+            var httpProvider = new GraphHttpProvider(requestPipeline, retryCount, userAgent);
+
+            // we will handle timeout with a delegation handler because HttpClient attaches user cancellation token with his inner token and then polly retry doesn't work as intended
+            //httpProvider.OverallTimeout = TimeSpan.MaxValue;
+
+            return httpProvider;
         }
     }
 }

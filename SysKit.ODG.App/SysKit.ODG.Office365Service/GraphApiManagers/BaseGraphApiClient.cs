@@ -26,12 +26,15 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         protected readonly IGraphServiceClient _graphServiceBetaClient;
         protected readonly IGraphHttpProvider _httpProvider;
 
+        protected readonly IAccessTokenManager _accessTokenManager;
+
         protected BaseGraphApiClient(IAppConfigManager appConfigManager, IAccessTokenManager accessTokenManager, IGraphHttpProvider httpProvider, IGraphServiceCreator graphServiceCreator, IMapper autoMapper)
         {
             _graphServiceClient = graphServiceCreator.CreateGraphServiceClient(accessTokenManager, false);
             _graphServiceBetaClient = graphServiceCreator.CreateGraphServiceClient(accessTokenManager, true);
             _autoMapper = autoMapper;
             _httpProvider = httpProvider;
+            _accessTokenManager = accessTokenManager;
         }
 
         #region Request execution helpers
