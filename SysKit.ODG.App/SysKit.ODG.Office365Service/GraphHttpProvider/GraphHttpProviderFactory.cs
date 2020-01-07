@@ -27,7 +27,8 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
             _customRetryPolicyFactory = customRetryPolicyFactory;
         }
 
-        public IGraphHttpProvider CreateHttpProvider()
+        /// <inheritdoc />
+        public IGraphHttpProvider CreateHttpProvider(HttpMessageHandler finalHandler = null)
         {
             if (_cachedProvider == null)
             {
@@ -35,7 +36,7 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
                 {
                     if (_cachedProvider == null)
                     {
-                        _cachedProvider = createGraphHttpProvider();
+                        _cachedProvider = createGraphHttpProvider(finalHandler ?? new HttpClientHandler());
                     }
                 }
             }
@@ -43,14 +44,13 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
             return _cachedProvider;
         }
 
-        private IGraphHttpProvider createGraphHttpProvider()
+        private IGraphHttpProvider createGraphHttpProvider(HttpMessageHandler finalHandler)
         {
-            var requestHandler = new HttpClientHandler();
             var compressionHandler = new CompressionHandler();
             var loggingHandler = new LoggingHandler(_logger);
             var retryHandler = new CustomRetryHandler(_customRetryPolicyFactory.CreateRetryPolicy());
 
-            var requestPipeline = GraphClientFactory.CreatePipeline(new DelegatingHandler[] { loggingHandler, compressionHandler, retryHandler }, requestHandler);
+            var requestPipeline = GraphClientFactory.CreatePipeline(new DelegatingHandler[] { loggingHandler, compressionHandler, retryHandler }, finalHandler);
             var httpProvider = new GraphHttpProvider(requestPipeline);
             //httpProvider.OverallTimeout = TimeSpan.FromMinutes(10);
 
