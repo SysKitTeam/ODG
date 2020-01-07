@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Polly;
+using Polly.CircuitBreaker;
 using Polly.Wrap;
 using Serilog;
 using Serilog.Events;
@@ -19,21 +20,22 @@ namespace SysKit.ODG.Office365Service.Polly
         private readonly AsyncPolicyWrap _policy;
         private const string CTX_URL = "url_key";
 
-        public CustomRetryPolicy(ILogger logger)
+        public CustomRetryPolicy(ILogger logger, CustomRetryPolicySettings settings)
         {
             _logger = logger;
-            var maxRetryCount = 3;
-            var maxFailedRequestsForCircuitbreaker = 4;
+            var maxRetryCount = settings.MaxRetryCount;
+            var maxFailedRequestsForCircuitbreaker = settings.MaxConsecutiveThrottledRequests;
 
             var retryPolicy = Policy
                 .Handle<ThrottleException>()
-                .WaitAndRetryAsync(retryCount: maxRetryCount, sleepDurationProvider: calculateRetryTime,
+                .Or<BrokenCircuitException>()
+                .WaitAndRetryAsync(retryCount: maxRetryCount, sleepDurationProvider: settings.CalculateRetryFunc,
                     onRetryAsync: onRetryAsync);
 
             var circuitBreakerPolicy = Policy
                 .Handle<ThrottleException>()
                 .CircuitBreakerAsync(maxFailedRequestsForCircuitbreaker,
-                    durationOfBreak: TimeSpan.FromMinutes(2),
+                    durationOfBreak: settings.DurationOfCircuitBreak,
                     onBreak, onReset);
 
             _policy = Policy.WrapAsync(retryPolicy, circuitBreakerPolicy);
@@ -79,16 +81,6 @@ namespace SysKit.ODG.Office365Service.Polly
             _logger.Warning($"Request: {getRequestUrlFromContext(context)} was throttled (attempt {retryAttempt}). Throttle time: {sleepDuration.TotalSeconds}s");
         }
 
-        private TimeSpan calculateRetryTime(int retryAttempt, Exception error, Context context)
-        {
-            var headerRetryValue = error is ThrottleException throttleException ? throttleException.Timeout : null;
-            var oneMinuteInMilliseconds = Convert.ToInt32(new TimeSpan(0, 1, 0).TotalMilliseconds);
-            var throttleValue = headerRetryValue ?? TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) +
-                                TimeSpan.FromMilliseconds(RandomThreadSafeGenerator.Next(oneMinuteInMilliseconds));
-
-            return throttleValue;
-        }
-
         #endregion Configuration
 
 
@@ -123,5 +115,39 @@ namespace SysKit.ODG.Office365Service.Polly
         }
 
         #endregion
+    }
+
+    public class CustomRetryPolicySettings
+    {
+        /// <summary>
+        /// Max number of retries if request is throttled
+        /// </summary>
+        public int MaxRetryCount { get; private set; }
+
+        /// <summary>
+        /// When this number is hit, all requests will fail until system gets back to normal (circuit breaker pattern)
+        /// </summary>
+        public int MaxConsecutiveThrottledRequests { get; private set; }
+
+        /// <summary>
+        /// If MaxConsecutiveThrottledRequests is hit, duration before requests can pass (circuit is open)
+        /// </summary>
+        public TimeSpan DurationOfCircuitBreak { get; private set; }
+
+        /// <summary>
+        /// Used to calculate throttle timeout. First param is retry count, second is exception nad third is the Polly context
+        /// </summary>
+        public Func<int, Exception, Context, TimeSpan> CalculateRetryFunc { get; private set; }
+
+        public CustomRetryPolicySettings(int maxRetryCount, 
+            int maxConsecutiveThrottledRequests,
+            TimeSpan durationOfCircuitBreak,
+            Func<int, Exception, Context, TimeSpan> calculateRetryFunc)
+        {
+            MaxRetryCount = maxRetryCount;
+            MaxConsecutiveThrottledRequests = maxConsecutiveThrottledRequests;
+            DurationOfCircuitBreak = durationOfCircuitBreak;
+            CalculateRetryFunc = calculateRetryFunc;
+        }
     }
 }

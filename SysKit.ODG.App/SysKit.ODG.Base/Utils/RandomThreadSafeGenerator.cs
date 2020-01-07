@@ -14,6 +14,11 @@ namespace SysKit.ODG.Base.Utils
 
         public static int Next(int maxValue)
         {
+            return Next(0, maxValue);
+        }
+
+        public static int Next(int minValue, int maxValue)
+        {
             Random inst = _local;
             if (inst == null)
             {
@@ -24,7 +29,7 @@ namespace SysKit.ODG.Base.Utils
                 }
                 _local = inst = new Random(seed);
             }
-            return inst.Next(maxValue);
+            return inst.Next(minValue, maxValue);
         }
     }
 }
