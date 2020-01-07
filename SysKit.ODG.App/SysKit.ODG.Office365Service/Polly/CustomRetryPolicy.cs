@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -7,6 +8,7 @@ using Polly;
 using Polly.Wrap;
 using Serilog;
 using Serilog.Events;
+using SysKit.ODG.Base.Exceptions;
 using SysKit.ODG.Base.Utils;
 
 namespace SysKit.ODG.Office365Service.Polly
@@ -14,57 +16,85 @@ namespace SysKit.ODG.Office365Service.Polly
     public class CustomRetryPolicy: ICustomRetryPolicy
     {
         private readonly ILogger _logger;
-        private readonly AsyncPolicyWrap<HttpResponseMessage> _policy;
+        private readonly AsyncPolicyWrap _policy;
+        private const string CTX_URL = "url_key";
 
         public CustomRetryPolicy(ILogger logger)
         {
             _logger = logger;
-            var maxRetryCount = 2;
+            var maxRetryCount = 3;
             var maxFailedRequestsForCircuitbreaker = 4;
 
             var retryPolicy = Policy
-                .HandleResult<HttpResponseMessage>(isResponseThrottled)
+                .Handle<ThrottleException>()
                 .WaitAndRetryAsync(retryCount: maxRetryCount, sleepDurationProvider: calculateRetryTime,
                     onRetryAsync: onRetryAsync);
 
             var circuitBreakerPolicy = Policy
-                .HandleResult<HttpResponseMessage>(isResponseThrottled)
-                .CircuitBreakerAsync(handledEventsAllowedBeforeBreaking: maxFailedRequestsForCircuitbreaker,
-                    durationOfBreak: TimeSpan.FromSeconds(10),
-                    onBreak: onBreak, dummy, dummy);
+                .Handle<ThrottleException>()
+                .CircuitBreakerAsync(maxFailedRequestsForCircuitbreaker,
+                    durationOfBreak: TimeSpan.FromMinutes(2),
+                    onBreak, onReset);
 
             _policy = Policy.WrapAsync(retryPolicy, circuitBreakerPolicy);
         }
 
-        private void onBreak(DelegateResult<HttpResponseMessage> response, TimeSpan timeout)
+        #region Interface
+
+        public async Task<HttpResponseMessage> ExecuteAsync(Func<Task<HttpResponseMessage>> requestFunction)
         {
-            _logger.Warning($"Request {response.Result.RequestMessage.RequestUri} broke the circuit");
+            return await _policy.ExecuteAsync(async (context) =>
+            {
+                var result = await requestFunction();
+                context[CTX_URL] = result.RequestMessage.RequestUri;
+
+                if (isResponseThrottled(result))
+                {
+                    throw new ThrottleException(getRetryAfterValueFromResponseHeader(result.Headers));
+                }
+
+                return result;
+            }, new Dictionary<string, object>());
+
         }
 
-        private void dummy()
+        #endregion Interface
+
+        #region Configuration
+
+        private void onReset(Context context)
         {
-            _logger.Warning("inside dummy");
+            _logger.Warning($"Requests are reset. Last request: {getRequestUrlFromContext(context)}");
         }
 
-        private async Task onRetryAsync(DelegateResult<HttpResponseMessage> responseMessage, TimeSpan sleepDuration, int retryAttempt, Context context)
+        private void onBreak(Exception exception, TimeSpan sleep, Context context)
         {
-            _logger.Warning($"Request {responseMessage.Result.RequestMessage.RequestUri} was throttled");
+            _logger.Warning($"Requests are disabled for {sleep.TotalSeconds}s. Last request: {getRequestUrlFromContext(context)}");
         }
 
-        private bool isResponseThrottled(HttpResponseMessage response)
+        private async Task onRetryAsync(Exception error, TimeSpan sleepDuration, int retryAttempt, Context context)
         {
-            return true;
-            return (int) response.StatusCode == 429 || (int) response.StatusCode == 503;
+            _logger.Warning($"Request: {getRequestUrlFromContext(context)} was throttled (attempt {retryAttempt}). Throttle time: {sleepDuration.TotalSeconds}s");
+            //// Fix for hanging polly: https://github.com/aspnet/Extensions/issues/1700#issuecomment-537612449
+            //responseMessage.Result.Dispose();
         }
 
-        private TimeSpan calculateRetryTime(int retryAttempt, DelegateResult<HttpResponseMessage> responseMessage, Context context)
+        private TimeSpan calculateRetryTime(int retryAttempt, Exception error, Context context)
         {
-            var retryTime = getRetryAfterValue(retryAttempt, responseMessage.Result.Headers);
-            _logger.Warning($"Request {responseMessage.Result.RequestMessage.RequestUri} was throttled (attempt: {retryAttempt}). Timeout: {retryTime.TotalSeconds}s");
-            return TimeSpan.FromSeconds(5);
+            var headerRetryValue = error is ThrottleException throttleException ? throttleException.Timeout : null;
+            var oneMinuteInMilliseconds = Convert.ToInt32(new TimeSpan(0, 1, 0).TotalMilliseconds);
+            var throttleValue = headerRetryValue ?? TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) +
+                                TimeSpan.FromMilliseconds(RandomThreadSafeGenerator.Next(oneMinuteInMilliseconds));
+
+            return throttleValue;
         }
 
-        private TimeSpan getRetryAfterValue(int retryAttempt, HttpResponseHeaders headers)
+        #endregion Configuration
+
+
+        #region Helpers
+
+        private TimeSpan? getRetryAfterValueFromResponseHeader(HttpResponseHeaders headers)
         {
             if (headers != null && headers.TryGetValues("Retry-After", out var values) && values != null &&
                 Int32.TryParse(values.First(), out var retryAfterValue))
@@ -74,14 +104,24 @@ namespace SysKit.ODG.Office365Service.Polly
                 return TimeSpan.FromSeconds(retryAfterValue) + TimeSpan.FromMilliseconds(tenSecondsInMilliseconds);
             }
 
-            var oneMinuteInMilliseconds = Convert.ToInt32(new TimeSpan(0, 1, 0).TotalMilliseconds);
-            return TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) +
-                   TimeSpan.FromMilliseconds(RandomThreadSafeGenerator.Next(oneMinuteInMilliseconds));
+            return null;
         }
 
-        public Task<HttpResponseMessage> ExecuteAsync(Func<Task<HttpResponseMessage>> requestFunction)
+        private bool isResponseThrottled(HttpResponseMessage response)
         {
-            return _policy.ExecuteAsync(requestFunction);
+            return (int)response.StatusCode == 429 || (int)response.StatusCode == 503;
         }
+
+        private string getRequestUrlFromContext(Context context)
+        {
+            if (context.TryGetValue(CTX_URL, out object url) && url is Uri uriObject)
+            {
+                return uriObject.AbsolutePath;
+            }
+
+            return "";
+        }
+
+        #endregion
     }
 }
