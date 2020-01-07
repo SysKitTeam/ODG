@@ -13,7 +13,6 @@ using SysKit.ODG.Generation.Users;
 using SysKit.ODG.Office365Service;
 using SysKit.ODG.Office365Service.GraphApiManagers;
 using SysKit.ODG.Office365Service.GraphHttpProvider;
-using SysKit.ODG.Office365Service.Utils;
 using SysKit.ODG.SampleData;
 using Unity;
 using Unity.Injection;

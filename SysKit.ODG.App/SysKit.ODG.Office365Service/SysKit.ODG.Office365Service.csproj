@@ -225,15 +225,15 @@
     <Compile Include="GraphApiManagers\UserGraphApiClient.cs" />
     <Compile Include="GraphHttpProvider\Dto\GraphBatchRequest.cs" />
     <Compile Include="GraphHttpProvider\Handlers\LoggingHandler.cs" />
-    <Compile Include="GraphHttpProvider\Handlers\RetryHandler.cs" />
+    <Compile Include="GraphHttpProvider\Handlers\CustomRetryHandler.cs" />
     <Compile Include="GraphHttpProvider\IGraphHttpProvider.cs" />
     <Compile Include="GraphHttpProvider\IGraphHttpProviderFactory.cs" />
     <Compile Include="GraphServiceCreator.cs" />
     <Compile Include="Office365MapProfile.cs" />
+    <Compile Include="Polly\CustomRetryPolicy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="GraphHttpProvider\GraphHttpProvider.cs" />
     <Compile Include="GraphHttpProvider\GraphHttpProviderFactory.cs" />
-    <Compile Include="Utils\ThrottleUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

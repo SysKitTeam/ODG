@@ -5,7 +5,6 @@ using System.Net.Http;
 using Microsoft.Graph;
 using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Office365Service.GraphHttpProvider.Handlers;
-using SysKit.ODG.Office365Service.Utils;
 
 namespace SysKit.ODG.Office365Service.GraphHttpProvider
 {
@@ -45,8 +44,9 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
             var requestHandler = new HttpClientHandler();
             var compressionHandler = new CompressionHandler();
             var loggingHandler = new LoggingHandler();
+            var retryHandler = new CustomRetryHandler();
 
-            var requestPipeline = GraphClientFactory.CreatePipeline(new DelegatingHandler[] { loggingHandler, compressionHandler }, requestHandler);
+            var requestPipeline = GraphClientFactory.CreatePipeline(new DelegatingHandler[] { loggingHandler, compressionHandler, retryHandler }, requestHandler);
             var httpProvider = new GraphHttpProvider(requestPipeline);
 
             return httpProvider;

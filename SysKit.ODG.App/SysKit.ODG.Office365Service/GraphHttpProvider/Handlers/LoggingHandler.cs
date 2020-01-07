@@ -13,7 +13,7 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider.Handlers
     {
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
         {
-            Console.WriteLine($"message: {request.RequestUri.AbsolutePath} {request?.Content is BatchRequestContent}");
+            Console.WriteLine($"message for me before: {request.RequestUri.AbsolutePath}");
             var response = await base.SendAsync(request, token);
             Console.WriteLine($"message for me after: {request.RequestUri.AbsolutePath}");
             return response;
