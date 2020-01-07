@@ -13,12 +13,13 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider.Handlers
 {
     public class CustomRetryHandler: DelegatingHandler
     {
-        CustomRetryPolicy _retryPolicy;
+        ICustomRetryPolicy _retryPolicy;
 
-        public CustomRetryHandler()
+        public CustomRetryHandler(ICustomRetryPolicy customRetryPolicy)
         {
-            _retryPolicy = new CustomRetryPolicy();
+            _retryPolicy = customRetryPolicy;
         }
+
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
             CancellationToken cancellationToken)

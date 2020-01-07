@@ -1,16 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net.Http;
 using Microsoft.Graph;
+using Serilog;
 using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Office365Service.GraphHttpProvider.Handlers;
+using SysKit.ODG.Office365Service.Polly;
 
 namespace SysKit.ODG.Office365Service.GraphHttpProvider
 {
     public class GraphHttpProviderFactory: IGraphHttpProviderFactory
     {
         private readonly IAppConfigManager _configManager;
+        private readonly ILogger _logger;
+        private readonly ICustomRetryPolicyFactory _customRetryPolicyFactory;
 
         private readonly object _lock = new object();
         /// <summary>
@@ -18,9 +20,11 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
         /// </summary>
         private IGraphHttpProvider _cachedProvider;
 
-        public GraphHttpProviderFactory(IAppConfigManager configManager)
+        public GraphHttpProviderFactory(IAppConfigManager configManager, ILogger logger, ICustomRetryPolicyFactory customRetryPolicyFactory)
         { 
             _configManager = configManager;
+            _logger = logger;
+            _customRetryPolicyFactory = customRetryPolicyFactory;
         }
 
         public IGraphHttpProvider CreateHttpProvider()
@@ -43,11 +47,12 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
         {
             var requestHandler = new HttpClientHandler();
             var compressionHandler = new CompressionHandler();
-            var loggingHandler = new LoggingHandler();
-            var retryHandler = new CustomRetryHandler();
+            var loggingHandler = new LoggingHandler(_logger);
+            var retryHandler = new CustomRetryHandler(_customRetryPolicyFactory.CreateRetryPolicy());
 
             var requestPipeline = GraphClientFactory.CreatePipeline(new DelegatingHandler[] { loggingHandler, compressionHandler, retryHandler }, requestHandler);
             var httpProvider = new GraphHttpProvider(requestPipeline);
+            //httpProvider.OverallTimeout = TimeSpan.FromMinutes(10);
 
             return httpProvider;
         }

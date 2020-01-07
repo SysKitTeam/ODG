@@ -1,30 +1,26 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
 using System.Threading.Tasks;
 using Polly;
-using Polly.Retry;
 using Polly.Wrap;
-using SysKit.ODG.Base.Exceptions;
+using Serilog;
+using Serilog.Events;
 using SysKit.ODG.Base.Utils;
 
 namespace SysKit.ODG.Office365Service.Polly
 {
-    public class CustomRetryPolicy
+    public class CustomRetryPolicy: ICustomRetryPolicy
     {
-        private AsyncPolicyWrap<HttpResponseMessage> _policy;
+        private readonly ILogger _logger;
+        private readonly AsyncPolicyWrap<HttpResponseMessage> _policy;
 
-        /// <summary>
-        /// If set to -1 it will retry forever
-        /// </summary>
-        /// <param name="maxRetryCount"></param>
-        public CustomRetryPolicy()
+        public CustomRetryPolicy(ILogger logger)
         {
+            _logger = logger;
             var maxRetryCount = 2;
-            var maxFailedRequestsForCircuitbreaker = 3;
+            var maxFailedRequestsForCircuitbreaker = 4;
 
             var retryPolicy = Policy
                 .HandleResult<HttpResponseMessage>(isResponseThrottled)
@@ -34,7 +30,7 @@ namespace SysKit.ODG.Office365Service.Polly
             var circuitBreakerPolicy = Policy
                 .HandleResult<HttpResponseMessage>(isResponseThrottled)
                 .CircuitBreakerAsync(handledEventsAllowedBeforeBreaking: maxFailedRequestsForCircuitbreaker,
-                    durationOfBreak: TimeSpan.FromMinutes(1),
+                    durationOfBreak: TimeSpan.FromSeconds(10),
                     onBreak: onBreak, dummy, dummy);
 
             _policy = Policy.WrapAsync(retryPolicy, circuitBreakerPolicy);
@@ -42,28 +38,30 @@ namespace SysKit.ODG.Office365Service.Polly
 
         private void onBreak(DelegateResult<HttpResponseMessage> response, TimeSpan timeout)
         {
-            Console.WriteLine($"Request {response.Result.RequestMessage.RequestUri} broke the circuit");
+            _logger.Warning($"Request {response.Result.RequestMessage.RequestUri} broke the circuit");
         }
 
         private void dummy()
         {
-            // we need to supply this
+            _logger.Warning("inside dummy");
         }
 
         private async Task onRetryAsync(DelegateResult<HttpResponseMessage> responseMessage, TimeSpan sleepDuration, int retryAttempt, Context context)
         {
-            Console.WriteLine($"Request {responseMessage.Result.RequestMessage.RequestUri} was throttled");
+            _logger.Warning($"Request {responseMessage.Result.RequestMessage.RequestUri} was throttled");
         }
 
         private bool isResponseThrottled(HttpResponseMessage response)
         {
+            return true;
             return (int) response.StatusCode == 429 || (int) response.StatusCode == 503;
         }
 
         private TimeSpan calculateRetryTime(int retryAttempt, DelegateResult<HttpResponseMessage> responseMessage, Context context)
         {
-            var responseTime = getRetryAfterValue(retryAttempt, responseMessage.Result.Headers);
-            return responseTime;
+            var retryTime = getRetryAfterValue(retryAttempt, responseMessage.Result.Headers);
+            _logger.Warning($"Request {responseMessage.Result.RequestMessage.RequestUri} was throttled (attempt: {retryAttempt}). Timeout: {retryTime.TotalSeconds}s");
+            return TimeSpan.FromSeconds(5);
         }
 
         private TimeSpan getRetryAfterValue(int retryAttempt, HttpResponseHeaders headers)

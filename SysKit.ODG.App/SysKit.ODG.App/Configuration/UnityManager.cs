@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
-using Microsoft.Graph;
-using OfficeDevPnP.Core.Framework.Graph;
+using Serilog;
 using SysKit.ODG.Authentication;
 using SysKit.ODG.Base.Authentication;
 using SysKit.ODG.Base.Interfaces;
@@ -13,6 +12,7 @@ using SysKit.ODG.Generation.Users;
 using SysKit.ODG.Office365Service;
 using SysKit.ODG.Office365Service.GraphApiManagers;
 using SysKit.ODG.Office365Service.GraphHttpProvider;
+using SysKit.ODG.Office365Service.Polly;
 using SysKit.ODG.SampleData;
 using Unity;
 using Unity.Injection;
@@ -26,6 +26,7 @@ namespace SysKit.ODG.App.Configuration
         {
             var container = new UnityContainer();
 
+            container.addLogging();
             container.RegisterInstance<IMapper>(AutomapperManager.ConfigureMapper(), new SingletonLifetimeManager());
             container.RegisterSingleton<IAppConfigManager, AppConfigManager>();
             container.RegisterInstance<IAccessTokenManager>(new AccessTokenManager(container.Resolve<IAppConfigManager>(), userCredentials), new SingletonLifetimeManager());
@@ -44,6 +45,7 @@ namespace SysKit.ODG.App.Configuration
 
             #region Office365 services
 
+            container.RegisterSingleton<ICustomRetryPolicyFactory, CustomRetryPolicyFactory>();
             // we dont want to make this singelton since we could have DNS problem with static HttpClientHandler (once we transition to .net core and HttpClientFactory this can be mitigated)
             container.RegisterType<IGraphHttpProviderFactory, GraphHttpProviderFactory>(new PerResolveLifetimeManager());
             container.RegisterSingleton<IGraphServiceCreator, GraphServiceCreator>();
@@ -51,6 +53,21 @@ namespace SysKit.ODG.App.Configuration
 
             #endregion Office365 services
 
+            return container;
+        }
+
+    }
+
+    static class Extension
+    {
+        public static UnityContainer addLogging(this UnityContainer container)
+        {
+            var logger = new LoggerConfiguration()
+                .WriteTo
+                .Console()
+                .CreateLogger();
+
+            container.RegisterInstance<ILogger>(logger, new SingletonLifetimeManager());
             return container;
         }
     }

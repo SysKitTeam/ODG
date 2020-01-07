@@ -25,8 +25,9 @@ namespace SysKit.ODG.Generation.Users
             try
             {
                 _userGraphApiClient.GetAllTenantUsers();
-                await _userGraphApiClient.CreateTenantUsers(users);
-                _userGraphApiClient.GetAllTenantUsers();
+                Console.WriteLine("after api call");
+                //await _userGraphApiClient.CreateTenantUsers(users);
+                //_userGraphApiClient.GetAllTenantUsers();
             }
             catch (Exception e)
             {
