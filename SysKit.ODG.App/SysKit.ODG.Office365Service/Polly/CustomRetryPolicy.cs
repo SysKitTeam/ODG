@@ -50,6 +50,8 @@ namespace SysKit.ODG.Office365Service.Polly
 
                 if (isResponseThrottled(result))
                 {
+                    //// Fix for hanging polly: https://github.com/aspnet/Extensions/issues/1700#issuecomment-537612449
+                    result.Dispose();
                     throw new ThrottleException(getRetryAfterValueFromResponseHeader(result.Headers));
                 }
 
@@ -75,8 +77,6 @@ namespace SysKit.ODG.Office365Service.Polly
         private async Task onRetryAsync(Exception error, TimeSpan sleepDuration, int retryAttempt, Context context)
         {
             _logger.Warning($"Request: {getRequestUrlFromContext(context)} was throttled (attempt {retryAttempt}). Throttle time: {sleepDuration.TotalSeconds}s");
-            //// Fix for hanging polly: https://github.com/aspnet/Extensions/issues/1700#issuecomment-537612449
-            //responseMessage.Result.Dispose();
         }
 
         private TimeSpan calculateRetryTime(int retryAttempt, Exception error, Context context)
