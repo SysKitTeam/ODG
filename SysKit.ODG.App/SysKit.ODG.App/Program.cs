@@ -8,6 +8,7 @@ using SysKit.ODG.Authentication;
 using SysKit.ODG.Base.Authentication;
 using SysKit.ODG.Base.DTO;
 using SysKit.ODG.Base.DTO.Generation;
+using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;

@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using SysKit.ODG.Base.XmlTemplate.Model;
+﻿using SysKit.ODG.Base.XmlTemplate.Model;
 
-namespace SysKit.ODG.Base.DTO.Generation
+namespace SysKit.ODG.Base.DTO.Generation.Options
 {
     public class UserGenerationOptions
     {

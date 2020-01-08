@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using AutoMapper;
 using SysKit.ODG.Base.DTO.Generation;
+using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.SampleData;
 using SysKit.ODG.Base.XmlTemplate.Model;
