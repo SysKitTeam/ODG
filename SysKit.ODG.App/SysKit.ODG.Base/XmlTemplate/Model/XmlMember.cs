@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Xml;
 using System.Xml.Serialization;
+using SysKit.ODG.Base.Enums;
 
 namespace SysKit.ODG.Base.XmlTemplate.Model
 {
-    [XmlType(TypeName = "RandomOptions")]
-    public class XmlRandomOptions
+    [XmlType(TypeName = "Member")]
+    public class XmlMember
     {
-        [XmlElement]
-        public int NumberOfUsers { get; set; }
+        [XmlAttribute]
+        public string Id { get; set; }
     }
 }

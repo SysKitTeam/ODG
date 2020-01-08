@@ -22,7 +22,7 @@ namespace SysKit.ODG.Generation.Users
         {
             _mapper = mapper;
             _sampleDataService = sampleDataService;
-            _userXmlMapper = new UserXmlMapper(mapper);
+            _userXmlMapper = new UserXmlMapper();
         }
 
         public IEnumerable<UserEntry> CreateUsers(UserGenerationOptions generationOptions)
@@ -40,13 +40,12 @@ namespace SysKit.ODG.Generation.Users
 
         private IEnumerable<UserEntry> createXmlUsers(UserGenerationOptions generationOptions)
         {
-            var xmlSpecification = generationOptions.UserOptions;
-            if (xmlSpecification?.Users == null)
+            if (generationOptions.Users == null)
             {
                 yield break;
             }
 
-            foreach (var xmlUser in xmlSpecification.Users)
+            foreach (var xmlUser in generationOptions.Users)
             {
                 var userEntry = _userXmlMapper.MapToUserEntry(generationOptions.TenantDomain, xmlUser);
                 var defaultValues = createSampleUserEntry(generationOptions);

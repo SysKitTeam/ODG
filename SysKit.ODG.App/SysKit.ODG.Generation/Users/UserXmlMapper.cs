@@ -8,18 +8,16 @@ namespace SysKit.ODG.Generation.Users
 {
     public class UserXmlMapper
     {
-        private readonly IMapper _mapper;
-
-        public UserXmlMapper(IMapper mapper)
+        public UserXmlMapper()
         {
-            _mapper = mapper;
+
         }
 
         public UserEntry MapToUserEntry(string tenantDomainName, XmlUser xmlUser)
         {
             var userEntry = new UserEntry();
 
-            userEntry.AccountEnabled = xmlUser.AccountEnabled;
+            userEntry.AccountEnabled = !xmlUser.AccountDisabled;
             userEntry.UserPrincipalName = xmlUser.Id.Contains("@") ? xmlUser.Id : $"{xmlUser.Id}@{tenantDomainName}";
 
             var mailNickname = userEntry.UserPrincipalName.Split('@')[0];

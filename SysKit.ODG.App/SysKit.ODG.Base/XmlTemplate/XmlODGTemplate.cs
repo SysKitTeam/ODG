@@ -12,7 +12,10 @@ namespace SysKit.ODG.Base.XmlTemplate
         [XmlElement(IsNullable = true)]
         public XmlRandomOptions RandomOptions { get; set; }
 
-        [XmlElement(IsNullable = true)]
-        public XmlUserCollection UserCollection { get; set; }
+        [XmlArray(IsNullable = true)]
+        public XmlUser[] Users { get; set; }
+
+        [XmlArray(IsNullable = true)]
+        public XmlGroup[] Groups { get; set; }
     }
 }

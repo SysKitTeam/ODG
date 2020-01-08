@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Xml;
 using System.Xml.Serialization;
 
 namespace SysKit.ODG.Base.XmlTemplate.Model
 {
-    [XmlType(TypeName = "RandomOptions")]
-    public class XmlRandomOptions
+    [XmlType(TypeName = "UnifiedGroup")]
+    public class XmlUnifiedGroup: XmlGroup
     {
-        [XmlElement]
-        public int NumberOfUsers { get; set; }
+        [XmlAttribute]
+        public bool IsPrivate { get; set; }
     }
 }

@@ -14,6 +14,7 @@ using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.XmlTemplate;
 using SysKit.ODG.Base.XmlTemplate.Model;
+using SysKit.ODG.Generation;
 using Unity;
 using Unity.Lifetime;
 
@@ -32,17 +33,40 @@ namespace SysKit.ODG.App
                 {
                     NumberOfUsers = 5
                 },
-                UserCollection = new XmlUserCollection
+                Users = new XmlUser[1]
                 {
-                    Users = new XmlUser[1]
+                    new XmlUser
                     {
-                        new XmlUser
+                        Id = "dino.test.userich1"
+                    }
+                },
+                Groups = new XmlGroup[3]
+                {
+                    new XmlGroup
+                    {
+                        Id = "test.grupica"
+                    },
+                    new XmlGroup
+                    {
+                        Id = "test.grupica1",
+                        Members = new []
                         {
-                            Id = "dino.test.userich"
+                            new XmlMember
+                            {
+                                Id = "dino.test.userich1"
+                            }
                         }
+                    },
+                    new XmlUnifiedGroup
+                    {
+                        Id = "test.unified.grupica"
                     }
                 }
             };
+
+            var xmlService = new XmlSpecificationService();
+            xmlService.SerializeSpecification(testTemplate, @"C:\Users\dino.kacavenda\test.xml");
+            //var template = xmlService.DeserializeSpecification(@"C:\Users\dino.kacavenda\test.xml");
 
             var unityContainer = UnityManager.CreateUnityContainer();
             var accessTokenFactory = unityContainer.Resolve<IAccessTokenManagerFactory>();

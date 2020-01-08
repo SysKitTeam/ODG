@@ -9,7 +9,7 @@ namespace SysKit.ODG.Base.DTO.Generation.Options
         /// If set this password will be used as default password for all new users
         /// </summary>
         public string DefaultPassword { get; set; }
-        public XmlUserCollection UserOptions { get; set; }
+        public XmlUser[] Users { get; set; }
         public XmlRandomOptions RandomOptions { get; set; }
 
         protected UserGenerationOptions()
@@ -21,7 +21,7 @@ namespace SysKit.ODG.Base.DTO.Generation.Options
         {
             return new UserGenerationOptions
             {
-                UserOptions = generationOptions.Template.UserCollection,
+                Users = generationOptions.Template.Users,
                 DefaultPassword = generationOptions.DefaultPassword,
                 TenantDomain = generationOptions.TenantDomain,
                 RandomOptions = generationOptions.Template.RandomOptions
