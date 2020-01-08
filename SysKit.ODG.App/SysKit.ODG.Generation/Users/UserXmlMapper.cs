@@ -15,14 +15,14 @@ namespace SysKit.ODG.Generation.Users
             _mapper = mapper;
         }
 
-        public UserEntry MapToUserEntry(XmlUser xmlUser)
+        public UserEntry MapToUserEntry(string tenantDomainName, XmlUser xmlUser)
         {
             var userEntry = new UserEntry();
 
             userEntry.AccountEnabled = xmlUser.AccountEnabled;
-            userEntry.UserPrincipalName = xmlUser.Name;
+            userEntry.UserPrincipalName = xmlUser.Id.Contains("@") ? xmlUser.Id : $"{xmlUser.Id}@{tenantDomainName}";
 
-            var mailNickname = xmlUser.Name.Split('@')[0];
+            var mailNickname = userEntry.UserPrincipalName.Split('@')[0];
 
             userEntry.MailNickname = mailNickname;
             userEntry.DisplayName = createDisplayName(mailNickname);
@@ -51,7 +51,6 @@ namespace SysKit.ODG.Generation.Users
         private void validateXmlUser(XmlUser xmlUser)
         {
             // TODO: validation
-            // name is defined and has @
         }
     }
 }

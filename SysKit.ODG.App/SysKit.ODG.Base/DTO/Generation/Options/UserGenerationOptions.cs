@@ -10,6 +10,7 @@ namespace SysKit.ODG.Base.DTO.Generation.Options
         /// </summary>
         public string DefaultPassword { get; set; }
         public XmlUserCollection UserOptions { get; set; }
+        public XmlRandomOptions RandomOptions { get; set; }
 
         protected UserGenerationOptions()
         {
@@ -22,7 +23,8 @@ namespace SysKit.ODG.Base.DTO.Generation.Options
             {
                 UserOptions = generationOptions.Template.UserCollection,
                 DefaultPassword = generationOptions.DefaultPassword,
-                TenantDomain = generationOptions.TenantDomain
+                TenantDomain = generationOptions.TenantDomain,
+                RandomOptions = generationOptions.Template.RandomOptions
             };
         }
     }

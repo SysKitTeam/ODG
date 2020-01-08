@@ -257,6 +257,7 @@
   <ItemGroup>
     <Compile Include="GraphApiClientFactory.cs" />
     <Compile Include="GraphApiManagers\BaseGraphApiClient.cs" />
+    <Compile Include="GraphApiManagers\GroupGraphApiClient.cs" />
     <Compile Include="GraphApiManagers\UserGraphApiClient.cs" />
     <Compile Include="GraphHttpProvider\Dto\GraphBatchRequest.cs" />
     <Compile Include="GraphHttpProvider\Handlers\LoggingHandler.cs" />

@@ -10,6 +10,9 @@ namespace SysKit.ODG.Base.XmlTemplate
     public class XmlODGTemplate
     {
         [XmlElement(IsNullable = true)]
+        public XmlRandomOptions RandomOptions { get; set; }
+
+        [XmlElement(IsNullable = true)]
         public XmlUserCollection UserCollection { get; set; }
     }
 }

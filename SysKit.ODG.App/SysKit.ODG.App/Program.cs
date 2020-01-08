@@ -28,19 +28,19 @@ namespace SysKit.ODG.App
             var userCredentials = new SimpleUserCredentials("admin@M365x314861.onmicrosoft.com", "1iH1Z8BwLM");
             var testTemplate = new XmlODGTemplate
             {
+                RandomOptions = new XmlRandomOptions
+                {
+                    NumberOfUsers = 5
+                },
                 UserCollection = new XmlUserCollection
                 {
-                    RandomOptions = new XmlUserRandomOptions
+                    Users = new XmlUser[1]
                     {
-                        NumberOfUsers = 50000
-                    },
-                    //Users = new XmlUser[1]
-                    //{
-                    //    new XmlUser
-                    //    {
-                    //        Name = "testUser12345@M365x314861.onmicrosoft.com"
-                    //    }
-                    //}
+                        new XmlUser
+                        {
+                            Id = "dino.test.userich"
+                        }
+                    }
                 }
             };
 

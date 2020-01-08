@@ -2,6 +2,7 @@
 {
     public class UserEntry
     {
+        public string Id { get; set; }
         public bool? AccountEnabled { get; set; }
         public string DisplayName { get; set; }
         public string MailNickname { get; set; }

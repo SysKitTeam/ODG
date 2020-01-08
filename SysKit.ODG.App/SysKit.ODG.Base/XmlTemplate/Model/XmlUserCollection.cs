@@ -7,8 +7,5 @@ namespace SysKit.ODG.Base.XmlTemplate.Model
     {
         [XmlElement()]
         public XmlUser[] Users { get; set; }
-
-        [XmlElement()]
-        public XmlUserRandomOptions RandomOptions { get; set; }
     }
 }

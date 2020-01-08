@@ -48,7 +48,7 @@ namespace SysKit.ODG.Generation.Users
 
             foreach (var xmlUser in xmlSpecification.Users)
             {
-                var userEntry = _userXmlMapper.MapToUserEntry(xmlUser);
+                var userEntry = _userXmlMapper.MapToUserEntry(generationOptions.TenantDomain, xmlUser);
                 var defaultValues = createSampleUserEntry(generationOptions);
                 yield return _mapper.Map(userEntry, defaultValues);
             }
@@ -56,12 +56,12 @@ namespace SysKit.ODG.Generation.Users
 
         private IEnumerable<UserEntry> createRandomUsers(UserGenerationOptions generationOptions)
         {
-            if (generationOptions.UserOptions?.RandomOptions?.NumberOfUsers == null)
+            if (generationOptions.RandomOptions?.NumberOfUsers == null)
             {
                 yield break;
             }
 
-            for (int i = 0; i < generationOptions.UserOptions.RandomOptions.NumberOfUsers; i++)
+            for (int i = 0; i < generationOptions.RandomOptions.NumberOfUsers; i++)
             {
                 yield return createSampleUserEntry(generationOptions);
             }
@@ -92,6 +92,7 @@ namespace SysKit.ODG.Generation.Users
             _sampleUserUPNs.Add(fakeDisplayName);
             return new UserEntry
             {
+                Id = createMailNickName(fakeDisplayName),
                 DisplayName = fakeDisplayName,
                 MailNickname = createMailNickName(fakeDisplayName),
                 Password = generationOptions.DefaultPassword,
