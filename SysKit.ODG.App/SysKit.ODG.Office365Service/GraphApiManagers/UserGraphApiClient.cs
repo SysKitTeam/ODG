@@ -79,5 +79,6 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
             return successfullyCreatedUsers;
         }
+
     }
 }

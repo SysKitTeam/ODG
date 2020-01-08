@@ -8,6 +8,7 @@ using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Base.Interfaces.SampleData;
 using SysKit.ODG.Generation;
+using SysKit.ODG.Generation.Groups;
 using SysKit.ODG.Generation.Users;
 using SysKit.ODG.Office365Service;
 using SysKit.ODG.Office365Service.GraphApiManagers;
@@ -39,6 +40,7 @@ namespace SysKit.ODG.App.Configuration
 
             // DataGeneration
             container.RegisterType<IUserDataGeneration, UserDataGeneration>();
+            container.RegisterType<IGroupDataGeneration, GroupDataGeneration>();
 
             #endregion Generation services
 

@@ -11,5 +11,8 @@ namespace SysKit.ODG.Base.XmlTemplate.Model
     {
         [XmlElement]
         public int NumberOfUsers { get; set; }
+
+        [XmlElement]
+        public int NumberOfUnifiedGroups { get; set; }
     }
 }

@@ -9,6 +9,7 @@ namespace SysKit.ODG.Base.Interfaces.SampleData
     {
         ReadOnlyCollection<string> FirstNames { get; }
         ReadOnlyCollection<string> LastNames { get; }
+        ReadOnlyCollection<string> GroupNames { get; }
 
         string GetRandomValue(IList<string> sampleCollection);
         string GetRandomValue(IList<string> primaryCollection, IList<string> secondaryCollection);

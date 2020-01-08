@@ -11,12 +11,15 @@ namespace SysKit.ODG.SampleData
     {
         public ReadOnlyCollection<string> FirstNames { get; }
         public ReadOnlyCollection<string> LastNames { get; }
+        public ReadOnlyCollection<string> GroupNames { get; }
+
         private readonly Random _randomGen = new Random();
 
         public SampleDataService()
         {
             FirstNames = createSampleCollection("firstName.csv");
             LastNames = createSampleCollection("lastName.csv");
+            GroupNames = createSampleCollection("groupName.csv");
         }
 
         public string GetRandomValue(IList<string> sampleCollection)

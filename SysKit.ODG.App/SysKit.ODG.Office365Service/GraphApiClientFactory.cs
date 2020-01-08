@@ -29,5 +29,10 @@ namespace SysKit.ODG.Office365Service
         {
             return new UserGraphApiClient(accessTokenManager, _logger, _graphHttpProviderFactory, _graphServiceFactory, _mapper);
         }
+
+        public IGroupGraphApiClient CreateGroupGraphApiClient(IAccessTokenManager accessTokenManager)
+        {
+            return new GroupGraphApiClient(accessTokenManager, _logger, _graphHttpProviderFactory, _graphServiceFactory, _mapper);
+        }
     }
 }
