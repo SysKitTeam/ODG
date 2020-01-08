@@ -22,14 +22,15 @@ namespace SysKit.ODG.Generation.Users
         public async Task Execute(GenerationOptions options)
         {
             var userGraphApiClient = _graphApiClientFactory.CreateUserGraphApiClient(options.UserAccessTokenManager);
-            var users = _userDataGenerationService.CreateUsers(options);
+            var userGenerationOptions = UserGenerationOptions.CreateFromGenerationOptions(options);
+            var users = _userDataGenerationService.CreateUsers(userGenerationOptions);
 
             try
             {
                 userGraphApiClient.GetAllTenantUsers();
                 Console.WriteLine("after api call");
-                //await _userGraphApiClient.CreateTenantUsers(users);
-                //_userGraphApiClient.GetAllTenantUsers();
+                await userGraphApiClient.CreateTenantUsers(users);
+                userGraphApiClient.GetAllTenantUsers();
             }
             catch (Exception e)
             {

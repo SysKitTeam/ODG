@@ -5,6 +5,7 @@ using AutoMapper;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.SampleData;
+using SysKit.ODG.Base.XmlTemplate.Model;
 
 namespace SysKit.ODG.Generation.Users
 {
@@ -23,29 +24,28 @@ namespace SysKit.ODG.Generation.Users
             _userXmlMapper = new UserXmlMapper(mapper);
         }
 
-        public IEnumerable<UserEntry> CreateUsers(IGenerationOptions generationOptions)
+        public IEnumerable<UserEntry> CreateUsers(UserGenerationOptions generationOptions)
         {
-            if (generationOptions is XmlGenerationOptions xmlOptions)
+            foreach (var xmlUser in createXmlUsers(generationOptions))
             {
-                return createXmlUsers(generationOptions, xmlOptions.XmlTemplate);
+                yield return xmlUser;
             }
 
-            if (generationOptions is RandomGenerationOptions randomGenerationOptions)
+            foreach (var xmlUser in createRandomUsers(generationOptions))
             {
-                return createRandomUsers(randomGenerationOptions);
+                yield return xmlUser;
             }
-
-            throw new ArgumentException("CreateUsers not defined for specified generation option type");
         }
 
-        private IEnumerable<UserEntry> createXmlUsers(IGenerationOptions generationOptions, XmlODGSpecification xmlSpecification)
+        private IEnumerable<UserEntry> createXmlUsers(UserGenerationOptions generationOptions)
         {
-            if (xmlSpecification?.UserCollection?.Users == null)
+            var xmlSpecification = generationOptions.UserOptions;
+            if (xmlSpecification?.Users == null)
             {
                 yield break;
             }
 
-            foreach (var xmlUser in xmlSpecification.UserCollection.Users)
+            foreach (var xmlUser in xmlSpecification.Users)
             {
                 var userEntry = _userXmlMapper.MapToUserEntry(xmlUser);
                 var defaultValues = createSampleUserEntry(generationOptions);
@@ -53,11 +53,16 @@ namespace SysKit.ODG.Generation.Users
             }
         }
 
-        private IEnumerable<UserEntry> createRandomUsers(RandomGenerationOptions randomGenerationOptions)
+        private IEnumerable<UserEntry> createRandomUsers(UserGenerationOptions generationOptions)
         {
-            for (int i = 0; i < randomGenerationOptions.UserOptions.NumberOfUsers; i++)
+            if (generationOptions.UserOptions?.RandomOptions?.NumberOfUsers == null)
             {
-                yield return createSampleUserEntry(randomGenerationOptions);
+                yield break;
+            }
+
+            for (int i = 0; i < generationOptions.UserOptions.RandomOptions.NumberOfUsers; i++)
+            {
+                yield return createSampleUserEntry(generationOptions);
             }
         }
 
@@ -65,7 +70,7 @@ namespace SysKit.ODG.Generation.Users
         /// Returns user entry populated with sample data
         /// </summary>
         /// <returns></returns>
-        private UserEntry createSampleUserEntry(IGenerationOptions generationOptions)
+        private UserEntry createSampleUserEntry(UserGenerationOptions generationOptions)
         {
             string fakeDisplayName;
             // just so we dont deadlock

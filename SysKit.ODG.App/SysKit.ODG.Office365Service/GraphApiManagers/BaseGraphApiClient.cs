@@ -8,6 +8,7 @@ using AutoMapper;
 using Microsoft.Graph;
 using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
+using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Office365Service.GraphHttpProvider;
 
 namespace SysKit.ODG.Office365Service.GraphApiManagers

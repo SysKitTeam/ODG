@@ -48,7 +48,7 @@ namespace SysKit.ODG.App.Configuration
             // we dont want to make this singelton since we could have DNS problem with static HttpClientHandler (once we transition to .net core and HttpClientFactory this can be mitigated)
             container.RegisterType<IGraphHttpProviderFactory, GraphHttpProviderFactory>(new PerResolveLifetimeManager());
             container.RegisterSingleton<IGraphServiceFactory, GraphServiceFactory>();
-            container.RegisterType<IUserGraphApiClient, UserGraphApiClient>();
+            container.RegisterSingleton<IGraphApiClientFactory, GraphApiClientFactory>();
 
             #endregion Office365 services
 
