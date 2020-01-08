@@ -11,6 +11,7 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
 {
     public interface IGraphHttpProvider: IHttpProvider
     {
-        Task<IEnumerable<HttpResponseMessage>> SendBatchAsync(IEnumerable<GraphBatchRequest> batchEntries, string token, bool useBetaEndpoint = false);
+        Task<Dictionary<string, HttpResponseMessage>> SendBatchAsync(IEnumerable<GraphBatchRequest> batchEntries,
+            string token, bool useBetaEndpoint = false);
     }
 }

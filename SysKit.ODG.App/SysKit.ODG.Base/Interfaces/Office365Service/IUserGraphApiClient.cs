@@ -9,6 +9,11 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
     public interface IUserGraphApiClient
     {
         void GetAllTenantUsers();
-        Task CreateTenantUsers(IEnumerable<UserEntry> users);
+        /// <summary>
+        /// Creates users on tenant and returns successfully created users
+        /// </summary>
+        /// <param name="users"></param>
+        /// <returns></returns>
+        Task<List<UserEntry>> CreateTenantUsers(IEnumerable<UserEntry> users);
     }
 }

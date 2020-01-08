@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Serilog;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Interfaces.Generation;
@@ -13,9 +15,11 @@ namespace SysKit.ODG.Generation.Users
     {
         private readonly IUserDataGeneration _userDataGenerationService;
         private readonly IGraphApiClientFactory _graphApiClientFactory;
+        private readonly ILogger _logger;
 
-        public UserGenerationTask(IUserDataGeneration userDataGenerationService, IGraphApiClientFactory graphApiClientFactory)
+        public UserGenerationTask(ILogger logger, IUserDataGeneration userDataGenerationService, IGraphApiClientFactory graphApiClientFactory)
         {
+            _logger = logger;
             _userDataGenerationService = userDataGenerationService;
             _graphApiClientFactory = graphApiClientFactory;
         }
@@ -26,18 +30,8 @@ namespace SysKit.ODG.Generation.Users
             var userGenerationOptions = UserGenerationOptions.CreateFromGenerationOptions(options);
             var users = _userDataGenerationService.CreateUsers(userGenerationOptions);
 
-            try
-            {
-                userGraphApiClient.GetAllTenantUsers();
-                Console.WriteLine("after api call");
-                await userGraphApiClient.CreateTenantUsers(users);
-                userGraphApiClient.GetAllTenantUsers();
-            }
-            catch (Exception e)
-            {
-                throw;
-            }
-            
+            var createdUsers = await userGraphApiClient.CreateTenantUsers(users);
+            _logger.Information($"Created {createdUsers.Count}/{users.Count()}");
 
             // TODO: assign licences
             // TODO: add external users

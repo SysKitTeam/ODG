@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Graph;
 using Newtonsoft.Json;
+using OfficeDevPnP.Core.Extensions;
 using SysKit.ODG.Base.Exceptions;
 using SysKit.ODG.Office365Service.GraphHttpProvider.Dto;
 using SysKit.ODG.Office365Service.Polly;
@@ -24,7 +25,7 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
             _customRetryPolicy = customRetryPolicy;
         }
 
-        public async Task<IEnumerable<HttpResponseMessage>> SendBatchAsync(IEnumerable<GraphBatchRequest> batchEntries, string token, bool useBetaEndpoint = false)
+        public async Task<Dictionary<string, HttpResponseMessage>> SendBatchAsync(IEnumerable<GraphBatchRequest> batchEntries, string token, bool useBetaEndpoint = false)
         {
             var endpoint = useBetaEndpoint ? "beta" : "v1.0";
             Func<string, string> createUrl = relativeUrl => $"https://graph.microsoft.com/{endpoint}/{relativeUrl}";
@@ -33,7 +34,7 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
             var maxRequestCountPerBatch = 20;
             var page = 0;
 
-            var batchResults = new List<HttpResponseMessage>();
+            var batchResults = new Dictionary<string, HttpResponseMessage>();
 
             List<GraphBatchRequest> tmpRequests = allRequests.Skip(page * maxRequestCountPerBatch).Take(maxRequestCountPerBatch).ToList();
 
@@ -48,9 +49,9 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
             return batchResults;
         }
 
-        private async Task<IEnumerable<HttpResponseMessage>> sendBatchAsync(string token, Dictionary<string, GraphBatchRequest> requestsToExecute, Func<string, string> createUrl)
+        private async Task<Dictionary<string, HttpResponseMessage>> sendBatchAsync(string token, Dictionary<string, GraphBatchRequest> requestsToExecute, Func<string, string> createUrl)
         {
-            var batchResults = new List<HttpResponseMessage>();
+            var batchResults = new Dictionary<string, HttpResponseMessage>();
             // copy because some requests can fail
             var tmpRequestsToExecute = requestsToExecute;
 
@@ -81,7 +82,7 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
                     }
                     else
                     {
-                        batchResults.Add(response.Value);
+                        batchResults.Add(response.Key, response.Value);
                     }
                 }
 

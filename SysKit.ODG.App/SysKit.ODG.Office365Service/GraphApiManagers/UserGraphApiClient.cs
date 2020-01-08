@@ -9,6 +9,7 @@ using AutoMapper;
 using Microsoft.Graph;
 using Newtonsoft.Json;
 using OfficeDevPnP.Core.Utilities;
+using Serilog;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
@@ -20,12 +21,14 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 {
     public class UserGraphApiClient: BaseGraphApiClient, IUserGraphApiClient
     {
+        private readonly ILogger _logger;
         public UserGraphApiClient(IAccessTokenManager accessTokenManager,
+            ILogger logger,
             IGraphHttpProviderFactory graphHttpProviderFactory,
             IGraphServiceFactory graphServiceFactory,
             IMapper autoMapper) : base(accessTokenManager, graphHttpProviderFactory, graphServiceFactory, autoMapper)
         {
-
+            _logger = logger;
         }
 
         public void GetAllTenantUsers()
@@ -38,11 +41,15 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             //}
         }
 
-        public async Task CreateTenantUsers(IEnumerable<UserEntry> users)
+        /// <inheritdoc />
+        public async Task<List<UserEntry>> CreateTenantUsers(IEnumerable<UserEntry> users)
         {
+            var userLookup = new Dictionary<string, UserEntry>();
+            var successfullyCreatedUsers = new List<UserEntry>();
             var batchEntries = new List<GraphBatchRequest>();
             foreach (var user in users)
             {
+                userLookup.Add(user.UserPrincipalName, user);
                 var graphUser = _autoMapper.Map<UserEntry, User>(user, config => config.AfterMap((src, dest) =>
                 {
                     dest.PasswordProfile = new PasswordProfile
@@ -56,7 +63,21 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             }
 
             var tokenResult = await _accessTokenManager.GetGraphToken();
-            var result = await _httpProvider.SendBatchAsync(batchEntries, tokenResult.Token);
+            var results = await _httpProvider.SendBatchAsync(batchEntries, tokenResult.Token);
+
+            foreach (var result in results)
+            {
+                if (result.Value.IsSuccessStatusCode)
+                {
+                    successfullyCreatedUsers.Add(userLookup[result.Key]);
+                }
+                else
+                {
+                    _logger.Warning($"Failed to create user: {result.Key}. Status code: {(int)result.Value.StatusCode}");
+                }
+            }
+
+            return successfullyCreatedUsers;
         }
     }
 }

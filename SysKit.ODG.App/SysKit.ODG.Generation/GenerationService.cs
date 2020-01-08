@@ -1,8 +1,10 @@
 ﻿using SysKit.ODG.Base.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
+using Serilog;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Interfaces.Authentication;
@@ -13,43 +15,38 @@ namespace SysKit.ODG.Generation
 {
     public class GenerationService: IGenerationService
     {
-        private readonly List<IGenerationTask> _generationTasks = new List<IGenerationTask>();
+        private readonly Dictionary<string, IGenerationTask> _generationTasks = new Dictionary<string, IGenerationTask>();
+        private readonly ILogger _logger;
 
-        public GenerationService()
+        public GenerationService(ILogger logger)
         {
-
+            _logger = logger;
         }
 
-        public void AddGenerationTask(IGenerationTask task)
+        public void AddGenerationTask(string taskKey, IGenerationTask task)
         {
-            _generationTasks.Add(task);
+            _generationTasks.Add(taskKey, task);
         }
 
         public async Task Start(GenerationOptions generationOptions)
         {
             foreach (var task in _generationTasks)
             {
-                await task.Execute(generationOptions);
+                try
+                {
+                    var stopwatch = new Stopwatch();
+                    stopwatch.Start();
+                    _logger.Information($"Started executing: {task.Key}");
+                    await task.Value.Execute(generationOptions);
+                    stopwatch.Stop();
+                    _logger.Information($"Finished executing: {task.Key}, Duration: {stopwatch.Elapsed}");
+                }
+                catch (Exception e)
+                {
+                    _logger.Error(e, $"Task {task.Key} failed with error");
+                    throw;
+                }
             }
-
-            //var testUsers = new List<UserEntry>();
-
-            //for (var i = 21; i < 23; i++)
-            //{
-            //    testUsers.Add(new UserEntry
-            //    {
-            //        AccountEnabled = i > 8,
-            //        DisplayName = $"Test User {i}",
-            //        UserPrincipalName = $"testUser{i}@M365x314861.onmicrosoft.com",
-            //        MailNickname = $"testUser{i}",
-            //        Password = _configManager.DefaultUserPassword
-            //    });
-            //}
-
-            //_userGraphApiClient.CreateTenantUsers(testUsers).GetAwaiter().GetResult();
-
-            //Console.WriteLine(_configManager.ClientId);
-            //Console.ReadLine();
         }
     }
 }

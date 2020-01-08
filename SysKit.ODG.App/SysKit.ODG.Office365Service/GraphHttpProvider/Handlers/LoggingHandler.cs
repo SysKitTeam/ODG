@@ -22,9 +22,9 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider.Handlers
         {
             try
             {
-                _logger.Information($"Started request for {request.RequestUri.AbsolutePath} as {DateTime.Now}");
+                _logger.Verbose($"Started request for {request.RequestUri.AbsolutePath} as {DateTime.Now}");
                 var response = await base.SendAsync(request, token);
-                _logger.Information($"Ended request for {request.RequestUri.AbsolutePath} as {DateTime.Now}");
+                _logger.Verbose($"Ended request for {request.RequestUri.AbsolutePath} as {DateTime.Now}");
                 return response;
             }
             catch (Exception e)

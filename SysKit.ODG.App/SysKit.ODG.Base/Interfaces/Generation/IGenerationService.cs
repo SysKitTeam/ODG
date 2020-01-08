@@ -13,8 +13,9 @@ namespace SysKit.ODG.Base.Interfaces.Generation
         /// <summary>
         /// Add tasks that will be execute on Start
         /// </summary>
+        /// <param name="taskKey">Unique task key. Used for logging</param>
         /// <param name="task"></param>
-        void AddGenerationTask(IGenerationTask task);
+        void AddGenerationTask(string taskKey, IGenerationTask task);
         /// <summary>
         /// Execute added tasks
         /// </summary>

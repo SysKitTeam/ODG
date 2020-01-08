@@ -32,8 +32,15 @@ namespace SysKit.ODG.App
                 {
                     RandomOptions = new XmlUserRandomOptions
                     {
-                        NumberOfUsers = 5
-                    }
+                        NumberOfUsers = 50000
+                    },
+                    //Users = new XmlUser[1]
+                    //{
+                    //    new XmlUser
+                    //    {
+                    //        Name = "testUser12345@M365x314861.onmicrosoft.com"
+                    //    }
+                    //}
                 }
             };
 
@@ -44,8 +51,8 @@ namespace SysKit.ODG.App
             var generationOptions = new GenerationOptions(accessTokenManager, tenantDomain, defaultPassword, testTemplate);
 
             var generationService = unityContainer.Resolve<IGenerationService>();
-            generationService.AddGenerationTask(unityContainer.Resolve<IGenerationTask>("userTask"));
-            generationService.Start(generationOptions);
+            generationService.AddGenerationTask("User Creation", unityContainer.Resolve<IGenerationTask>("userTask"));
+            generationService.Start(generationOptions).GetAwaiter().GetResult();
 
             Console.WriteLine("Finished :)");
             Console.ReadLine();
