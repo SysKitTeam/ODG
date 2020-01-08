@@ -91,7 +91,6 @@ namespace SysKit.ODG.Generation.Users
             _sampleUserUPNs.Add(fakeDisplayName);
             return new UserEntry
             {
-                Id = createMailNickName(fakeDisplayName),
                 DisplayName = fakeDisplayName,
                 MailNickname = createMailNickName(fakeDisplayName),
                 Password = generationOptions.DefaultPassword,

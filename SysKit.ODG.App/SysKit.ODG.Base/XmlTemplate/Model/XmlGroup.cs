@@ -10,7 +10,7 @@ namespace SysKit.ODG.Base.XmlTemplate.Model
     public class XmlGroup
     {
         [XmlAttribute]
-        public string Id { get; set; }
+        public string Name { get; set; }
 
         [XmlAttribute]
         public string DisplayName { get; set; }

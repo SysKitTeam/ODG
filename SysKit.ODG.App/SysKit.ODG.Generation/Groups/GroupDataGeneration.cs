@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 using AutoMapper;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
@@ -15,6 +16,7 @@ namespace SysKit.ODG.Generation.Groups
         private readonly IMapper _mapper;
         private readonly ISampleDataService _sampleDataService;
         private readonly GroupXmlMapper _groupXmlMapper;
+        private readonly HashSet<string> _usedGroupUPNs = new HashSet<string>();
 
         public GroupDataGeneration(IMapper mapper, ISampleDataService sampleDataService)
         {
@@ -23,15 +25,15 @@ namespace SysKit.ODG.Generation.Groups
             _groupXmlMapper = new GroupXmlMapper(mapper);
         }
 
-        public IEnumerable<GroupEntry> CreateGroups(GenerationOptions generationOptions)
+        public IEnumerable<UnifiedGroupEntry> CreateUnifiedGroups(GenerationOptions generationOptions)
         {
-            foreach (var group in createRandomGroups(generationOptions))
+            foreach (var group in createRandomUnifiedGroups(generationOptions))
             {
                 yield return group;
             }
         }
 
-        private IEnumerable<GroupEntry> createRandomGroups(GenerationOptions generationOptions)
+        private IEnumerable<UnifiedGroupEntry> createRandomUnifiedGroups(GenerationOptions generationOptions)
         {
             if (generationOptions.Template.RandomOptions?.NumberOfUnifiedGroups == null)
             {
@@ -51,6 +53,17 @@ namespace SysKit.ODG.Generation.Groups
             populateSampleGroupProperties(sampleGroup);
             sampleGroup.IsPrivate = RandomThreadSafeGenerator.Next(0, 100) > 70;
 
+            string originalGroupMailNick = Regex.Replace(sampleGroup.DisplayName, @"[^a-z0-9]", "");
+            string groupMailNick = originalGroupMailNick;
+
+            int i = 0;
+            while (_usedGroupUPNs.Contains(groupMailNick))
+            {
+                groupMailNick = $"{originalGroupMailNick}.{++i}";
+            }
+
+            sampleGroup.MailNickname = groupMailNick;
+            _usedGroupUPNs.Add(groupMailNick);
             return sampleGroup;
         }
 

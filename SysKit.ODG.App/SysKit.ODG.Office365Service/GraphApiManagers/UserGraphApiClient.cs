@@ -14,6 +14,7 @@ using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Office365Service;
+using SysKit.ODG.Base.Office365;
 using SysKit.ODG.Office365Service.GraphHttpProvider;
 using SysKit.ODG.Office365Service.GraphHttpProvider.Dto;
 
@@ -31,14 +32,24 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             _logger = logger;
         }
 
-        public void GetAllTenantUsers()
+        /// <inheritdoc />
+        public async Task<UserEntryCollection> GetAllTenantUsers()
         {
-            var result = _graphServiceClient.Users.Request().Top(999).GetAsync().GetAwaiter().GetResult();
-            Console.WriteLine(result.Count);
-            //foreach (var user in result)
-            //{
-            //   Console.WriteLine(user.DisplayName);
-            //}
+            var userRequest = _graphServiceClient.Users.Request().Top(999);
+            var userEntries = new List<UserEntry>();
+
+            do
+            {
+                var users = await userRequest.GetAsync();
+                foreach (var user in users)
+                {
+                    userEntries.Add(_autoMapper.Map<User, UserEntry>(user));
+                }
+
+                userRequest = users.NextPageRequest;
+            } while (userRequest != null);
+
+            return new UserEntryCollection(userEntries);
         }
 
         /// <inheritdoc />
@@ -49,6 +60,11 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             var batchEntries = new List<GraphBatchRequest>();
             foreach (var user in users)
             {
+                if (userLookup.ContainsKey(user.UserPrincipalName))
+                {
+                    _logger.Warning($"Trying to create user with same name ({user.UserPrincipalName}), only the first one will be created");
+                }
+
                 userLookup.Add(user.UserPrincipalName, user);
                 var graphUser = _autoMapper.Map<UserEntry, User>(user, config => config.AfterMap((src, dest) =>
                 {
@@ -69,7 +85,12 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             {
                 if (result.Value.IsSuccessStatusCode)
                 {
-                    successfullyCreatedUsers.Add(userLookup[result.Key]);
+                    var originalUser = userLookup[result.Key];
+                    var graphUser = await DeserializeGraphObject<User>(result.Value.Content);
+
+                    originalUser.Id = graphUser.Id;
+                    graphUser.UserPrincipalName = graphUser.UserPrincipalName;
+                    successfullyCreatedUsers.Add(originalUser);
                 }
                 else
                 {

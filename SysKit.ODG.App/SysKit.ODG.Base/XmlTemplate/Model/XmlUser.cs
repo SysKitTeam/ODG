@@ -6,7 +6,7 @@ namespace SysKit.ODG.Base.XmlTemplate.Model
     public class XmlUser
     {
         [XmlAttribute]
-        public string Id { get; set; }
+        public string Name { get; set; }
         [XmlAttribute]
         public bool AccountDisabled { get; set; }
         [XmlAttribute]

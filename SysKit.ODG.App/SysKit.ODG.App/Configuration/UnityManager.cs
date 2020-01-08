@@ -37,6 +37,7 @@ namespace SysKit.ODG.App.Configuration
             
             container.RegisterSingleton<IGenerationService, GenerationService>();
             container.RegisterType<IGenerationTask, UserGenerationTask>("userTask");
+            container.RegisterType<IGenerationTask, GroupGenerationTask>("groupTask");
 
             // DataGeneration
             container.RegisterType<IUserDataGeneration, UserDataGeneration>();

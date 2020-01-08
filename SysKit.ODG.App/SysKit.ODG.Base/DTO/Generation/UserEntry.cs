@@ -2,6 +2,9 @@
 {
     public class UserEntry
     {
+        /// <summary>
+        /// User Id from Azure AD
+        /// </summary>
         public string Id { get; set; }
         public bool? AccountEnabled { get; set; }
         public string DisplayName { get; set; }

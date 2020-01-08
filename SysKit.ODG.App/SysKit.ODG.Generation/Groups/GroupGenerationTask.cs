@@ -1,17 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Serilog;
 using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Interfaces.Generation;
+using SysKit.ODG.Base.Interfaces.Office365Service;
 
 namespace SysKit.ODG.Generation.Groups
 {
     public class GroupGenerationTask: IGenerationTask
     {
-        public Task Execute(GenerationOptions options)
+        private readonly IGroupDataGeneration _groupDataGeneration;
+        private readonly IGraphApiClientFactory _graphApiClientFactory;
+        private readonly ILogger _logger;
+
+        public GroupGenerationTask(ILogger logger, IGroupDataGeneration groupDataGeneration, IGraphApiClientFactory graphApiClientFactory)
         {
-            throw new NotImplementedException();
+            _logger = logger;
+            _groupDataGeneration = groupDataGeneration;
+            _graphApiClientFactory = graphApiClientFactory;
+        }
+
+        public async Task Execute(GenerationOptions options)
+        {
+            var userGraphApiClient = _graphApiClientFactory.CreateUserGraphApiClient(options.UserAccessTokenManager);
+            var groupGraphApiClient = _graphApiClientFactory.CreateGroupGraphApiClient(options.UserAccessTokenManager);
+
+            var groups = _groupDataGeneration.CreateUnifiedGroups(options);
+
+            if (groups?.Any() == false)
+            {
+                return;
+            }
+
+            var users = await userGraphApiClient.GetAllTenantUsers();
+            var createdGroups = await groupGraphApiClient.CreateUnifiedGroups(groups, users);
+            _logger.Information($"Created {createdGroups.Count}");
         }
     }
 }

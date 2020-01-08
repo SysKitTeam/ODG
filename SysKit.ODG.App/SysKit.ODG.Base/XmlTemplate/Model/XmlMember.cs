@@ -10,6 +10,6 @@ namespace SysKit.ODG.Base.XmlTemplate.Model
     public class XmlMember
     {
         [XmlAttribute]
-        public string Id { get; set; }
+        public string Name { get; set; }
     }
 }

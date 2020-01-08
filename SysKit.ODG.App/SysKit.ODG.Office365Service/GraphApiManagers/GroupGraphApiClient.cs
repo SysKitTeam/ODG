@@ -10,6 +10,7 @@ using Serilog;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Office365Service;
+using SysKit.ODG.Base.Office365;
 using SysKit.ODG.Office365Service.GraphHttpProvider;
 using SysKit.ODG.Office365Service.GraphHttpProvider.Dto;
 
@@ -27,7 +28,8 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             _logger = logger;
         }
 
-        public async Task<List<UnifiedGroupEntry>> CreateUnifiedGroups(IEnumerable<UnifiedGroupEntry> groups)
+        /// <inheritdoc />
+        public async Task<List<UnifiedGroupEntry>> CreateUnifiedGroups(IEnumerable<UnifiedGroupEntry> groups, UserEntryCollection users)
         {
             var groupLookup = new Dictionary<string, UnifiedGroupEntry>();
             var successfullyCreatedGroups = new List<UnifiedGroupEntry>();
@@ -36,16 +38,21 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             int i = 0;
             foreach (var group in groups)
             {
-                //groupLookup.Add(group.DisplayName, user);
+                if (groupLookup.ContainsKey(group.MailNickname))
+                {
+                    _logger.Warning($"Trying to create 2 groups with same mail nickname ({group.MailNickname}). Only the first will be created.");
+                }
+
+                groupLookup.Add(group.MailNickname, group);
                 var graphGroup = _autoMapper.Map<UnifiedGroupEntry, Group>(group, config => config.AfterMap((src, dest) =>
                     {
                         dest.Visibility = src.IsPrivate ? "Private" : "Public";
                         dest.MailEnabled = true;
                         dest.SecurityEnabled = false;
-                        dest.GroupTypes = new List<string> {"Unified"};
+                        dest.GroupTypes = new List<string> { "Unified" };
                     }));
 
-                batchEntries.Add(new GraphBatchRequest($"{++i}", "groups", HttpMethod.Post, graphGroup));
+                batchEntries.Add(new GraphBatchRequest(group.MailNickname, "groups", HttpMethod.Post, graphGroup));
             }
 
             var tokenResult = await _accessTokenManager.GetGraphToken();
@@ -55,10 +62,13 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             {
                 if (result.Value.IsSuccessStatusCode)
                 {
-                    var createdGroup =
-                        _graphServiceClient.HttpProvider.Serializer.DeserializeObject<Group>(
+                    var originalGroup = groupLookup[result.Key];
+                    var createdGroup = _graphServiceClient.HttpProvider.Serializer.DeserializeObject<Group>(
                             await result.Value.Content.ReadAsStreamAsync());
-                    //successfullyCreatedUsers.Add(userLookup[result.Key]);
+
+                    originalGroup.GroupId = createdGroup.Id;
+                    
+                    successfullyCreatedGroups.Add(originalGroup);
                 }
                 else
                 {

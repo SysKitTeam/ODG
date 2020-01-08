@@ -6,6 +6,6 @@ namespace SysKit.ODG.Base.Interfaces.Generation
 {
     public interface IGroupDataGeneration
     {
-        IEnumerable<GroupEntry> CreateGroups(GenerationOptions generationOptions);
+        IEnumerable<UnifiedGroupEntry> CreateUnifiedGroups(GenerationOptions generationOptions);
     }
 }

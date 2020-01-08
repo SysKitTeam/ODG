@@ -18,7 +18,7 @@ namespace SysKit.ODG.Generation.Users
             var userEntry = new UserEntry();
 
             userEntry.AccountEnabled = !xmlUser.AccountDisabled;
-            userEntry.UserPrincipalName = xmlUser.Id.Contains("@") ? xmlUser.Id : $"{xmlUser.Id}@{tenantDomainName}";
+            userEntry.UserPrincipalName = xmlUser.Name.Contains("@") ? xmlUser.Name : $"{xmlUser.Name}@{tenantDomainName}";
 
             var mailNickname = userEntry.UserPrincipalName.Split('@')[0];
 

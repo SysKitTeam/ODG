@@ -37,29 +37,29 @@ namespace SysKit.ODG.App
                 {
                     new XmlUser
                     {
-                        Id = "dino.test.userich1"
+                        Name = "dino.test.userich1"
                     }
                 },
                 Groups = new XmlGroup[3]
                 {
                     new XmlGroup
                     {
-                        Id = "test.grupica"
+                        Name = "test.grupica"
                     },
                     new XmlGroup
                     {
-                        Id = "test.grupica1",
+                        Name = "test.grupica1",
                         Members = new []
                         {
                             new XmlMember
                             {
-                                Id = "dino.test.userich1"
+                                Name = "dino.test.userich1"
                             }
                         }
                     },
                     new XmlUnifiedGroup
                     {
-                        Id = "test.unified.grupica"
+                        Name = "test.unified.grupica"
                     }
                 }
             };
@@ -76,6 +76,7 @@ namespace SysKit.ODG.App
 
             var generationService = unityContainer.Resolve<IGenerationService>();
             generationService.AddGenerationTask("User Creation", unityContainer.Resolve<IGenerationTask>("userTask"));
+            generationService.AddGenerationTask("Group Creation", unityContainer.Resolve<IGenerationTask>("groupTask"));
             generationService.Start(generationOptions).GetAwaiter().GetResult();
 
             Console.WriteLine("Finished :)");
