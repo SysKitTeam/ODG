@@ -11,21 +11,22 @@ namespace SysKit.ODG.Generation.Users
     public class UserGenerationTask: IGenerationTask
     {
         private readonly IUserDataGeneration _userDataGenerationService;
-        private readonly IUserGraphApiClient _userGraphApiClient;
+        private readonly IGraphApiClientFactory _graphApiClientFactory;
 
-        public UserGenerationTask(IUserDataGeneration userDataGenerationService, IUserGraphApiClient userGraphApiClient)
+        public UserGenerationTask(IUserDataGeneration userDataGenerationService, IGraphApiClientFactory graphApiClientFactory)
         {
             _userDataGenerationService = userDataGenerationService;
-            _userGraphApiClient = userGraphApiClient;
+            _graphApiClientFactory = graphApiClientFactory;
         }
 
         public async Task Execute(GenerationOptions options)
         {
+            var userGraphApiClient = _graphApiClientFactory.CreateUserGraphApiClient(options.UserAccessTokenManager);
             var users = _userDataGenerationService.CreateUsers(options);
 
             try
             {
-                _userGraphApiClient.GetAllTenantUsers();
+                userGraphApiClient.GetAllTenantUsers();
                 Console.WriteLine("after api call");
                 //await _userGraphApiClient.CreateTenantUsers(users);
                 //_userGraphApiClient.GetAllTenantUsers();

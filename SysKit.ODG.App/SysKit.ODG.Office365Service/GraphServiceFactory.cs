@@ -6,25 +6,15 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Graph;
 using SysKit.ODG.Base.Interfaces.Authentication;
+using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Office365Service.GraphHttpProvider;
 
 namespace SysKit.ODG.Office365Service
 {
-    public interface IGraphServiceCreator
-    {
-        /// <summary>
-        /// Creates service client that is used for pinging Graph API
-        /// </summary>
-        /// <param name="accessTokenManager"></param>
-        /// <param name="useBetaEndpoint"></param>
-        /// <returns></returns>
-        IGraphServiceClient CreateGraphServiceClient(IAccessTokenManager accessTokenManager, bool useBetaEndpoint = false);
-    }
-
-    public class GraphServiceCreator : IGraphServiceCreator
+    public class GraphServiceFactory : IGraphServiceFactory
     {
         private readonly IGraphHttpProviderFactory _graphHttpProviderFactory;
-        public GraphServiceCreator(IGraphHttpProviderFactory graphHttpProviderFactory)
+        public GraphServiceFactory(IGraphHttpProviderFactory graphHttpProviderFactory)
         {
             _graphHttpProviderFactory = graphHttpProviderFactory;
         }

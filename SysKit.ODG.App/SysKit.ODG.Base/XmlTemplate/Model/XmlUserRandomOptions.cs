@@ -10,7 +10,5 @@ namespace SysKit.ODG.Base.XmlTemplate.Model
     {
         [XmlElement()]
         public int NumberOfUsers { get; set; }
-        [XmlElement(IsNullable = true)]
-        public int? NumberOfExternalUsers { get; set; }
     }
 }

@@ -29,11 +29,11 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
         protected BaseGraphApiClient(IAccessTokenManager accessTokenManager,
             IGraphHttpProviderFactory graphHttpProviderFactory,
-            IGraphServiceCreator graphServiceCreator, 
+            IGraphServiceFactory graphServiceFactory, 
             IMapper autoMapper)
         {
-            _graphServiceClient = graphServiceCreator.CreateGraphServiceClient(accessTokenManager, false);
-            _graphServiceBetaClient = graphServiceCreator.CreateGraphServiceClient(accessTokenManager, true);
+            _graphServiceClient = graphServiceFactory.CreateGraphServiceClient(accessTokenManager, false);
+            _graphServiceBetaClient = graphServiceFactory.CreateGraphServiceClient(accessTokenManager, true);
             _autoMapper = autoMapper;
             _httpProvider = graphHttpProviderFactory.CreateHttpProvider();
             _accessTokenManager = accessTokenManager;

@@ -11,9 +11,8 @@ using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
-using SysKit.ODG.Base.Options;
-using SysKit.ODG.XMLSpecification;
-using SysKit.ODG.XMLSpecification.Model;
+using SysKit.ODG.Base.XmlTemplate;
+using SysKit.ODG.Base.XmlTemplate.Model;
 using Unity;
 using Unity.Lifetime;
 
@@ -23,22 +22,31 @@ namespace SysKit.ODG.App
     {
         static void Main(string[] args)
         {
+            var defaultPassword = "1iH1Z8BwLM";
+            var tenantDomain = "M365x314861.onmicrosoft.com";
             var userCredentials = new SimpleUserCredentials("admin@M365x314861.onmicrosoft.com", "1iH1Z8BwLM");
-            var randomOptions = new GenerationOptions(userCredentials, "M365x314861.onmicrosoft.com");
+            var testTemplate = new XmlODGTemplate
             {
-                DefaultPassword = "1iH1Z8BwLM",
-                UserOptions =
+                UserCollection = new XmlUserCollection
                 {
-                    NumberOfUsers = 30
+                    RandomOptions = new XmlUserRandomOptions
+                    {
+                        NumberOfUsers = 5
+                    }
                 }
             };
 
-            var unityContainer = UnityManager.CreateUnityContainer(userCredentials);
+            var unityContainer = UnityManager.CreateUnityContainer();
+            var accessTokenFactory = unityContainer.Resolve<IAccessTokenManagerFactory>();
+            var accessTokenManager = accessTokenFactory.CreateAccessTokenManager(userCredentials);
+
+            var generationOptions = new GenerationOptions(accessTokenManager, tenantDomain, defaultPassword, testTemplate);
 
             var generationService = unityContainer.Resolve<IGenerationService>();
             generationService.AddGenerationTask(unityContainer.Resolve<IGenerationTask>("userTask"));
-            generationService.Start(randomOptions);
+            generationService.Start(generationOptions);
 
+            Console.WriteLine("Finished :)");
             Console.ReadLine();
         }
     }

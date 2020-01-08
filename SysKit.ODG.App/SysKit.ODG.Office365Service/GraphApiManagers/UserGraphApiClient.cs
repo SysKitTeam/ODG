@@ -22,8 +22,8 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
     {
         public UserGraphApiClient(IAccessTokenManager accessTokenManager,
             IGraphHttpProviderFactory graphHttpProviderFactory,
-            IGraphServiceCreator graphServiceCreator,
-            IMapper autoMapper) : base(accessTokenManager, graphHttpProviderFactory, graphServiceCreator, autoMapper)
+            IGraphServiceFactory graphServiceFactory,
+            IMapper autoMapper) : base(accessTokenManager, graphHttpProviderFactory, graphServiceFactory, autoMapper)
         {
 
         }

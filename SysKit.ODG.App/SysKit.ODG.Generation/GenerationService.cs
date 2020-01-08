@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
@@ -23,11 +24,11 @@ namespace SysKit.ODG.Generation
             _generationTasks.Add(task);
         }
 
-        public void Start(GenerationOptions generationOptions)
+        public async Task Start(GenerationOptions generationOptions)
         {
             foreach (var task in _generationTasks)
             {
-                task.Execute(generationOptions).GetAwaiter().GetResult();
+                await task.Execute(generationOptions);
             }
 
             //var testUsers = new List<UserEntry>();

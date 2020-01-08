@@ -9,9 +9,5 @@ namespace SysKit.ODG.Base.Interfaces
         string UserAgent { get; }
         string ClientId { get; }
         string[] Scopes { get; }
-        /// <summary>
-        /// Password that will be set for new users if one is not defined
-        /// </summary>
-        string DefaultUserPassword { get; }
     }
 }

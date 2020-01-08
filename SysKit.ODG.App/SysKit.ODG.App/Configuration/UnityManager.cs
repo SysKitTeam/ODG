@@ -22,15 +22,14 @@ namespace SysKit.ODG.App.Configuration
 {
     public class UnityManager
     {
-        public static UnityContainer CreateUnityContainer(SimpleUserCredentials userCredentials, string userAgent = null)
+        public static UnityContainer CreateUnityContainer()
         {
             var container = new UnityContainer();
 
             container.addLogging();
             container.RegisterInstance<IMapper>(AutomapperManager.ConfigureMapper(), new SingletonLifetimeManager());
             container.RegisterSingleton<IAppConfigManager, AppConfigManager>();
-            container.RegisterInstance<IAccessTokenManager>(new AccessTokenManager(container.Resolve<IAppConfigManager>(), userCredentials), new SingletonLifetimeManager());
-            
+            container.RegisterSingleton<IAccessTokenManagerFactory, AccessTokenManagerFactory>();
             container.RegisterSingleton<ISampleDataService, SampleDataService>();
 
             #region Generation services
@@ -48,7 +47,7 @@ namespace SysKit.ODG.App.Configuration
             container.RegisterSingleton<ICustomRetryPolicyFactory, CustomRetryPolicyFactory>();
             // we dont want to make this singelton since we could have DNS problem with static HttpClientHandler (once we transition to .net core and HttpClientFactory this can be mitigated)
             container.RegisterType<IGraphHttpProviderFactory, GraphHttpProviderFactory>(new PerResolveLifetimeManager());
-            container.RegisterSingleton<IGraphServiceCreator, GraphServiceCreator>();
+            container.RegisterSingleton<IGraphServiceFactory, GraphServiceFactory>();
             container.RegisterType<IUserGraphApiClient, UserGraphApiClient>();
 
             #endregion Office365 services

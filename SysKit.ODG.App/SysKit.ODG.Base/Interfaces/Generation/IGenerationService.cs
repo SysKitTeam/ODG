@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Interfaces.Authentication;
 
@@ -17,6 +18,6 @@ namespace SysKit.ODG.Base.Interfaces.Generation
         /// Execute added tasks
         /// </summary>
         /// <param name="generationOptions"></param>
-        void Start(GenerationOptions generationOptions);
+        Task Start(GenerationOptions generationOptions);
     }
 }

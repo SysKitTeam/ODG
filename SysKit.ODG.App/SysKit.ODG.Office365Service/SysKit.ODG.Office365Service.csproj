@@ -255,7 +255,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GraphApiManagerFactories\IUserGraphApiClientFactory.cs" />
+    <Compile Include="GraphApiClientFactory.cs" />
     <Compile Include="GraphApiManagers\BaseGraphApiClient.cs" />
     <Compile Include="GraphApiManagers\UserGraphApiClient.cs" />
     <Compile Include="GraphHttpProvider\Dto\GraphBatchRequest.cs" />
@@ -264,7 +264,7 @@
     <Compile Include="GraphHttpProvider\Handlers\UserAgentHandler.cs" />
     <Compile Include="GraphHttpProvider\IGraphHttpProvider.cs" />
     <Compile Include="GraphHttpProvider\IGraphHttpProviderFactory.cs" />
-    <Compile Include="GraphServiceCreator.cs" />
+    <Compile Include="GraphServiceFactory.cs" />
     <Compile Include="Office365MapProfile.cs" />
     <Compile Include="Polly\CustomRetryPolicy.cs" />
     <Compile Include="Polly\CustomRetryPolicyFactory.cs" />
