@@ -44,14 +44,16 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 }
 
                 groupLookup.Add(group.MailNickname, group);
-                var graphGroup = _autoMapper.Map<UnifiedGroupEntry, Group>(group, config => config.AfterMap((src, dest) =>
-                    {
-                        dest.Visibility = src.IsPrivate ? "Private" : "Public";
-                        dest.MailEnabled = true;
-                        dest.SecurityEnabled = false;
-                        dest.GroupTypes = new List<string> { "Unified" };
-                    }));
-
+                var graphGroup = new Group
+                {
+                    DisplayName = group.DisplayName,
+                    MailNickname = group.MailNickname,
+                    Visibility = group.IsPrivate ? "Private" : "Public",
+                    MailEnabled = true,
+                    SecurityEnabled = false,
+                    GroupTypes = new List<string> { "Unified" }
+                };
+                
                 batchEntries.Add(new GraphBatchRequest(group.MailNickname, "groups", HttpMethod.Post, graphGroup));
             }
 
@@ -72,7 +74,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 }
                 else
                 {
-                    _logger.Warning($"Failed to create user: {result.Key}. Status code: {(int)result.Value.StatusCode}");
+                    _logger.Warning($"Failed to create group: {result.Key}. Status code: {(int)result.Value.StatusCode}");
                 }
             }
 

@@ -9,7 +9,7 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
 {
     public interface IUserGraphApiClient
     {
-        Task<UserEntryCollection> GetAllTenantUsers();
+        Task<UserEntryCollection> GetAllTenantUsers(string tenantDomain);
         /// <summary>
         /// Creates users on tenant and returns successfully created users
         /// </summary>

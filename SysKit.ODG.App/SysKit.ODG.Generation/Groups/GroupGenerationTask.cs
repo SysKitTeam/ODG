@@ -35,7 +35,7 @@ namespace SysKit.ODG.Generation.Groups
                 return;
             }
 
-            var users = await userGraphApiClient.GetAllTenantUsers();
+            var users = await userGraphApiClient.GetAllTenantUsers(options.TenantDomain);
             var createdGroups = await groupGraphApiClient.CreateUnifiedGroups(groups, users);
             _logger.Information($"Created {createdGroups.Count}");
         }

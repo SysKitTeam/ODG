@@ -8,6 +8,7 @@ using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.SampleData;
 using SysKit.ODG.Base.Utils;
+using SysKit.ODG.Base.XmlTemplate.Model;
 
 namespace SysKit.ODG.Generation.Groups
 {
@@ -27,9 +28,31 @@ namespace SysKit.ODG.Generation.Groups
 
         public IEnumerable<UnifiedGroupEntry> CreateUnifiedGroups(GenerationOptions generationOptions)
         {
+            foreach (var group in createXmlUnifiedGroups(generationOptions))
+            {
+                yield return group;
+            }
+
             foreach (var group in createRandomUnifiedGroups(generationOptions))
             {
                 yield return group;
+            }
+        }
+
+        private IEnumerable<UnifiedGroupEntry> createXmlUnifiedGroups(GenerationOptions generationOptions)
+        {
+            if (generationOptions.Template.Groups == null)
+            {
+                yield break;
+            }
+
+            foreach (var group in generationOptions.Template.Groups)
+            {
+                if (group is XmlUnifiedGroup unifiedGroup)
+                {
+                    var groupEntry = _groupXmlMapper.MapToUnifiedGroupEntry(generationOptions.TenantDomain, unifiedGroup);
+                    yield return groupEntry;
+                }
             }
         }
 

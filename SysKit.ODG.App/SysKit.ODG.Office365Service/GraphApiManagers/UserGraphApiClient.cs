@@ -33,7 +33,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         }
 
         /// <inheritdoc />
-        public async Task<UserEntryCollection> GetAllTenantUsers()
+        public async Task<UserEntryCollection> GetAllTenantUsers(string tenantDomain)
         {
             var userRequest = _graphServiceClient.Users.Request().Top(999);
             var userEntries = new List<UserEntry>();
@@ -49,7 +49,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 userRequest = users.NextPageRequest;
             } while (userRequest != null);
 
-            return new UserEntryCollection(userEntries);
+            return new UserEntryCollection(tenantDomain, userEntries);
         }
 
         /// <inheritdoc />
