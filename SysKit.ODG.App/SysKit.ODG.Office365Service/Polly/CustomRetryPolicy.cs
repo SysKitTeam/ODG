@@ -50,16 +50,25 @@ namespace SysKit.ODG.Office365Service.Polly
                 var result = await requestFunction();
                 context[CTX_URL] = result.RequestMessage.RequestUri;
 
-                if (isResponseThrottled(result))
+                if (IsResponseThrottled(result))
                 {
                     //// Fix for hanging polly: https://github.com/aspnet/Extensions/issues/1700#issuecomment-537612449
                     result.Dispose();
-                    throw new ThrottleException(getRetryAfterValueFromResponseHeader(result.Headers));
+                    throw new ThrottleException(GetRetryAfterValueFromResponseHeader(result.Headers));
                 }
 
                 return result;
             }, new Dictionary<string, object>());
 
+        }
+
+        public Task ExecuteAsync(Func<Task> requestFunction, string requestUri)
+        {
+            return _policy.ExecuteAsync((context) =>
+            {
+                context[CTX_URL] = requestUri;
+                return requestFunction();
+            }, new Dictionary<string, object>());
         }
 
         #endregion Interface
@@ -86,7 +95,7 @@ namespace SysKit.ODG.Office365Service.Polly
 
         #region Helpers
 
-        private TimeSpan? getRetryAfterValueFromResponseHeader(HttpResponseHeaders headers)
+        public TimeSpan? GetRetryAfterValueFromResponseHeader(HttpResponseHeaders headers)
         {
             if (headers != null && headers.TryGetValues("Retry-After", out var values) && values != null &&
                 Int32.TryParse(values.First(), out var retryAfterValue))
@@ -99,7 +108,7 @@ namespace SysKit.ODG.Office365Service.Polly
             return null;
         }
 
-        private bool isResponseThrottled(HttpResponseMessage response)
+        public bool IsResponseThrottled(HttpResponseMessage response)
         {
             return (int)response.StatusCode == 429 || (int)response.StatusCode == 503;
         }

@@ -46,13 +46,14 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
 
         private IGraphHttpProvider createGraphHttpProvider(HttpMessageHandler finalHandler)
         {
+            var retryPolicy = _customRetryPolicyFactory.CreateRetryPolicy();
             var userAgentHandler = new UserAgentHandler(_configManager.UserAgent);
             var compressionHandler = new CompressionHandler();
             var loggingHandler = new LoggingHandler(_logger);
-            var retryHandler = new CustomRetryHandler(_customRetryPolicyFactory.CreateRetryPolicy());
+            var retryHandler = new CustomRetryHandler(retryPolicy);
 
             var requestPipeline = GraphClientFactory.CreatePipeline(new DelegatingHandler[] { loggingHandler, userAgentHandler, compressionHandler, retryHandler }, finalHandler);
-            var httpProvider = new GraphHttpProvider(requestPipeline);
+            var httpProvider = new GraphHttpProvider(requestPipeline, retryPolicy);
             //httpProvider.OverallTimeout = TimeSpan.FromMinutes(10);
 
             return httpProvider;
