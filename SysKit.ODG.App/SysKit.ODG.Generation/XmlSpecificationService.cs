@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+﻿using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
-using SysKit.ODG.XMLSpecification.Model;
 
-namespace SysKit.ODG.XMLSpecification
+namespace SysKit.ODG.Generation
 {
     public class XmlSpecificationService
     {

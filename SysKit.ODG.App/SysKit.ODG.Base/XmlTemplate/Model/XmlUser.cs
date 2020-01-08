@@ -1,7 +1,6 @@
-﻿using System.Runtime.CompilerServices;
-using System.Xml.Serialization;
+﻿using System.Xml.Serialization;
 
-namespace SysKit.ODG.XMLSpecification.Model
+namespace SysKit.ODG.Base.XmlTemplate.Model
 {
     public class XmlUser
     {

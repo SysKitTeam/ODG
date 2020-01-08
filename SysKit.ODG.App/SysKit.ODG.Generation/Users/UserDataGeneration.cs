@@ -7,7 +7,6 @@ using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.SampleData;
 using SysKit.ODG.Base.Options;
 using SysKit.ODG.XMLSpecification;
-using SysKit.ODG.XMLSpecification.Mappers;
 using SysKit.ODG.XMLSpecification.Model;
 
 namespace SysKit.ODG.Generation.Users

@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Xml.Serialization;
+using SysKit.ODG.Base.XmlTemplate.Model;
 
-namespace SysKit.ODG.XMLSpecification.Model
+namespace SysKit.ODG.Base.XmlTemplate
 {
-    [XmlRoot("ODGSpec")]
-    public class XmlODGSpecification
+    [XmlRoot("ODGTemplate")]
+    public class XmlODGTemplate
     {
         [XmlElement(IsNullable = true)]
         public XmlUserCollection UserCollection { get; set; }

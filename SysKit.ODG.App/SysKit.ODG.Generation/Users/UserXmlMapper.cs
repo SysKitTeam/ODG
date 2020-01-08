@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using AutoMapper;
 using SysKit.ODG.Base.DTO.Generation;
-using SysKit.ODG.Base.Interfaces.Generation;
-using SysKit.ODG.XMLSpecification.Model;
+using SysKit.ODG.Base.XmlTemplate.Model;
 
-namespace SysKit.ODG.XMLSpecification.Mappers
+namespace SysKit.ODG.Generation.Users
 {
     public class UserXmlMapper
     {

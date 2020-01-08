@@ -300,10 +300,6 @@
       <Project>{2B279BD0-B7FB-4B30-B482-8277D050AE00}</Project>
       <Name>SysKit.ODG.SampleData</Name>
     </ProjectReference>
-    <ProjectReference Include="..\SysKit.ODG.XMLSpecification\SysKit.ODG.XMLSpecification.csproj">
-      <Project>{AB09DEAB-6AA6-4389-8BEF-0C84AA696B02}</Project>
-      <Name>SysKit.ODG.XMLSpecification</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

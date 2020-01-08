@@ -255,6 +255,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GraphApiManagerFactories\IUserGraphApiClientFactory.cs" />
     <Compile Include="GraphApiManagers\BaseGraphApiClient.cs" />
     <Compile Include="GraphApiManagers\UserGraphApiClient.cs" />
     <Compile Include="GraphHttpProvider\Dto\GraphBatchRequest.cs" />

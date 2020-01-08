@@ -7,6 +7,7 @@ namespace SysKit.ODG.Base.Interfaces.Generation
 {
     public interface IUserDataGeneration
     {
-        IEnumerable<UserEntry> CreateUsers(IGenerationOptions generationOptions);
+        // TODO: UserGenerationOptions!!!
+        IEnumerable<UserEntry> CreateUsers(GenerationOptions generationOptions);
     }
 }

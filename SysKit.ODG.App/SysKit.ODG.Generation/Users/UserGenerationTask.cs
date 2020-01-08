@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 
@@ -18,7 +19,7 @@ namespace SysKit.ODG.Generation.Users
             _userGraphApiClient = userGraphApiClient;
         }
 
-        public async Task Execute(IGenerationOptions options)
+        public async Task Execute(GenerationOptions options)
         {
             var users = _userDataGenerationService.CreateUsers(options);
 

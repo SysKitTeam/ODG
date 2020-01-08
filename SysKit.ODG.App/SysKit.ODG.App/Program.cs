@@ -7,6 +7,7 @@ using SysKit.ODG.App.Configuration;
 using SysKit.ODG.Authentication;
 using SysKit.ODG.Base.Authentication;
 using SysKit.ODG.Base.DTO;
+using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
@@ -23,7 +24,7 @@ namespace SysKit.ODG.App
         static void Main(string[] args)
         {
             var userCredentials = new SimpleUserCredentials("admin@M365x314861.onmicrosoft.com", "1iH1Z8BwLM");
-            var randomOptions = new RandomGenerationOptions(userCredentials, "M365x314861.onmicrosoft.com")
+            var randomOptions = new GenerationOptions(userCredentials, "M365x314861.onmicrosoft.com");
             {
                 DefaultPassword = "1iH1Z8BwLM",
                 UserOptions =

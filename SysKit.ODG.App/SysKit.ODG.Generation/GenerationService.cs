@@ -23,7 +23,7 @@ namespace SysKit.ODG.Generation
             _generationTasks.Add(task);
         }
 
-        public void Start(IGenerationOptions generationOptions)
+        public void Start(GenerationOptions generationOptions)
         {
             foreach (var task in _generationTasks)
             {
