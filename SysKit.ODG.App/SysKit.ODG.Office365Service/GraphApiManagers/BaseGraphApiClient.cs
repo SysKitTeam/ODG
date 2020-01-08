@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
@@ -42,6 +43,16 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
         #region Request execution helpers
 
+        /// <summary>
+        /// Helper for deserializing Graph API objects
+        /// </summary>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="content"></param>
+        /// <returns></returns>
+        protected async Task<TResult> DeserializeGraphObject<TResult>(HttpContent content)
+        {
+            return _graphServiceClient.HttpProvider.Serializer.DeserializeObject<TResult>(await content.ReadAsStreamAsync());
+        }
        
         #endregion
 
