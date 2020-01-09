@@ -24,20 +24,20 @@ namespace SysKit.ODG.App
     {
         static void Main(string[] args)
         {
-            var defaultPassword = "1iH1Z8BwLM";
-            var tenantDomain = "M365x314861.onmicrosoft.com";
-            var userCredentials = new SimpleUserCredentials("admin@M365x314861.onmicrosoft.com", "1iH1Z8BwLM");
+            var defaultPassword = "hC7q95955D";
+            var tenantDomain = "M365B117306.onmicrosoft.com";
+            var userCredentials = new SimpleUserCredentials("admin@M365B117306.onmicrosoft.com", "hC7q95955D");
             var testTemplate = new XmlODGTemplate
             {
-                RandomOptions = new XmlRandomOptions
-                {
-                    NumberOfUsers = 50000
-                },
+                //RandomOptions = new XmlRandomOptions
+                //{
+                //    NumberOfUsers = 10000
+                //},
                 Users = new XmlUser[1]
                 {
                     new XmlUser
                     {
-                        Name = "dino.test"
+                        Name = "dino.test.userich1"
                     }
                 },
                 Groups = new XmlGroup[4]
@@ -48,7 +48,7 @@ namespace SysKit.ODG.App
                     },
                     new XmlUnifiedGroup
                     {
-                        Name = "nova.test.grupica1",
+                        Name = "nova.test.grupica1234",
                         DisplayName = "Grupica sa memberima",
                         Members = new []
                         {
@@ -86,7 +86,7 @@ namespace SysKit.ODG.App
             generationService.AddGenerationTask("Group Creation", unityContainer.Resolve<IGenerationTask>("groupTask"));
             generationService.Start(generationOptions).GetAwaiter().GetResult();
 
-            Console.WriteLine("Finished :)");
+            Console.WriteLine("Finished ;)");
             Console.ReadLine();
         }
     }

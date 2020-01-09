@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Graph;
@@ -32,8 +34,9 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         /// <inheritdoc />
         public async Task<List<UnifiedGroupEntry>> CreateUnifiedGroups(IEnumerable<UnifiedGroupEntry> groups, UserEntryCollection users)
         {
+            int groupsProcessed = 0;
             var groupLookup = new Dictionary<string, UnifiedGroupEntry>();
-            var successfullyCreatedGroups = new List<UnifiedGroupEntry>();
+            var successfullyCreatedGroups = new ConcurrentBag<UnifiedGroupEntry>();
             var batchEntries = new List<GraphBatchRequest>();
 
             int i = 0;
@@ -45,26 +48,37 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 }
             }
 
-            var results = await _httpProvider.SendBatchAsync(batchEntries, _accessTokenManager);
-
-            foreach (var result in results)
+            if (!batchEntries.Any())
             {
-                if (result.Value.IsSuccessStatusCode)
-                {
-                    var originalGroup = groupLookup[result.Key];
-                    var createdGroup = _graphServiceClient.HttpProvider.Serializer.DeserializeObject<Group>(
-                            await result.Value.Content.ReadAsStreamAsync());
-
-                    originalGroup.GroupId = createdGroup.Id;
-                    successfullyCreatedGroups.Add(originalGroup);
-                }
-                else
-                {
-                    _logger.Warning($"Failed to create group: {result.Key}. Status code: {(int)result.Value.StatusCode}");
-                }
+                return new List<UnifiedGroupEntry>();
             }
 
-            return successfullyCreatedGroups;
+            Action<Dictionary<string, HttpResponseMessage>> handleBatchResult = results =>
+            {
+                foreach (var result in results)
+                {
+                    if (result.Value.IsSuccessStatusCode)
+                    {
+                        var originalGroup = groupLookup[result.Key];
+                        var createdGroup = DeserializeGraphObject<Group>(result.Value.Content).GetAwaiter().GetResult();
+
+                        originalGroup.GroupId = createdGroup.Id;
+                        successfullyCreatedGroups.Add(originalGroup);
+                    }
+                    else
+                    {
+                        _logger.Warning($"Failed to create group: {result.Key}. Status code: {(int)result.Value.StatusCode}");
+                    }
+
+                    result.Value.Dispose();
+                }
+
+                Interlocked.Add(ref groupsProcessed, results.Count);
+                _logger.Information($"Groups processed: {groupsProcessed}/{batchEntries.Count}");
+            };
+
+            await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult);
+            return successfullyCreatedGroups.ToList();
         }
 
         private bool tryCreateGroupBatch(UserEntryCollection users, Dictionary<string, UnifiedGroupEntry> groupLookup, UnifiedGroupEntry @group, out GroupExtended graphGroup)

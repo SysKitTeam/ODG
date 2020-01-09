@@ -81,6 +81,11 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 batchEntries.Add(new GraphBatchRequest(graphUser.UserPrincipalName, "users", HttpMethod.Post, graphUser));
             }
 
+            if (!batchEntries.Any())
+            {
+                return new List<UserEntry>();
+            }
+
             Action<Dictionary<string, HttpResponseMessage>> handleBatchResult = results =>
             {
                 foreach (var result in results)

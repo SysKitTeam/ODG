@@ -19,7 +19,7 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
         /// <param name="useBetaEndpoint"></param>
         /// <param name="maxConcurrent"></param>
         /// <returns></returns>
-        Task<Dictionary<string, HttpResponseMessage>> SendBatchAsync(IEnumerable<GraphBatchRequest> batchEntries, IAccessTokenManager tokenRetriever, bool useBetaEndpoint = false, int maxConcurrent = 8);
+        Task<Dictionary<string, HttpResponseMessage>> SendBatchAsync(IEnumerable<GraphBatchRequest> batchEntries, IAccessTokenManager tokenRetriever, bool useBetaEndpoint = false, int maxConcurrent = 6);
 
         /// <summary>
         /// Similar to SendBatchAsync, but returns batches as they are completed (and not in the end)
@@ -32,6 +32,6 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
         /// <returns></returns>
         Task StreamBatchAsync(IEnumerable<GraphBatchRequest> batchEntries, IAccessTokenManager tokenRetriever,
             Action<Dictionary<string, HttpResponseMessage>> handleBatchResult, bool useBetaEndpoint = false,
-            int maxConcurrent = 8);
+            int maxConcurrent = 6);
     }
 }
