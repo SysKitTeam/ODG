@@ -272,6 +272,7 @@
     <Compile Include="Configuration\AppConfigManager.cs" />
     <Compile Include="Configuration\AutomapperManager.cs" />
     <Compile Include="Configuration\UnityManager.cs" />
+    <Compile Include="LoggNotifier.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

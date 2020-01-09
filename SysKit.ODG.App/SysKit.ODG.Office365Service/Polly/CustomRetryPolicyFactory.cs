@@ -44,7 +44,7 @@ namespace SysKit.ODG.Office365Service.Polly
             if (error is BrokenCircuitException)
             {
                 // too much ThrottleExceptions, time to wait
-                return TimeSpan.FromMinutes(3) + TimeSpan.FromMilliseconds(RandomThreadSafeGenerator.Next(twoMinutesInMilliseconds));
+                return TimeSpan.FromMinutes(2) + TimeSpan.FromMilliseconds(RandomThreadSafeGenerator.Next(twoMinutesInMilliseconds));
             }
 
             var headerRetryValue = error is ThrottleException throttleException ? throttleException.Timeout : null;

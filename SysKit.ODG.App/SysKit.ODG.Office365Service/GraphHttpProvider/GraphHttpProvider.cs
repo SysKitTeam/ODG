@@ -29,7 +29,7 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
         }
 
         /// <inheritdoc />
-        public async Task<Dictionary<string, HttpResponseMessage>> SendBatchAsync(IEnumerable<GraphBatchRequest> batchEntries, IAccessTokenManager tokenRetriever, bool useBetaEndpoint = false, int maxConcurrent = 8)
+        public async Task<Dictionary<string, HttpResponseMessage>> SendBatchAsync(IEnumerable<GraphBatchRequest> batchEntries, IAccessTokenManager tokenRetriever, bool useBetaEndpoint = false, int maxConcurrent = 6)
         {
             var results = new ConcurrentDictionary<string, HttpResponseMessage>();
             
@@ -47,7 +47,7 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
         }
 
         /// <inheritdoc />
-        public async Task StreamBatchAsync(IEnumerable<GraphBatchRequest> batchEntries, IAccessTokenManager tokenRetriever, Action<Dictionary<string, HttpResponseMessage>> handleBatchResult, bool useBetaEndpoint = false, int maxConcurrent = 8)
+        public async Task StreamBatchAsync(IEnumerable<GraphBatchRequest> batchEntries, IAccessTokenManager tokenRetriever, Action<Dictionary<string, HttpResponseMessage>> handleBatchResult, bool useBetaEndpoint = false, int maxConcurrent = 6)
         {
             var endpoint = useBetaEndpoint ? "beta" : "v1.0";
             Func<string, string> createUrl = relativeUrl => $"https://graph.microsoft.com/{endpoint}/{relativeUrl}";
