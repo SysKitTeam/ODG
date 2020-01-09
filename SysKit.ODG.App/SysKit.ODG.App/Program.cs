@@ -29,10 +29,10 @@ namespace SysKit.ODG.App
             var userCredentials = new SimpleUserCredentials("admin@M365x314861.onmicrosoft.com", "1iH1Z8BwLM");
             var testTemplate = new XmlODGTemplate
             {
-                //RandomOptions = new XmlRandomOptions
-                //{
-                //    NumberOfUsers = 5
-                //},
+                RandomOptions = new XmlRandomOptions
+                {
+                    NumberOfUsers = 50000
+                },
                 Users = new XmlUser[1]
                 {
                     new XmlUser

@@ -45,8 +45,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 }
             }
 
-            var tokenResult = await _accessTokenManager.GetGraphToken();
-            var results = await _httpProvider.SendBatchAsync(batchEntries, tokenResult.Token);
+            var results = await _httpProvider.SendBatchAsync(batchEntries, _accessTokenManager);
 
             foreach (var result in results)
             {

@@ -28,7 +28,7 @@ namespace SysKit.ODG.Office365Service.Polly
 
         public ICustomRetryPolicy CreateRetryPolicy()
         {
-            return CreateRetryPolicy(new CustomRetryPolicySettings(5, 3, TimeSpan.FromMinutes(2), CalculateRetryTime));
+            return CreateRetryPolicy(new CustomRetryPolicySettings(5, 2, TimeSpan.FromMinutes(2), CalculateRetryTime));
         }
 
         public ICustomRetryPolicy CreateRetryPolicy(CustomRetryPolicySettings settings)
@@ -38,18 +38,18 @@ namespace SysKit.ODG.Office365Service.Polly
 
         public static TimeSpan CalculateRetryTime(int retryAttempt, Exception error, Context context)
         {
-            var oneMinuteInMilliseconds = Convert.ToInt32(new TimeSpan(0, 1, 0).TotalMilliseconds);
-            var threeMinutesInMilliseconds = Convert.ToInt32(new TimeSpan(0, 3, 0).TotalMilliseconds);
+            var halfMinuteInMilliseconds = Convert.ToInt32(new TimeSpan(0, 0, 30).TotalMilliseconds);
+            var twoMinutesInMilliseconds = Convert.ToInt32(new TimeSpan(0, 2, 0).TotalMilliseconds);
 
             if (error is BrokenCircuitException)
             {
                 // too much ThrottleExceptions, time to wait
-                return TimeSpan.FromMinutes(5) + TimeSpan.FromMilliseconds(RandomThreadSafeGenerator.Next(oneMinuteInMilliseconds, threeMinutesInMilliseconds));
+                return TimeSpan.FromMinutes(3) + TimeSpan.FromMilliseconds(RandomThreadSafeGenerator.Next(twoMinutesInMilliseconds));
             }
 
             var headerRetryValue = error is ThrottleException throttleException ? throttleException.Timeout : null;
             var throttleValue = (headerRetryValue ?? TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))) +
-                                TimeSpan.FromMilliseconds(RandomThreadSafeGenerator.Next(oneMinuteInMilliseconds, threeMinutesInMilliseconds));
+                                TimeSpan.FromMilliseconds(RandomThreadSafeGenerator.Next(halfMinuteInMilliseconds, twoMinutesInMilliseconds));
 
             return throttleValue;
         }

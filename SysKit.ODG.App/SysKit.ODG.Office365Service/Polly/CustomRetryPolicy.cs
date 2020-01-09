@@ -100,9 +100,7 @@ namespace SysKit.ODG.Office365Service.Polly
             if (headers != null && headers.TryGetValues("Retry-After", out var values) && values != null &&
                 Int32.TryParse(values.First(), out var retryAfterValue))
             {
-                // we want jitter so if multiple requests throttle with same value we don't go at the same time
-                var tenSecondsInMilliseconds = Convert.ToInt32(new TimeSpan(0, 0, 10).TotalMilliseconds);
-                return TimeSpan.FromSeconds(retryAfterValue) + TimeSpan.FromMilliseconds(tenSecondsInMilliseconds);
+                return TimeSpan.FromSeconds(retryAfterValue);
             }
 
             return null;
@@ -115,9 +113,14 @@ namespace SysKit.ODG.Office365Service.Polly
 
         private string getRequestUrlFromContext(Context context)
         {
-            if (context.TryGetValue(CTX_URL, out object url) && url is Uri uriObject)
+            if (context.TryGetValue(CTX_URL, out object url))
             {
-                return uriObject.AbsolutePath;
+                if (url is Uri uriObject)
+                {
+                    return uriObject.AbsolutePath;
+                }
+
+                return $"{url}";
             }
 
             return "";

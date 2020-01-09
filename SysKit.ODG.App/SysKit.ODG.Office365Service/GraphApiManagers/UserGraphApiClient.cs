@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Graph;
@@ -55,8 +57,9 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         /// <inheritdoc />
         public async Task<List<UserEntry>> CreateTenantUsers(IEnumerable<UserEntry> users)
         {
+            int userProcessed = 0;
             var userLookup = new Dictionary<string, UserEntry>();
-            var successfullyCreatedUsers = new List<UserEntry>();
+            var successfullyCreatedUsers = new ConcurrentBag<UserEntry>();
             var batchEntries = new List<GraphBatchRequest>();
             foreach (var user in users)
             {
@@ -78,27 +81,35 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 batchEntries.Add(new GraphBatchRequest(graphUser.UserPrincipalName, "users", HttpMethod.Post, graphUser));
             }
 
-            var tokenResult = await _accessTokenManager.GetGraphToken();
-            var results = await _httpProvider.SendBatchAsync(batchEntries, tokenResult.Token);
-
-            foreach (var result in results)
+            Action<Dictionary<string, HttpResponseMessage>> handleBatchResult = results =>
             {
-                if (result.Value.IsSuccessStatusCode)
+                foreach (var result in results)
                 {
-                    var originalUser = userLookup[result.Key];
-                    var graphUser = await DeserializeGraphObject<User>(result.Value.Content);
+                    if (result.Value.IsSuccessStatusCode)
+                    {
+                        var originalUser = userLookup[result.Key];
+                        var graphUser = DeserializeGraphObject<User>(result.Value.Content).GetAwaiter().GetResult();
 
-                    originalUser.Id = graphUser.Id;
-                    graphUser.UserPrincipalName = graphUser.UserPrincipalName;
-                    successfullyCreatedUsers.Add(originalUser);
-                }
-                else
-                {
-                    _logger.Warning($"Failed to create user: {result.Key}. Status code: {(int)result.Value.StatusCode}");
-                }
-            }
+                        originalUser.Id = graphUser.Id;
+                        graphUser.UserPrincipalName = graphUser.UserPrincipalName;
+                        successfullyCreatedUsers.Add(originalUser);
+                    }
+                    else
+                    {
+                        _logger.Warning(
+                            $"Failed to create user: {result.Key}. Status code: {(int) result.Value.StatusCode}");
+                    }
 
-            return successfullyCreatedUsers;
+                    result.Value.Dispose();
+                }
+
+                Interlocked.Add(ref userProcessed, results.Count);
+                _logger.Information($"User processed: {userProcessed}/{userLookup.Count}");
+            };
+
+            await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult);
+
+            return successfullyCreatedUsers.ToList();
         }
 
     }

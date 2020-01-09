@@ -28,10 +28,10 @@ namespace SysKit.ODG.Generation.Users
         {
             var userGraphApiClient = _graphApiClientFactory.CreateUserGraphApiClient(options.UserAccessTokenManager);
             var userGenerationOptions = UserGenerationOptions.CreateFromGenerationOptions(options);
-            var users = _userDataGenerationService.CreateUsers(userGenerationOptions);
+            var users = _userDataGenerationService.CreateUsers(userGenerationOptions).ToList();
 
             var createdUsers = await userGraphApiClient.CreateTenantUsers(users);
-            _logger.Information($"Created {createdUsers.Count}/{users.Count()}");
+            _logger.Information($"Created {createdUsers.Count}/{users.Count}");
 
             // TODO: assign licences
             // TODO: add external users

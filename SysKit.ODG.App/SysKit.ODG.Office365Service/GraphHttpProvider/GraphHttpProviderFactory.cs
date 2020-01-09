@@ -54,7 +54,7 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
 
             var requestPipeline = GraphClientFactory.CreatePipeline(new DelegatingHandler[] { loggingHandler, userAgentHandler, compressionHandler, retryHandler }, finalHandler);
             var httpProvider = new GraphHttpProvider(requestPipeline, retryPolicy);
-            //httpProvider.OverallTimeout = TimeSpan.FromMinutes(10);
+            httpProvider.OverallTimeout = TimeSpan.FromMinutes(15);
 
             return httpProvider;
         }
