@@ -46,9 +46,10 @@ namespace SysKit.ODG.App
                     {
                         Name = "test.grupica"
                     },
-                    new XmlGroup
+                    new XmlUnifiedGroup
                     {
-                        Name = "test.grupica1",
+                        Name = "nova.test.grupica1",
+                        DisplayName = "Grupica sa memberima",
                         Members = new []
                         {
                             new XmlMember

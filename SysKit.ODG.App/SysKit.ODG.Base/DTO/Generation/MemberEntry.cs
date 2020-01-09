@@ -6,6 +6,11 @@ namespace SysKit.ODG.Base.DTO.Generation
 {
     public class MemberEntry
     {
-        public string UserPrincipalName { get; set; }
+        public string Name { get; set; }
+
+        public MemberEntry(string name)
+        {
+            Name = name;
+        }
     }
 }

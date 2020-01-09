@@ -37,7 +37,7 @@ namespace SysKit.ODG.Base.Office365
         /// </summary>
         /// <param name="member"></param>
         /// <returns></returns>
-        public UserEntry FindMember(XmlMember member)
+        public UserEntry FindMember(MemberEntry member)
         {
             var mailNickname = member.Name.Contains("@") ? member.Name : $"{member.Name}@{_tenantDomain}";
             return _userEntriesLookup.TryGetValue(mailNickname, out UserEntry value) ? value : null;

@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Graph;
+using Newtonsoft.Json;
 using Serilog;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Interfaces.Authentication;
@@ -41,10 +42,11 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 if (groupLookup.ContainsKey(group.MailNickname))
                 {
                     _logger.Warning($"Trying to create 2 groups with same mail nickname ({group.MailNickname}). Only the first will be created.");
+                    continue;
                 }
 
                 groupLookup.Add(group.MailNickname, group);
-                var graphGroup = new Group
+                var graphGroup = new GroupExtended
                 {
                     DisplayName = group.DisplayName,
                     MailNickname = group.MailNickname,
@@ -53,7 +55,55 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     SecurityEnabled = false,
                     GroupTypes = new List<string> { "Unified" }
                 };
-                
+
+                if (group.Owners?.Any() == true)
+                {
+                    var userIds = new HashSet<string>();
+                    foreach (var owner in group.Owners)
+                    {
+                        var ownerEntry = users.FindMember(owner);
+
+                        if (ownerEntry == null)
+                        {
+                            _logger.Warning($"Failed to create group: {group.MailNickname}. Owner not found: {owner.Name}");
+                        }
+                        else
+                        {
+                            userIds.Add(ownerEntry.Id);
+                        }
+                    }
+
+                    if (userIds.Any())
+                    {
+                        graphGroup.OwnersODataBind =
+                            userIds.Select(id => $"https://graph.microsoft.com/v1.0/users/{id}").ToArray();
+                    }
+                }
+
+                if (group.Members?.Any() == true)
+                {
+                    var userIds = new HashSet<string>();
+                    foreach (var member in group.Members)
+                    {
+                        var memberEntry = users.FindMember(member);
+
+                        if (memberEntry == null)
+                        {
+                            _logger.Warning($"Failed to create group: {group.MailNickname}. Member not found: {member.Name}");
+                        }
+                        else
+                        {
+                            userIds.Add(memberEntry.Id);
+                        }
+                    }
+
+                    if (userIds.Any())
+                    {
+                        graphGroup.MembersODataBind =
+                            userIds.Select(id => $"https://graph.microsoft.com/v1.0/users/{id}").ToArray();
+                    }
+                }
+
                 batchEntries.Add(new GraphBatchRequest(group.MailNickname, "groups", HttpMethod.Post, graphGroup));
             }
 
@@ -79,6 +129,14 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             }
 
             return successfullyCreatedGroups;
+        }
+
+        class GroupExtended : Group
+        {
+            [JsonProperty("owners@odata.bind", NullValueHandling = NullValueHandling.Ignore)]
+            public string[] OwnersODataBind { get; set; }
+            [JsonProperty("members@odata.bind", NullValueHandling = NullValueHandling.Ignore)]
+            public string[] MembersODataBind { get; set; }
         }
     }
 }

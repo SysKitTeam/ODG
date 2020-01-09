@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using AutoMapper;
 using SysKit.ODG.Base.DTO.Generation;
@@ -23,6 +24,9 @@ namespace SysKit.ODG.Generation.Groups
             groupEntry.DisplayName = unifiedGroup.DisplayName;
             groupEntry.MailNickname = unifiedGroup.Name;
             groupEntry.IsPrivate = unifiedGroup.IsPrivate;
+
+            groupEntry.Members = unifiedGroup.Members?.Select(m => new MemberEntry(m.Name)).ToList();
+            groupEntry.Owners = unifiedGroup.Owners?.Select(m => new MemberEntry(m.Name)).ToList();
 
             return groupEntry;
         }
