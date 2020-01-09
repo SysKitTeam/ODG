@@ -28,16 +28,16 @@ namespace SysKit.ODG.Generation.Groups
             var userGraphApiClient = _graphApiClientFactory.CreateUserGraphApiClient(options.UserAccessTokenManager);
             var groupGraphApiClient = _graphApiClientFactory.CreateGroupGraphApiClient(options.UserAccessTokenManager);
 
-            var groups = _groupDataGeneration.CreateUnifiedGroups(options);
+            var groups = _groupDataGeneration.CreateUnifiedGroups(options).ToList();
 
-            if (groups?.Any() == false)
+            if (groups.Any() == false)
             {
                 return;
             }
 
             var users = await userGraphApiClient.GetAllTenantUsers(options.TenantDomain);
             var createdGroups = await groupGraphApiClient.CreateUnifiedGroups(groups, users);
-            _logger.Information($"Created {createdGroups.Count}");
+            _logger.Information($"Created {createdGroups.Count}/{groups.Count}");
         }
     }
 }

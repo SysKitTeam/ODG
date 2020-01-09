@@ -39,72 +39,10 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             int i = 0;
             foreach (var group in groups)
             {
-                if (groupLookup.ContainsKey(group.MailNickname))
+                if (tryCreateGroupBatch(users, groupLookup, @group, out var graphGroup))
                 {
-                    _logger.Warning($"Trying to create 2 groups with same mail nickname ({group.MailNickname}). Only the first will be created.");
-                    continue;
+                    batchEntries.Add(new GraphBatchRequest(group.MailNickname, "groups", HttpMethod.Post, graphGroup));
                 }
-
-                groupLookup.Add(group.MailNickname, group);
-                var graphGroup = new GroupExtended
-                {
-                    DisplayName = group.DisplayName,
-                    MailNickname = group.MailNickname,
-                    Visibility = group.IsPrivate ? "Private" : "Public",
-                    MailEnabled = true,
-                    SecurityEnabled = false,
-                    GroupTypes = new List<string> { "Unified" }
-                };
-
-                if (group.Owners?.Any() == true)
-                {
-                    var userIds = new HashSet<string>();
-                    foreach (var owner in group.Owners)
-                    {
-                        var ownerEntry = users.FindMember(owner);
-
-                        if (ownerEntry == null)
-                        {
-                            _logger.Warning($"Failed to create group: {group.MailNickname}. Owner not found: {owner.Name}");
-                        }
-                        else
-                        {
-                            userIds.Add(ownerEntry.Id);
-                        }
-                    }
-
-                    if (userIds.Any())
-                    {
-                        graphGroup.OwnersODataBind =
-                            userIds.Select(id => $"https://graph.microsoft.com/v1.0/users/{id}").ToArray();
-                    }
-                }
-
-                if (group.Members?.Any() == true)
-                {
-                    var userIds = new HashSet<string>();
-                    foreach (var member in group.Members)
-                    {
-                        var memberEntry = users.FindMember(member);
-
-                        if (memberEntry == null)
-                        {
-                            _logger.Warning($"Failed to create group: {group.MailNickname}. Member not found: {member.Name}");
-                        }
-                        else
-                        {
-                            userIds.Add(memberEntry.Id);
-                        }
-                    }
-
-                    if (userIds.Any())
-                    {
-                        graphGroup.MembersODataBind =
-                            userIds.Select(id => $"https://graph.microsoft.com/v1.0/users/{id}").ToArray();
-                    }
-                }
-
-                batchEntries.Add(new GraphBatchRequest(group.MailNickname, "groups", HttpMethod.Post, graphGroup));
             }
 
             var tokenResult = await _accessTokenManager.GetGraphToken();
@@ -119,7 +57,6 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                             await result.Value.Content.ReadAsStreamAsync());
 
                     originalGroup.GroupId = createdGroup.Id;
-                    
                     successfullyCreatedGroups.Add(originalGroup);
                 }
                 else
@@ -129,6 +66,82 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             }
 
             return successfullyCreatedGroups;
+        }
+
+        private bool tryCreateGroupBatch(UserEntryCollection users, Dictionary<string, UnifiedGroupEntry> groupLookup, UnifiedGroupEntry @group, out GroupExtended graphGroup)
+        {
+            graphGroup = null;
+            if (groupLookup.ContainsKey(@group.MailNickname))
+            {
+                _logger.Warning(
+                    $"Trying to create 2 groups with same mail nickname ({@group.MailNickname}). Only the first will be created.");
+                return false;
+            }
+
+            groupLookup.Add(@group.MailNickname, @group);
+            graphGroup = new GroupExtended
+            {
+                DisplayName = @group.DisplayName,
+                MailNickname = @group.MailNickname,
+                Visibility = @group.IsPrivate ? "Private" : "Public",
+                MailEnabled = true,
+                SecurityEnabled = false,
+                GroupTypes = new List<string> {"Unified"}
+            };
+
+            if (@group.Owners?.Any() == true)
+            {
+                var userIds = new HashSet<string>();
+                foreach (var owner in @group.Owners)
+                {
+                    var ownerEntry = users.FindMember(owner);
+
+                    if (ownerEntry == null)
+                    {
+                        _logger.Warning($"Failed to create group: {@group.MailNickname}. Owner not found: {owner.Name}");
+                        // we want all or nothing
+                        return false;
+                    }
+                    else
+                    {
+                        userIds.Add(ownerEntry.Id);
+                    }
+                }
+
+                if (userIds.Any())
+                {
+                    graphGroup.OwnersODataBind =
+                        userIds.Select(id => $"https://graph.microsoft.com/v1.0/users/{id}").ToArray();
+                }
+            }
+
+            if (@group.Members?.Any() == true)
+            {
+                var userIds = new HashSet<string>();
+                foreach (var member in @group.Members)
+                {
+                    var memberEntry = users.FindMember(member);
+
+                    if (memberEntry == null)
+                    {
+                        _logger.Warning($"Failed to create group: {@group.MailNickname}. Member not found: {member.Name}");
+                        // we want all or nothing
+                        return false;
+                    }
+                    else
+                    {
+                        userIds.Add(memberEntry.Id);
+                    }
+                }
+
+                if (userIds.Any())
+                {
+                    graphGroup.MembersODataBind =
+                        userIds.Select(id => $"https://graph.microsoft.com/v1.0/users/{id}").ToArray();
+                }
+            }
+
+            return true;
         }
 
         class GroupExtended : Group
