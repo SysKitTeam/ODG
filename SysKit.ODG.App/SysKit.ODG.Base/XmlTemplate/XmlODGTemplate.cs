@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml.Serialization;
 using SysKit.ODG.Base.XmlTemplate.Model;
+using SysKit.ODG.Base.XmlTemplate.Model.Groups;
 
 namespace SysKit.ODG.Base.XmlTemplate
 {

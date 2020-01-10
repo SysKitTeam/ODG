@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Xml.Serialization;
+﻿using System.Xml.Serialization;
 
-namespace SysKit.ODG.Base.XmlTemplate.Model
+namespace SysKit.ODG.Base.XmlTemplate.Model.Groups
 {
     [XmlType(TypeName = "Group")]
     [XmlInclude(typeof(XmlUnifiedGroup))]
+    [XmlInclude(typeof(XmlTeam))]
     public class XmlGroup
     {
         [XmlAttribute]

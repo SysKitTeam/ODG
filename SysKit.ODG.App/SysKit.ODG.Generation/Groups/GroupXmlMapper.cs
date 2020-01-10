@@ -5,6 +5,7 @@ using System.Text;
 using AutoMapper;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.XmlTemplate.Model;
+using SysKit.ODG.Base.XmlTemplate.Model.Groups;
 
 namespace SysKit.ODG.Generation.Groups
 {

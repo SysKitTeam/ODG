@@ -9,6 +9,7 @@ using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.SampleData;
 using SysKit.ODG.Base.Utils;
 using SysKit.ODG.Base.XmlTemplate.Model;
+using SysKit.ODG.Base.XmlTemplate.Model.Groups;
 
 namespace SysKit.ODG.Generation.Groups
 {

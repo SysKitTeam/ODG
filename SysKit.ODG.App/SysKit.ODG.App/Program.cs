@@ -14,6 +14,7 @@ using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.XmlTemplate;
 using SysKit.ODG.Base.XmlTemplate.Model;
+using SysKit.ODG.Base.XmlTemplate.Model.Groups;
 using SysKit.ODG.Generation;
 using Unity;
 using Unity.Lifetime;
@@ -33,53 +34,101 @@ namespace SysKit.ODG.App
                 //{
                 //    NumberOfUsers = 10000
                 //},
-                Users = new XmlUser[1]
+                Users = new []
                 {
                     new XmlUser
                     {
-                        Name = "dino.test.userich1"
+                        Name = "dino.test"
+                    },
+                    new XmlUser
+                    {
+                        Name = "dino.test1"
+                    },
+                    new XmlUser
+                    {
+                        Name = "dino.test2"
                     }
                 },
-                Groups = new XmlGroup[4]
+                Groups = new []
                 {
-                    new XmlGroup
-                    {
-                        Name = "test.grupica"
-                    },
                     new XmlUnifiedGroup
                     {
-                        Name = "nova.test.grupica1234",
-                        DisplayName = "Grupica sa memberima",
+                        Name = "Grupa sa ownerom",
+                        DisplayName = "Grupica sa non mod admin ownerom",
+                        Owners = new []
+                        {
+                            new XmlMember
+                            {
+                                Name = "dino.test"
+                            }
+                        },
+                        IsPrivate = true
+                    },
+                    new XmlTeam
+                    {
+                        Name = "ODG Team",
+                        DisplayName = "Team napravljen sa ODG",
+                        Owners = new []
+                        {
+                            new XmlMember
+                            {
+                                Name = "dino.test"
+                            }
+                        },
                         Members = new []
                         {
                             new XmlMember
                             {
-                                Name = "dino.test.userich1"
+                                Name = "dino.test1"
+                            },
+                            new XmlMember
+                            {
+                                Name = "dino.test2"
+                            }
+                        },
+                        Channels = new []
+                        {
+                            new XmlTeamChannel
+                            {
+                                DisplayName = "Standard channel"
+                            },
+                            new XmlTeamChannel
+                            {
+                                DisplayName = "Private channel",
+                                IsPrivate = true,
+                                Owners = new []
+                                {
+                                    new XmlMember
+                                    {
+                                        Name = "dino.test1"
+                                    }
+                                },
+                                Members = new []
+                                {
+                                    new XmlMember
+                                    {
+                                        Name = "dino.test1"
+                                    },
+                                    new XmlMember
+                                    {
+                                        Name = "dino.test2"
+                                    }
+                                }
                             }
                         }
-                    },
-                    new XmlUnifiedGroup
-                    {
-                        Name = "unified.test.odg",
-                        DisplayName = "Dupla ODG Grupa"
-                    },
-                    new XmlUnifiedGroup
-                    {
-                        Name = "unified.test.odg1",
-                        DisplayName = "Dupla ODG Grupa"
-                    }
+                    } 
                 }
             };
 
             var xmlService = new XmlSpecificationService();
-            xmlService.SerializeSpecification(testTemplate, @"C:\Users\dino.kacavenda\test.xml");
-            //var template = xmlService.DeserializeSpecification(@"C:\Users\dino.kacavenda\test.xml");
+            //xmlService.SerializeSpecification(testTemplate, @"C:\Users\dino.kacavenda\test.xml");
+            var template = xmlService.DeserializeSpecification(@"C:\Users\dino.kacavenda\test.xml");
 
             var unityContainer = UnityManager.CreateUnityContainer();
             var accessTokenFactory = unityContainer.Resolve<IAccessTokenManagerFactory>();
             var accessTokenManager = accessTokenFactory.CreateAccessTokenManager(userCredentials);
 
-            var generationOptions = new GenerationOptions(accessTokenManager, tenantDomain, defaultPassword, testTemplate);
+            var generationOptions = new GenerationOptions(accessTokenManager, tenantDomain, defaultPassword, template);
 
             var generationService = unityContainer.Resolve<IGenerationService>();
             generationService.AddGenerationTask("User Creation", unityContainer.Resolve<IGenerationTask>("userTask"));
