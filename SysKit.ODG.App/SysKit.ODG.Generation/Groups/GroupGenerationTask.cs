@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Serilog;
+using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.Office365Service;
@@ -37,7 +38,8 @@ namespace SysKit.ODG.Generation.Groups
             }
 
             var createdGroups = await groupGraphApiClient.CreateUnifiedGroups(groups, users);
-            _logger.Information($"Created {createdGroups.Count}/{groups.Count}");
+            var createdTeams = await groupGraphApiClient.CreateTeams(createdGroups.Where(g => g.IsTeam).Cast<TeamEntry>(), users);
+            _logger.Information($"Created {createdGroups.Count} groups && {createdTeams.Count} teams");
         }
     }
 }

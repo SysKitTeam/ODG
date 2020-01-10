@@ -56,6 +56,7 @@ namespace SysKit.ODG.Generation.Groups
                 {
                     var teamEntry = _groupXmlMapper.MapToTeamEntry(generationOptions.TenantDomain, team);
                     yield return teamEntry;
+                    continue;
                 }
 
                 if (group is XmlUnifiedGroup unifiedGroup)

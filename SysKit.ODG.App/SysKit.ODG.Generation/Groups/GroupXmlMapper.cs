@@ -23,6 +23,11 @@ namespace SysKit.ODG.Generation.Groups
             var teamEntry = new TeamEntry();
             populateGroupEntry(team, teamEntry);
 
+            if (team.Channels == null || team.Channels.Any() == false)
+            {
+                return teamEntry;
+            }
+
             foreach (var channel in team.Channels)
             {
                 var channelEntry = new TeamChannelEntry(channel.DisplayName, channel.IsPrivate);

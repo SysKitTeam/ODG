@@ -16,6 +16,8 @@ namespace SysKit.ODG.Base.DTO.Generation
         {
             DisplayName = displayName;
             IsPrivate = isPrivate;
+            Owners = new List<MemberEntry>();
+            Members = new List<MemberEntry>();
         }
     }
 }

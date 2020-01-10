@@ -139,7 +139,12 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
             {
                 var httpRequestMessage = new HttpRequestMessage(entry.Value.Method, createUrl(entry.Value.RelativeUrl));
 
-                if (entry.Value.Content != null)
+                if (entry.Value.Content is string jsonContent)
+                {
+                    httpRequestMessage.Content = new StringContent(jsonContent, Encoding.UTF8,
+                        "application/json");
+                }
+                else if (entry.Value.Content != null)
                 {
                     httpRequestMessage.Content = new StringContent(JsonConvert.SerializeObject(entry.Value.Content), Encoding.UTF8,
                         "application/json");

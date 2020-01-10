@@ -30,13 +30,12 @@ namespace SysKit.ODG.App
             var userCredentials = new SimpleUserCredentials("admin@M365B117306.onmicrosoft.com", "hC7q95955D");
             var testTemplate = new XmlODGTemplate
             {
-                RandomOptions = new XmlRandomOptions
-                {
-                    NumberOfUnifiedGroups = 5,
-                    NumberOfTeams = 3,
-                    MaxNumberOfOwnersPerGroup = 3,
-                    MaxNumberOfMembersPerGroup = 10
-                },
+                //RandomOptions = new XmlRandomOptions
+                //{
+                //    NumberOfTeams = 5,
+                //    MaxNumberOfOwnersPerGroup = 3,
+                //    MaxNumberOfMembersPerGroup = 10
+                //},
                 Users = new []
                 {
                     new XmlUser
@@ -54,30 +53,22 @@ namespace SysKit.ODG.App
                 },
                 Groups = new []
                 {
-                    new XmlUnifiedGroup
+                    new XmlTeam
                     {
-                        Name = "Grupa sa ownerom",
-                        DisplayName = "Grupica sa non mod admin ownerom",
-                        Owners = new []
+                        Name = "point.new.dino1",
+                        DisplayName = "AAAB nova iteracija samo sa memberima",
+                        Members = new []
                         {
                             new XmlMember
                             {
                                 Name = "dino.test"
                             }
-                        },
-                        IsPrivate = true
+                        }
                     },
                     new XmlTeam
                     {
-                        Name = "ODG Team",
-                        DisplayName = "Team napravljen sa ODG",
-                        Owners = new []
-                        {
-                            new XmlMember
-                            {
-                                Name = "dino.test"
-                            }
-                        },
+                        Name = "point.new.dino2",
+                        DisplayName = "AAAB nova iteracija samo sa memberima i public channel",
                         Members = new []
                         {
                             new XmlMember
@@ -93,30 +84,57 @@ namespace SysKit.ODG.App
                         {
                             new XmlTeamChannel
                             {
-                                DisplayName = "Standard channel"
+                                DisplayName = "Custom channel"
+                            }
+                        }
+                    },
+                    new XmlTeam
+                    {
+                        Name = "point.new.dino7",
+                        DisplayName = "Skroz novi team",
+                        Members = new []
+                        {
+                            new XmlMember
+                            {
+                                Name = "dino.test1"
+                            },
+                            new XmlMember
+                            {
+                                Name = "dino.test2"
+                            },
+                            new XmlMember
+                            {
+                                Name = "adelev@M365B117306.onmicrosoft.com"
+                            }
+                        },
+                        Channels = new []
+                        {
+                            new XmlTeamChannel
+                            {
+                                DisplayName = "Custom channel"
                             },
                             new XmlTeamChannel
                             {
-                                DisplayName = "Private channel",
+                                DisplayName = "Custom Private channel",
                                 IsPrivate = true,
                                 Owners = new []
                                 {
                                     new XmlMember
                                     {
-                                        Name = "dino.test1"
-                                    }
-                                },
-                                Members = new []
-                                {
-                                    new XmlMember
-                                    {
-                                        Name = "dino.test1"
-                                    },
-                                    new XmlMember
-                                    {
-                                        Name = "dino.test2"
+                                        Name = "admin@M365B117306.onmicrosoft.com"
                                     }
                                 }
+                                //Members = new []
+                                //{
+                                //    //new XmlMember
+                                //    //{
+                                //    //    Name = "dino.test1"
+                                //    //},
+                                //    new XmlMember
+                                //    {
+                                //        Name = "dino.test2"
+                                //    }
+                                //}
                             }
                         }
                     } 
@@ -134,7 +152,7 @@ namespace SysKit.ODG.App
             var generationOptions = new GenerationOptions(accessTokenManager, tenantDomain, defaultPassword, template);
 
             var generationService = unityContainer.Resolve<IGenerationService>();
-            //generationService.AddGenerationTask("User Creation", unityContainer.Resolve<IGenerationTask>("userTask"));
+            generationService.AddGenerationTask("User Creation", unityContainer.Resolve<IGenerationTask>("userTask"));
             generationService.AddGenerationTask("Group Creation", unityContainer.Resolve<IGenerationTask>("groupTask"));
             generationService.Start(generationOptions).GetAwaiter().GetResult();
 
