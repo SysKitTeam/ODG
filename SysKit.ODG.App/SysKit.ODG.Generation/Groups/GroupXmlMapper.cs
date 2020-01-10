@@ -18,10 +18,34 @@ namespace SysKit.ODG.Generation.Groups
             _mapper = mapper;
         }
 
+        public TeamEntry MapToTeamEntry(string tenantDomainName, XmlTeam team)
+        {
+            var teamEntry = new TeamEntry();
+            populateGroupEntry(team, teamEntry);
+
+            foreach (var channel in team.Channels)
+            {
+                var channelEntry = new TeamChannelEntry(channel.DisplayName, channel.IsPrivate);
+                if (channelEntry.IsPrivate)
+                {
+                    channelEntry.Members = channel.Members?.Select(m => new MemberEntry(m.Name)).ToList();
+                    channelEntry.Owners = channel.Owners?.Select(m => new MemberEntry(m.Name)).ToList();
+                }
+
+                teamEntry.Channels.Add(channelEntry);
+            }
+
+            return teamEntry;
+        }
+
         public UnifiedGroupEntry MapToUnifiedGroupEntry(string tenantDomainName, XmlUnifiedGroup unifiedGroup)
         {
             var groupEntry = new UnifiedGroupEntry();
+            return populateGroupEntry(unifiedGroup, groupEntry);
+        }
 
+        private UnifiedGroupEntry populateGroupEntry(XmlUnifiedGroup unifiedGroup, UnifiedGroupEntry groupEntry)
+        {
             groupEntry.DisplayName = unifiedGroup.DisplayName;
             groupEntry.MailNickname = unifiedGroup.Name;
             groupEntry.IsPrivate = unifiedGroup.IsPrivate;

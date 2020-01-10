@@ -33,6 +33,7 @@ namespace SysKit.ODG.App
                 RandomOptions = new XmlRandomOptions
                 {
                     NumberOfUnifiedGroups = 5,
+                    NumberOfTeams = 3,
                     MaxNumberOfOwnersPerGroup = 3,
                     MaxNumberOfMembersPerGroup = 10
                 },
@@ -123,7 +124,7 @@ namespace SysKit.ODG.App
             };
 
             var xmlService = new XmlSpecificationService();
-            //xmlService.SerializeSpecification(testTemplate, @"C:\Users\dino.kacavenda\test.xml");
+            xmlService.SerializeSpecification(testTemplate, @"C:\Users\dino.kacavenda\test.xml");
             var template = xmlService.DeserializeSpecification(@"C:\Users\dino.kacavenda\test.xml");
 
             var unityContainer = UnityManager.CreateUnityContainer();
@@ -133,7 +134,7 @@ namespace SysKit.ODG.App
             var generationOptions = new GenerationOptions(accessTokenManager, tenantDomain, defaultPassword, template);
 
             var generationService = unityContainer.Resolve<IGenerationService>();
-            generationService.AddGenerationTask("User Creation", unityContainer.Resolve<IGenerationTask>("userTask"));
+            //generationService.AddGenerationTask("User Creation", unityContainer.Resolve<IGenerationTask>("userTask"));
             generationService.AddGenerationTask("Group Creation", unityContainer.Resolve<IGenerationTask>("groupTask"));
             generationService.Start(generationOptions).GetAwaiter().GetResult();
 

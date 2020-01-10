@@ -43,23 +43,10 @@ namespace SysKit.ODG.Base.Office365
         /// <inheritdoc />
         public IEnumerable<MemberEntry> GetRandomEntries(int number)
         {
-            var usedEntries = new HashSet<int>();
-            var usedEntryValues = _userEntriesLookup.Values.ToList();
-            var maxValue = _userEntriesLookup.Count;
-            var numberOfEntries = Math.Min(number, maxValue);
-            int counter = 0;
-
-            while (counter < numberOfEntries)
+            var values = _userEntriesLookup.Values.ToList();
+            foreach (var entryValue in values.GetRandom(number))
             {
-                int randomIndex;
-                do
-                {
-                    randomIndex = RandomThreadSafeGenerator.Next(maxValue);
-                } while (usedEntries.Contains(randomIndex));
-
-                usedEntries.Add(randomIndex);
-                counter++;
-                yield return new MemberEntry(usedEntryValues[randomIndex].UserPrincipalName);
+                yield return new MemberEntry(entryValue.UserPrincipalName);
             }
         }
     }

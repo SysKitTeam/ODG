@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using AutoMapper;
+using SysKit.ODG.Base;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Interfaces.Generation;
@@ -29,7 +30,7 @@ namespace SysKit.ODG.Generation.Groups
             _groupXmlMapper = new GroupXmlMapper(mapper);
         }
 
-        public IEnumerable<UnifiedGroupEntry> CreateUnifiedGroups(GenerationOptions generationOptions, IUserEntryCollection userEntryCollection)
+        public IEnumerable<UnifiedGroupEntry> CreateUnifiedGroupsAndTeams(GenerationOptions generationOptions, IUserEntryCollection userEntryCollection)
         {
             foreach (var group in createXmlUnifiedGroups(generationOptions))
             {
@@ -51,6 +52,12 @@ namespace SysKit.ODG.Generation.Groups
 
             foreach (var group in generationOptions.Template.Groups)
             {
+                if (group is XmlTeam team)
+                {
+                    var teamEntry = _groupXmlMapper.MapToTeamEntry(generationOptions.TenantDomain, team);
+                    yield return teamEntry;
+                }
+
                 if (group is XmlUnifiedGroup unifiedGroup)
                 {
                     var groupEntry = _groupXmlMapper.MapToUnifiedGroupEntry(generationOptions.TenantDomain, unifiedGroup);
@@ -70,12 +77,49 @@ namespace SysKit.ODG.Generation.Groups
             {
                 yield return createSampleUnifiedGroupEntry(generationOptions, userEntryCollection);
             }
+
+            for (int i = 0; i < generationOptions.Template.RandomOptions.NumberOfTeams; i++)
+            {
+                yield return createSampleTeamEntry(generationOptions, userEntryCollection);
+            }
+        }
+
+        private TeamEntry createSampleTeamEntry(GenerationOptions generationOptions, IUserEntryCollection userEntryCollection)
+        {
+            var sampleTeam = new TeamEntry();
+            populateSampleUnifiedGroupProperties(generationOptions, userEntryCollection, sampleTeam);
+            var maxChannels = 10;
+            var currentTeamChannels = RandomThreadSafeGenerator.Next(maxChannels);
+
+            for (int i = 0; i < currentTeamChannels; i++)
+            {
+                var isPrivateChannel = RandomThreadSafeGenerator.Next(0, 100) > 80;
+                var channelName = _sampleDataService.GetRandomValue(_sampleDataService.GroupNames);
+                var channelEntry = new TeamChannelEntry(channelName, isPrivateChannel);
+
+                if (channelEntry.IsPrivate)
+                {
+                    // for testing purposes I want both channel owners and members to be from group members
+                    channelEntry.Owners = sampleTeam.Members.GetRandom(RandomThreadSafeGenerator.Next(3)).ToList();
+                    channelEntry.Members = sampleTeam.Members.GetRandom(RandomThreadSafeGenerator.Next(5)).ToList();
+                }
+
+                sampleTeam.Channels.Add(channelEntry);
+            }
+
+            return sampleTeam;
         }
 
         private UnifiedGroupEntry createSampleUnifiedGroupEntry(GenerationOptions generationOptions, IUserEntryCollection userEntryCollection)
         {
             var sampleGroup = new UnifiedGroupEntry();
+            populateSampleUnifiedGroupProperties(generationOptions, userEntryCollection, sampleGroup);
+            return sampleGroup;
+        }
 
+        private void populateSampleUnifiedGroupProperties(GenerationOptions generationOptions,
+            IUserEntryCollection userEntryCollection, UnifiedGroupEntry sampleGroup)
+        {
             populateSampleGroupProperties(sampleGroup, userEntryCollection, generationOptions.Template.RandomOptions);
             sampleGroup.IsPrivate = RandomThreadSafeGenerator.Next(0, 100) > 70;
 
@@ -91,7 +135,6 @@ namespace SysKit.ODG.Generation.Groups
 
             sampleGroup.MailNickname = groupMailNick;
             _usedGroupUPNs.Add(groupMailNick);
-            return sampleGroup;
         }
 
         private void populateSampleGroupProperties(GroupEntry groupEntry, IUserEntryCollection userEntryCollection, XmlRandomOptions generationOptions)

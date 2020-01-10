@@ -29,7 +29,7 @@ namespace SysKit.ODG.Generation.Groups
             var groupGraphApiClient = _graphApiClientFactory.CreateGroupGraphApiClient(options.UserAccessTokenManager);
             var users = await userGraphApiClient.GetAllTenantUsers(options.TenantDomain);
 
-            var groups = _groupDataGeneration.CreateUnifiedGroups(options, users).ToList();
+            var groups = _groupDataGeneration.CreateUnifiedGroupsAndTeams(options, users).ToList();
 
             if (groups.Any() == false)
             {
