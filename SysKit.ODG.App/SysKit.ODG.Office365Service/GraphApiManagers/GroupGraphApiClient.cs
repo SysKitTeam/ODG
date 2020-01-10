@@ -135,16 +135,18 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
             await executeCreateTeams(teams);
 
-            int waitTime = 30;
-            while (failedTeams.Any())
+            int waitTime = 10;
+            int attempts = 0;
+            while (failedTeams.Any() || attempts >= 3)
             {
                 var toRepeat = failedTeams.ToList();
                 failedTeams = new ConcurrentBag<TeamEntry>();
                 // group provisioning was not finished, so lts wait and try again
                 _logger.Information($"Retry team creation for {toRepeat.Count}, time: {waitTime}");
-                await Task.Delay(TimeSpan.FromSeconds(30));
+                await Task.Delay(TimeSpan.FromSeconds(waitTime));
                 await executeCreateTeams(toRepeat);
                 waitTime += 15;
+                attempts++;
             }
 
             return successfullyCreatedTeams.ToList();
@@ -192,7 +194,8 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             if (team?.Channels.Any() == true)
             {
                 graphTeam.Channels = new Beta.TeamChannelsCollectionPage();
-                foreach (var channel in team.Channels)
+                // TODO: private channels are not supported currently. This will hopefully change :)
+                foreach (var channel in team.Channels.Where(c => !c.IsPrivate))
                 {
                     var newChannel = new Beta.Channel()
                     {
@@ -205,55 +208,52 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     if (channel.IsPrivate)
                     {
                         newChannel.Members = new Beta.ChannelMembersCollectionPage();
-                        foreach (var member in channel.Owners)
-                        {
-                            var memberEntry = users.FindMember(member);
-                            if (memberEntry == null)
-                            {
-                                _logger.Warning($"Failed to create team: {team.MailNickname}. User not found: {member.Name}");
-                                // we want all or nothing
-                                return false;
-                            }
 
-                            newChannel.Members.Add(new Beta.AadUserConversationMember
-                            {
-                                AdditionalData = new Dictionary<string, object>()
-                                {
-                                    {"user@odata.bind",$"https://graph.microsoft.com/beta/users/{memberEntry.Id}"}
-                                },
-                                Roles = new List<String>()
-                                {
-                                    "owner"
-                                }
-                            });
-                        }
+                        if (!tryCreateChannelMemberCollection(users, channel, "owner", out var owners)) return false;
+                        owners.ForEach(o => newChannel.Members.Add(o));
 
-                        //foreach (var member in channel.Members)
-                        //{
-                        //    var memberEntry = users.FindMember(member);
-                        //    if (memberEntry == null)
-                        //    {
-                        //        _logger.Warning($"Failed to create team: {team.MailNickname}. User not found: {member.Name}");
-                        //        // we want all or nothing
-                        //        return false;
-                        //    }
-
-                        //    newChannel.Members.Add(new Beta.AadUserConversationMember
-                        //    {
-                        //        AdditionalData = new Dictionary<string, object>()
-                        //        {
-                        //            {"user@odata.bind",$"https://graph.microsoft.com/beta/users/{memberEntry.Id}"}
-                        //        },
-                        //        Roles = new List<String>()
-                        //        {
-                        //            "member"
-                        //        }
-                        //    });
-                        //}
+                        if (!tryCreateChannelMemberCollection(users, channel, "member", out var members)) return false;
+                        members.ForEach(o => newChannel.Members.Add(o));
                     }
 
                     graphTeam.Channels.Add(newChannel);
                 }
+            }
+
+            return true;
+        }
+
+        private bool tryCreateChannelMemberCollection(UserEntryCollection users, IEnumerable<MemberEntry> memberEntries, string role, out List<Beta.AadUserConversationMember> members)
+        {
+            members = new List<Beta.AadUserConversationMember>();
+
+            if (memberEntries == null)
+            {
+                // we do nothing
+                return true;
+            }
+
+            foreach (var member in memberEntries)
+            {
+                var memberEntry = users.FindMember(member);
+                if (memberEntry == null)
+                {
+                    _logger.Warning($"Failed to create team. User not found: {member.Name}");
+                    // we want all or nothing
+                    return false;
+                }
+
+                members.Add(new Beta.AadUserConversationMember
+                {
+                    AdditionalData = new Dictionary<string, object>()
+                    {
+                        {"user@odata.bind", $"https://graph.microsoft.com/beta/users/{memberEntry.Id}"}
+                    },
+                    Roles = new List<String>()
+                    {
+                        role
+                    }
+                });
             }
 
             return true;
@@ -268,30 +268,37 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         /// <returns></returns>
         private bool tryCreateMembersOwnersBindings(UnifiedGroupEntry @group, IGroupMembership graphGroup, UserEntryCollection users)
         {
-            //if (@group.Owners?.Any() == true)
+            if (@group.Owners?.Any() == true)
+            {
+                var userIds = new HashSet<string>();
+                foreach (var owner in @group.Owners)
+                {
+                    var ownerEntry = users.FindMember(owner);
+
+                    if (ownerEntry == null)
+                    {
+                        _logger.Warning($"Failed to create group: {@group.MailNickname}. Owner not found: {owner.Name}");
+                        // we want all or nothing
+                        return false;
+                    }
+                    else
+                    {
+                        userIds.Add(ownerEntry.Id);
+                    }
+                }
+
+                if (userIds.Any())
+                {
+                    graphGroup.OwnersODataBind =
+                        userIds.Select(id => $"https://graph.microsoft.com/v1.0/users/{id}").ToArray();
+                }
+            }
+
+            //var currentUserUsername = _accessTokenManager.GetUsernameFromToken();
+            //if (!@group.Owners.Any(x => x.Name == currentUserUsername))
             //{
-            //    var userIds = new HashSet<string>();
-            //    foreach (var owner in @group.Owners)
-            //    {
-            //        var ownerEntry = users.FindMember(owner);
-
-            //        if (ownerEntry == null)
-            //        {
-            //            _logger.Warning($"Failed to create group: {@group.MailNickname}. Owner not found: {owner.Name}");
-            //            // we want all or nothing
-            //            return false;
-            //        }
-            //        else
-            //        {
-            //            userIds.Add(ownerEntry.Id);
-            //        }
-            //    }
-
-            //    if (userIds.Any())
-            //    {
-            //        graphGroup.OwnersODataBind =
-            //            userIds.Select(id => $"https://graph.microsoft.com/v1.0/users/{id}").ToArray();
-            //    }
+            //    var currentUserEntry = users.FindMember(new MemberEntry(currentUserUsername));
+            //    graphGroup.OwnersODataBind
             //}
 
             if (@group.Members?.Any() == true)

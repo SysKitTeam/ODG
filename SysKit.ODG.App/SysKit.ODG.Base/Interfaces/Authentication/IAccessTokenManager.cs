@@ -8,6 +8,7 @@ namespace SysKit.ODG.Base.Interfaces.Authentication
 {
     public interface IAccessTokenManager
     {
+        string GetUsernameFromToken();
         Task<AuthToken> GetGraphToken();
     }
 }

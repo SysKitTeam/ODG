@@ -65,5 +65,10 @@ namespace SysKit.ODG.Authentication
                 throw;
             }
         }
+
+        public string GetUsernameFromToken()
+        {
+            return _userCredentials.Username;
+        }
     }
 }
