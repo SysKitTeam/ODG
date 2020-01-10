@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using SysKit.ODG.Base.DTO.Generation;
+using SysKit.ODG.Base.Utils;
 using SysKit.ODG.Base.XmlTemplate.Model;
 
 namespace SysKit.ODG.Base.Office365
@@ -11,7 +12,7 @@ namespace SysKit.ODG.Base.Office365
     /// <summary>
     /// Helper class for searching UserEntries returned from Graph API
     /// </summary>
-    public class UserEntryCollection
+    public class UserEntryCollection : IUserEntryCollection
     {
         private readonly Dictionary<string, UserEntry> _userEntriesLookup;
         private readonly string _tenantDomain;
@@ -32,15 +33,34 @@ namespace SysKit.ODG.Base.Office365
             }
         }
 
-        /// <summary>
-        /// Returns UserEntry or null if member is not found
-        /// </summary>
-        /// <param name="member"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public UserEntry FindMember(MemberEntry member)
         {
             var mailNickname = member.Name.Contains("@") ? member.Name : $"{member.Name}@{_tenantDomain}";
             return _userEntriesLookup.TryGetValue(mailNickname, out UserEntry value) ? value : null;
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<MemberEntry> GetRandomEntries(int number)
+        {
+            var usedEntries = new HashSet<int>();
+            var usedEntryValues = _userEntriesLookup.Values.ToList();
+            var maxValue = _userEntriesLookup.Count;
+            var numberOfEntries = Math.Min(number, maxValue);
+            int counter = 0;
+
+            while (counter < numberOfEntries)
+            {
+                int randomIndex;
+                do
+                {
+                    randomIndex = RandomThreadSafeGenerator.Next(maxValue);
+                } while (usedEntries.Contains(randomIndex));
+
+                usedEntries.Add(randomIndex);
+                counter++;
+                yield return new MemberEntry(usedEntryValues[randomIndex].UserPrincipalName);
+            }
         }
     }
 }

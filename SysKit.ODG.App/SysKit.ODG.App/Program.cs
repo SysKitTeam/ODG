@@ -30,10 +30,12 @@ namespace SysKit.ODG.App
             var userCredentials = new SimpleUserCredentials("admin@M365B117306.onmicrosoft.com", "hC7q95955D");
             var testTemplate = new XmlODGTemplate
             {
-                //RandomOptions = new XmlRandomOptions
-                //{
-                //    NumberOfUsers = 10000
-                //},
+                RandomOptions = new XmlRandomOptions
+                {
+                    NumberOfUnifiedGroups = 5,
+                    MaxNumberOfOwnersPerGroup = 3,
+                    MaxNumberOfMembersPerGroup = 10
+                },
                 Users = new []
                 {
                     new XmlUser

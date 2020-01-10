@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using AutoMapper;
@@ -7,6 +8,7 @@ using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.SampleData;
+using SysKit.ODG.Base.Office365;
 using SysKit.ODG.Base.Utils;
 using SysKit.ODG.Base.XmlTemplate.Model;
 using SysKit.ODG.Base.XmlTemplate.Model.Groups;
@@ -27,14 +29,14 @@ namespace SysKit.ODG.Generation.Groups
             _groupXmlMapper = new GroupXmlMapper(mapper);
         }
 
-        public IEnumerable<UnifiedGroupEntry> CreateUnifiedGroups(GenerationOptions generationOptions)
+        public IEnumerable<UnifiedGroupEntry> CreateUnifiedGroups(GenerationOptions generationOptions, IUserEntryCollection userEntryCollection)
         {
             foreach (var group in createXmlUnifiedGroups(generationOptions))
             {
                 yield return group;
             }
 
-            foreach (var group in createRandomUnifiedGroups(generationOptions))
+            foreach (var group in createRandomUnifiedGroups(generationOptions, userEntryCollection))
             {
                 yield return group;
             }
@@ -57,7 +59,7 @@ namespace SysKit.ODG.Generation.Groups
             }
         }
 
-        private IEnumerable<UnifiedGroupEntry> createRandomUnifiedGroups(GenerationOptions generationOptions)
+        private IEnumerable<UnifiedGroupEntry> createRandomUnifiedGroups(GenerationOptions generationOptions, IUserEntryCollection userEntryCollection)
         {
             if (generationOptions.Template.RandomOptions?.NumberOfUnifiedGroups == null)
             {
@@ -66,19 +68,20 @@ namespace SysKit.ODG.Generation.Groups
 
             for (int i = 0; i < generationOptions.Template.RandomOptions.NumberOfUnifiedGroups; i++)
             {
-                yield return createSampleUnifiedGroupEntry(generationOptions);
+                yield return createSampleUnifiedGroupEntry(generationOptions, userEntryCollection);
             }
         }
 
-        private UnifiedGroupEntry createSampleUnifiedGroupEntry(GenerationOptions generationOptions)
+        private UnifiedGroupEntry createSampleUnifiedGroupEntry(GenerationOptions generationOptions, IUserEntryCollection userEntryCollection)
         {
             var sampleGroup = new UnifiedGroupEntry();
 
-            populateSampleGroupProperties(sampleGroup);
+            populateSampleGroupProperties(sampleGroup, userEntryCollection, generationOptions.Template.RandomOptions);
             sampleGroup.IsPrivate = RandomThreadSafeGenerator.Next(0, 100) > 70;
 
             string originalGroupMailNick = Regex.Replace(sampleGroup.DisplayName, @"[^a-z0-9]", "");
-            string groupMailNick = originalGroupMailNick;
+            // sample values have entries that can produce null here
+            string groupMailNick = string.IsNullOrEmpty(originalGroupMailNick) ? "testgroup" : originalGroupMailNick;
 
             int i = 0;
             while (_usedGroupUPNs.Contains(groupMailNick))
@@ -91,9 +94,13 @@ namespace SysKit.ODG.Generation.Groups
             return sampleGroup;
         }
 
-        private void populateSampleGroupProperties(GroupEntry groupEntry)
+        private void populateSampleGroupProperties(GroupEntry groupEntry, IUserEntryCollection userEntryCollection, XmlRandomOptions generationOptions)
         {
             groupEntry.DisplayName = _sampleDataService.GetRandomValue(_sampleDataService.GroupNames);
+            groupEntry.Owners = userEntryCollection.GetRandomEntries(RandomThreadSafeGenerator.Next(generationOptions.MaxNumberOfOwnersPerGroup))
+                .ToList();
+            groupEntry.Members = userEntryCollection.GetRandomEntries(RandomThreadSafeGenerator.Next(generationOptions.MaxNumberOfMembersPerGroup))
+                .ToList();
         }
     }
 }

@@ -14,5 +14,11 @@ namespace SysKit.ODG.Base.XmlTemplate.Model
 
         [XmlElement]
         public int NumberOfUnifiedGroups { get; set; }
+
+        [XmlElement]
+        public int MaxNumberOfOwnersPerGroup { get; set; }
+
+        [XmlElement]
+        public int MaxNumberOfMembersPerGroup { get; set; }
     }
 }

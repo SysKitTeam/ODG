@@ -27,15 +27,15 @@ namespace SysKit.ODG.Generation.Groups
         {
             var userGraphApiClient = _graphApiClientFactory.CreateUserGraphApiClient(options.UserAccessTokenManager);
             var groupGraphApiClient = _graphApiClientFactory.CreateGroupGraphApiClient(options.UserAccessTokenManager);
+            var users = await userGraphApiClient.GetAllTenantUsers(options.TenantDomain);
 
-            var groups = _groupDataGeneration.CreateUnifiedGroups(options).ToList();
+            var groups = _groupDataGeneration.CreateUnifiedGroups(options, users).ToList();
 
             if (groups.Any() == false)
             {
                 return;
             }
 
-            var users = await userGraphApiClient.GetAllTenantUsers(options.TenantDomain);
             var createdGroups = await groupGraphApiClient.CreateUnifiedGroups(groups, users);
             _logger.Information($"Created {createdGroups.Count}/{groups.Count}");
         }
