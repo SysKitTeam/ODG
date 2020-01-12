@@ -60,5 +60,10 @@ namespace SysKit.ODG.Generation.Groups
 
             return groupEntry;
         }
+
+        private void validate(XmlUnifiedGroup xmlGroup)
+        {
+            // TODO: private channel at least one owner
+        }
     }
 }

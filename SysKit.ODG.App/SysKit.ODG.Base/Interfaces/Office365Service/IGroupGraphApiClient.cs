@@ -24,5 +24,13 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         /// <param name="users"></param>
         /// <returns></returns>
         Task<List<TeamEntry>> CreateTeamsFromGroups(IEnumerable<TeamEntry> teams, UserEntryCollection users);
+
+        /// <summary>
+        /// Creates private channels for existing groups
+        /// </summary>
+        /// <param name="teams"></param>
+        /// <param name="users"></param>
+        /// <returns></returns>
+        Task CreatePrivateChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users);
     }
 }

@@ -153,6 +153,38 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             return successfullyCreatedTeams.ToList();
         }
 
+        public async Task CreatePrivateChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users)
+        {
+            var batchEntries = new List<GraphBatchRequest>();
+
+            var i = 0;
+            foreach (var team in teams)
+            {
+                if (team?.Channels?.Any() != true)
+                {
+                    continue;
+                }
+
+                foreach (var teamChannelEntry in team.Channels?.Where(c => c.IsPrivate))
+                {
+                    if (tryCreateChannel(users, teamChannelEntry, out var graphChannel))
+                    {
+                        batchEntries.Add(new GraphBatchRequest($"{++i}", $"teams/{team.GroupId}/channels", HttpMethod.Post, graphChannel));
+                    }
+                }
+            }
+
+            var results = await _httpProvider.SendBatchAsync(batchEntries, _accessTokenManager, true);
+            foreach (var result in results)
+            {
+                if (!result.Value.IsSuccessStatusCode)
+                {
+                    // TODO: better handling
+                    _logger.Warning("Failed to create channel");
+                }
+            }
+        }
+
         #region Helpers
 
         private bool tryCreateGroupBatch(UserEntryCollection users, Dictionary<string, UnifiedGroupEntry> groupLookup, UnifiedGroupEntry @group, CreatedGroupsResult createResult, out GroupExtended graphGroup)
@@ -198,27 +230,35 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 // TODO: private channels are not supported currently. This will hopefully change :)
                 foreach (var channel in team.Channels.Where(c => !c.IsPrivate))
                 {
-                    var newChannel = new Beta.Channel()
-                    {
-                        DisplayName = channel.DisplayName,
-                        MembershipType = channel.IsPrivate
-                            ? Beta.ChannelMembershipType.Private
-                            : Beta.ChannelMembershipType.Standard
-                    };
-
-                    if (channel.IsPrivate)
-                    {
-                        newChannel.Members = new Beta.ChannelMembersCollectionPage();
-
-                        if (!tryCreateChannelMemberCollection(users, channel, "owner", out var owners)) return false;
-                        owners.ForEach(o => newChannel.Members.Add(o));
-
-                        if (!tryCreateChannelMemberCollection(users, channel, "member", out var members)) return false;
-                        members.ForEach(o => newChannel.Members.Add(o));
-                    }
-
+                    if (!tryCreateChannel(users, channel, out var newChannel)) return false;
                     graphTeam.Channels.Add(newChannel);
                 }
+            }
+
+            return true;
+        }
+
+        private bool tryCreateChannel(UserEntryCollection users, TeamChannelEntry channel, out Beta.Channel newChannel)
+        {
+            newChannel = new Beta.Channel()
+            {
+                DisplayName = channel.DisplayName,
+                MembershipType = channel.IsPrivate
+                    ? Beta.ChannelMembershipType.Private
+                    : Beta.ChannelMembershipType.Standard
+            };
+
+            if (channel.IsPrivate)
+            {
+                var channelMembers = new Beta.ChannelMembersCollectionPage();
+
+                if (!tryCreateChannelMemberCollection(users, channel.Owners, "owner", out var owners)) return false;
+                owners.ForEach(o => channelMembers.Add(o));
+
+                if (!tryCreateChannelMemberCollection(users, channel.Members, "member", out var members)) return false;
+                members.ForEach(o => channelMembers.Add(o));
+
+                newChannel.Members = channelMembers;
             }
 
             return true;
@@ -248,7 +288,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 {
                     AdditionalData = new Dictionary<string, object>()
                     {
-                        {"user@odata.bind", $"https://graph.microsoft.com/beta/users/{memberEntry.Id}"}
+                        {"user@odata.bind", $"https://graph.microsoft.com/beta/users('{memberEntry.Id}')"}
                     },
                     Roles = new List<String>()
                     {

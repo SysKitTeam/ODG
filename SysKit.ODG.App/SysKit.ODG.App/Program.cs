@@ -53,45 +53,52 @@ namespace SysKit.ODG.App
                 },
                 Groups = new []
                 {
+                    //new XmlTeam
+                    //{
+                    //    Name = "point.new.dino1",
+                    //    DisplayName = "AAAB nova iteracija samo sa memberima",
+                    //    Members = new []
+                    //    {
+                    //        new XmlMember
+                    //        {
+                    //            Name = "dino.test"
+                    //        }
+                    //    }
+                    //},
+                    //new XmlTeam
+                    //{
+                    //    Name = "point.new.dino2",
+                    //    DisplayName = "AAAB nova iteracija samo sa memberima i public channel",
+                    //    Members = new []
+                    //    {
+                    //        new XmlMember
+                    //        {
+                    //            Name = "dino.test1"
+                    //        },
+                    //        new XmlMember
+                    //        {
+                    //            Name = "dino.test2"
+                    //        }
+                    //    },
+                    //    Channels = new []
+                    //    {
+                    //        new XmlTeamChannel
+                    //        {
+                    //            DisplayName = "Custom channel"
+                    //        }
+                    //    }
+                    //},
                     new XmlTeam
                     {
-                        Name = "point.new.dino1",
-                        DisplayName = "AAAB nova iteracija samo sa memberima",
-                        Members = new []
+                        Name = "point.sunday669",
+                        DisplayName = "Sunday fundy team 669",
+                        Owners = new []
                         {
-                            new XmlMember
-                            {
-                                Name = "dino.test"
-                            }
-                        }
-                    },
-                    new XmlTeam
-                    {
-                        Name = "point.new.dino2",
-                        DisplayName = "AAAB nova iteracija samo sa memberima i public channel",
-                        Members = new []
-                        {
-                            new XmlMember
-                            {
-                                Name = "dino.test1"
-                            },
                             new XmlMember
                             {
                                 Name = "dino.test2"
                             }
                         },
-                        Channels = new []
-                        {
-                            new XmlTeamChannel
-                            {
-                                DisplayName = "Custom channel"
-                            }
-                        }
-                    },
-                    new XmlTeam
-                    {
-                        Name = "point.new.dino7",
-                        DisplayName = "Skroz novi team",
                         Members = new []
                         {
                             new XmlMember
@@ -121,20 +128,16 @@ namespace SysKit.ODG.App
                                 {
                                     new XmlMember
                                     {
-                                        Name = "admin@M365B117306.onmicrosoft.com"
+                                        Name = "dino.test1"
+                                    }
+                                },
+                                Members = new []
+                                {
+                                    new XmlMember
+                                    {
+                                        Name = "dino.test2"
                                     }
                                 }
-                                //Members = new []
-                                //{
-                                //    //new XmlMember
-                                //    //{
-                                //    //    Name = "dino.test1"
-                                //    //},
-                                //    new XmlMember
-                                //    {
-                                //        Name = "dino.test2"
-                                //    }
-                                //}
                             }
                         }
                     } 
