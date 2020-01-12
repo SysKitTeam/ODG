@@ -30,12 +30,14 @@ namespace SysKit.ODG.App
             var userCredentials = new SimpleUserCredentials("admin@M365B117306.onmicrosoft.com", "hC7q95955D");
             var testTemplate = new XmlODGTemplate
             {
-                //RandomOptions = new XmlRandomOptions
-                //{
-                //    NumberOfTeams = 5,
-                //    MaxNumberOfOwnersPerGroup = 3,
-                //    MaxNumberOfMembersPerGroup = 10
-                //},
+                RandomOptions = new XmlRandomOptions
+                {
+                    NumberOfUsers = 10000,
+                    NumberOfUnifiedGroups = 1000,
+                    NumberOfTeams = 100,
+                    MaxNumberOfOwnersPerGroup = 3,
+                    MaxNumberOfMembersPerGroup = 50
+                },
                 Users = new []
                 {
                     new XmlUser
@@ -149,7 +151,7 @@ namespace SysKit.ODG.App
             };
 
             var xmlService = new XmlSpecificationService();
-            xmlService.SerializeSpecification(testTemplate, @"C:\Users\dino.kacavenda\test.xml");
+            //xmlService.SerializeSpecification(testTemplate, @"C:\Users\dino.kacavenda\test.xml");
             var template = xmlService.DeserializeSpecification(@"C:\Users\dino.kacavenda\test.xml");
 
             var unityContainer = UnityManager.CreateUnityContainer();

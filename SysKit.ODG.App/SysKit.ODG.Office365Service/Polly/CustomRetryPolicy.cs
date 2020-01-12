@@ -87,6 +87,12 @@ namespace SysKit.ODG.Office365Service.Polly
 
         private async Task onRetryAsync(Exception error, TimeSpan sleepDuration, int retryAttempt, Context context)
         {
+            if (error is BrokenCircuitException)
+            {
+                _logger.Warning($"Request: {getRequestUrlFromContext(context)} are disabled (attempt {retryAttempt}). Throttle time: {sleepDuration.TotalSeconds}s");
+                return;
+            }
+
             _logger.Warning($"Request: {getRequestUrlFromContext(context)} was throttled (attempt {retryAttempt}). Throttle time: {sleepDuration.TotalSeconds}s");
         }
 

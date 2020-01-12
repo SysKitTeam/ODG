@@ -131,7 +131,7 @@ namespace SysKit.ODG.Generation.Groups
             int i = 0;
             while (_usedGroupUPNs.Contains(groupMailNick))
             {
-                groupMailNick = $"{originalGroupMailNick}.{++i}";
+                groupMailNick = $"{originalGroupMailNick}{++i}";
             }
 
             sampleGroup.MailNickname = groupMailNick;

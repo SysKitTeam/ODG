@@ -138,7 +138,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
             int waitTime = 10;
             int attempts = 0;
-            while (failedTeams.Any() || attempts >= 3)
+            while (failedTeams.Any() || attempts < 3)
             {
                 var toRepeat = failedTeams.ToList();
                 failedTeams = new ConcurrentBag<TeamEntry>();
