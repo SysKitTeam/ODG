@@ -9,7 +9,5 @@ namespace SysKit.ODG.Base.XmlTemplate.Model
         public string Name { get; set; }
         [XmlAttribute]
         public bool AccountDisabled { get; set; }
-        [XmlAttribute]
-        public bool SetUserPhoto { get; set; }
     }
 }

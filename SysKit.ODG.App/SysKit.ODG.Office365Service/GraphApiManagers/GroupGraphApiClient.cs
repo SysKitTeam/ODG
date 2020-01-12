@@ -34,17 +34,17 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         }
 
         /// <inheritdoc />
-        public async Task<List<UnifiedGroupEntry>> CreateUnifiedGroups(IEnumerable<UnifiedGroupEntry> groups, UserEntryCollection users)
+        public async Task<CreatedGroupsResult> CreateUnifiedGroups(IEnumerable<UnifiedGroupEntry> groups, UserEntryCollection users)
         {
+            var createdGroupsResult = new CreatedGroupsResult();
             int groupsProcessed = 0;
             var groupLookup = new Dictionary<string, UnifiedGroupEntry>();
-            var successfullyCreatedGroups = new ConcurrentBag<UnifiedGroupEntry>();
             var batchEntries = new List<GraphBatchRequest>();
 
             int i = 0;
             foreach (var group in groups)
             {
-                if (tryCreateGroupBatch(users, groupLookup, @group, out var graphGroup))
+                if (tryCreateGroupBatch(users, groupLookup, @group, createdGroupsResult, out var graphGroup))
                 {
                     batchEntries.Add(new GraphBatchRequest(group.MailNickname, "groups", HttpMethod.Post, graphGroup));
                 }
@@ -52,7 +52,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
             if (!batchEntries.Any())
             {
-                return new List<UnifiedGroupEntry>();
+                return new CreatedGroupsResult();
             }
 
             Action<Dictionary<string, HttpResponseMessage>> handleBatchResult = results =>
@@ -65,7 +65,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                         var createdGroup = DeserializeGraphObject<Group>(result.Value.Content).GetAwaiter().GetResult();
 
                         originalGroup.GroupId = createdGroup.Id;
-                        successfullyCreatedGroups.Add(originalGroup);
+                        createdGroupsResult.AddGroup(originalGroup);
                     }
                     else
                     {
@@ -80,10 +80,11 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             };
 
             await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult);
-            return successfullyCreatedGroups.ToList();
+            return createdGroupsResult;
         }
 
-        public async Task<List<TeamEntry>> CreateTeams(IEnumerable<TeamEntry> teams, UserEntryCollection users)
+        /// <inheritdoc />
+        public async Task<List<TeamEntry>> CreateTeamsFromGroups(IEnumerable<TeamEntry> teams, UserEntryCollection users)
         {
             var successfullyCreatedTeams = new ConcurrentBag<TeamEntry>();
             var failedTeams = new ConcurrentBag<TeamEntry>();
@@ -154,7 +155,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
         #region Helpers
 
-        private bool tryCreateGroupBatch(UserEntryCollection users, Dictionary<string, UnifiedGroupEntry> groupLookup, UnifiedGroupEntry @group, out GroupExtended graphGroup)
+        private bool tryCreateGroupBatch(UserEntryCollection users, Dictionary<string, UnifiedGroupEntry> groupLookup, UnifiedGroupEntry @group, CreatedGroupsResult createResult, out GroupExtended graphGroup)
         {
             graphGroup = null;
             if (groupLookup.ContainsKey(@group.MailNickname))
@@ -175,7 +176,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 GroupTypes = new List<string> {"Unified"}
             };
 
-            return tryCreateMembersOwnersBindings(group, graphGroup, users);
+            return tryCreateMembersOwnersBindings(group, graphGroup, users, createResult);
         }
 
         private bool tryCreateTeamBatch(UserEntryCollection users, Dictionary<string, TeamEntry> teamLookup, TeamEntry team, out TeamExtended graphTeam)
@@ -266,7 +267,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         /// <param name="graphGroup"></param>
         /// <param name="users"></param>
         /// <returns></returns>
-        private bool tryCreateMembersOwnersBindings(UnifiedGroupEntry @group, IGroupMembership graphGroup, UserEntryCollection users)
+        private bool tryCreateMembersOwnersBindings(UnifiedGroupEntry @group, IGroupMembership graphGroup, UserEntryCollection users, CreatedGroupsResult createResult)
         {
             if (@group.Owners?.Any() == true)
             {
@@ -287,20 +288,21 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     }
                 }
 
+                var currentUserUsername = _accessTokenManager.GetUsernameFromToken();
+                var currentUserEntry = users.FindMember(new MemberEntry(currentUserUsername));
+                if (currentUserEntry != null && !userIds.Contains(currentUserEntry.Id))
+                {
+                    userIds.Add(currentUserEntry.Id);
+                    createResult.AddGroupWhereOwnerWasAdded(currentUserEntry.Id, group);
+                }
+
                 if (userIds.Any())
                 {
                     graphGroup.OwnersODataBind =
                         userIds.Select(id => $"https://graph.microsoft.com/v1.0/users/{id}").ToArray();
                 }
             }
-
-            //var currentUserUsername = _accessTokenManager.GetUsernameFromToken();
-            //if (!@group.Owners.Any(x => x.Name == currentUserUsername))
-            //{
-            //    var currentUserEntry = users.FindMember(new MemberEntry(currentUserUsername));
-            //    graphGroup.OwnersODataBind
-            //}
-
+            
             if (@group.Members?.Any() == true)
             {
                 var userIds = new HashSet<string>();

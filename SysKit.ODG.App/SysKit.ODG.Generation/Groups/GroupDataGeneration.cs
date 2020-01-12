@@ -54,14 +54,14 @@ namespace SysKit.ODG.Generation.Groups
             {
                 if (group is XmlTeam team)
                 {
-                    var teamEntry = _groupXmlMapper.MapToTeamEntry(generationOptions.TenantDomain, team);
+                    var teamEntry = _groupXmlMapper.MapToTeamEntry(team);
                     yield return teamEntry;
                     continue;
                 }
 
                 if (group is XmlUnifiedGroup unifiedGroup)
                 {
-                    var groupEntry = _groupXmlMapper.MapToUnifiedGroupEntry(generationOptions.TenantDomain, unifiedGroup);
+                    var groupEntry = _groupXmlMapper.MapToUnifiedGroupEntry(unifiedGroup);
                     yield return groupEntry;
                 }
             }

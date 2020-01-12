@@ -18,12 +18,12 @@ namespace SysKit.ODG.Generation.Groups
             _mapper = mapper;
         }
 
-        public TeamEntry MapToTeamEntry(string tenantDomainName, XmlTeam team)
+        public TeamEntry MapToTeamEntry(XmlTeam team)
         {
             var teamEntry = new TeamEntry();
             populateGroupEntry(team, teamEntry);
 
-            if (team.Channels == null || team.Channels.Any() == false)
+            if (team.Channels.Any() != true)
             {
                 return teamEntry;
             }
@@ -43,7 +43,7 @@ namespace SysKit.ODG.Generation.Groups
             return teamEntry;
         }
 
-        public UnifiedGroupEntry MapToUnifiedGroupEntry(string tenantDomainName, XmlUnifiedGroup unifiedGroup)
+        public UnifiedGroupEntry MapToUnifiedGroupEntry(XmlUnifiedGroup unifiedGroup)
         {
             var groupEntry = new UnifiedGroupEntry();
             return populateGroupEntry(unifiedGroup, groupEntry);

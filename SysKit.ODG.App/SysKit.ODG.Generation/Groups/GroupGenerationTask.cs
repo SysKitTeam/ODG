@@ -38,8 +38,9 @@ namespace SysKit.ODG.Generation.Groups
             }
 
             var createdGroups = await groupGraphApiClient.CreateUnifiedGroups(groups, users);
-            var createdTeams = await groupGraphApiClient.CreateTeams(createdGroups.Where(g => g.IsTeam).Cast<TeamEntry>(), users);
-            _logger.Information($"Created {createdGroups.Count} groups && {createdTeams.Count} teams");
+            var createdTeams = await groupGraphApiClient.CreateTeamsFromGroups(createdGroups.TeamsToCreate, users);
+            // TODO: private channels
+            // TODO: remove owners
         }
     }
 }
