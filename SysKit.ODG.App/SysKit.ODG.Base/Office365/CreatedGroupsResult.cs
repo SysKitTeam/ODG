@@ -14,7 +14,7 @@ namespace SysKit.ODG.Base.Office365
         /// Groups that didn't have current user as owner. We need to add him to owners so we can create a team from group
         /// Key => userid, Value => group where owner was added
         /// </summary>
-        public readonly ConcurrentDictionary<string, UnifiedGroupEntry> _groupsWithAddedOwners = new ConcurrentDictionary<string, UnifiedGroupEntry>();
+        private readonly ConcurrentDictionary<string, UnifiedGroupEntry> _groupsWithAddedOwners = new ConcurrentDictionary<string, UnifiedGroupEntry>();
 
         public CreatedGroupsResult()
         {
@@ -33,5 +33,8 @@ namespace SysKit.ODG.Base.Office365
 
         public List<TeamEntry> TeamsToCreate => _createdGroups.Where(g => g.IsTeam).Cast<TeamEntry>().ToList();
         public List<UnifiedGroupEntry> CreatedGroups => _createdGroups.ToList();
+
+        public Dictionary<string, UnifiedGroupEntry> GroupsWithAddedOwners =>
+            _groupsWithAddedOwners.ToDictionary(x => x.Key, x => x.Value);
     }
 }

@@ -40,8 +40,10 @@ namespace SysKit.ODG.Generation.Groups
             var createdGroups = await groupGraphApiClient.CreateUnifiedGroups(groups, users);
             var createdTeams = await groupGraphApiClient.CreateTeamsFromGroups(createdGroups.TeamsToCreate, users);
             await groupGraphApiClient.CreatePrivateChannels(createdTeams, users);
-            // TODO: private channels
-            // TODO: remove owners
+
+            // just in case, if there is some provisioning (public channels believed strangely(don't get created))
+            await Task.Delay(TimeSpan.FromSeconds(10));
+            await groupGraphApiClient.RemoveGroupOwners(createdGroups.GroupsWithAddedOwners);
         }
     }
 }

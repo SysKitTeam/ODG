@@ -153,6 +153,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             return successfullyCreatedTeams.ToList();
         }
 
+        /// <inheritdoc />
         public async Task CreatePrivateChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users)
         {
             var batchEntries = new List<GraphBatchRequest>();
@@ -181,6 +182,28 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 {
                     // TODO: better handling
                     _logger.Warning("Failed to create channel");
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task RemoveGroupOwners(Dictionary<string, UnifiedGroupEntry> ownersMap)
+        {
+            var batchEntries = new List<GraphBatchRequest>();
+
+            var i = 0;
+            foreach (var ownerMap in ownersMap)
+            {
+                batchEntries.Add(new GraphBatchRequest($"{++i}", $"/groups/{ownerMap.Value.GroupId}/owners/{ownerMap.Key}/$ref", HttpMethod.Delete));
+            }
+
+            var results = await _httpProvider.SendBatchAsync(batchEntries, _accessTokenManager);
+            foreach (var result in results)
+            {
+                if (!result.Value.IsSuccessStatusCode)
+                {
+                    // TODO: better handling
+                    _logger.Warning("Failed to remove owner");
                 }
             }
         }

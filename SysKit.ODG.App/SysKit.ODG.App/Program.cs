@@ -90,8 +90,8 @@ namespace SysKit.ODG.App
                     //},
                     new XmlTeam
                     {
-                        Name = "point.sunday669",
-                        DisplayName = "Sunday fundy team 669",
+                        Name = "point.monday.blue3",
+                        DisplayName = "Monday blues 3",
                         Owners = new []
                         {
                             new XmlMember
@@ -118,7 +118,11 @@ namespace SysKit.ODG.App
                         {
                             new XmlTeamChannel
                             {
-                                DisplayName = "Custom channel"
+                                DisplayName = "Custom public channel"
+                            },
+                            new XmlTeamChannel
+                            {
+                                DisplayName = "Custom public channel 2"
                             },
                             new XmlTeamChannel
                             {

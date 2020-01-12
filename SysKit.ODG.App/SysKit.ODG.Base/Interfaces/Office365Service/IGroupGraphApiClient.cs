@@ -32,5 +32,12 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         /// <param name="users"></param>
         /// <returns></returns>
         Task CreatePrivateChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users);
+
+        /// <summary>
+        /// Removes group owners. Key =>userId, Value => group from which to remove owner
+        /// </summary>
+        /// <param name="ownersMap"></param>
+        /// <returns></returns>
+        Task RemoveGroupOwners(Dictionary<string, UnifiedGroupEntry> ownersMap);
     }
 }
