@@ -4,17 +4,16 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F8A500B5-9940-47AF-8A55-3AEC09A5890F}</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>SysKit.ODG.App</RootNamespace>
-    <AssemblyName>SysKit.ODG.App</AssemblyName>
+    <ProjectGuid>{D007589C-2428-42F7-A017-3F0C3E00BEB3}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>SysKit.ODG.Office365Service</RootNamespace>
+    <AssemblyName>SysKit.ODG.Office365Service</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -24,7 +23,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -81,11 +79,13 @@
     <Reference Include="Microsoft.Graph, Version=1.21.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Graph.1.21.0\lib\net45\Microsoft.Graph.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Graph.Beta, Version=0.12.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.Graph.Beta.0.12.0-preview\lib\net45\Microsoft.Graph.Beta.dll</HintPath>
+      <Aliases>BetaLib</Aliases>
+    </Reference>
     <Reference Include="Microsoft.Graph.Core, Version=1.19.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Graph.Core.1.19.0\lib\net45\Microsoft.Graph.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Identity.Client, Version=4.7.1.0, Culture=neutral, PublicKeyToken=0a613f4dd989e8ae, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Identity.Client.4.7.1\lib\net45\Microsoft.Identity.Client.dll</HintPath>
     </Reference>
     <Reference Include="microsoft.identitymodel, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.IdentityModel.7.0.0\lib\net35\microsoft.identitymodel.dll</HintPath>
@@ -159,11 +159,11 @@
     <Reference Include="OfficeDevPnP.Core, Version=3.16.1912.0, Culture=neutral, PublicKeyToken=5e633289e95c321a, processorArchitecture=MSIL">
       <HintPath>..\packages\SharePointPnPCoreOnline.3.16.1912\lib\net45\OfficeDevPnP.Core.dll</HintPath>
     </Reference>
+    <Reference Include="Polly, Version=7.0.0.0, Culture=neutral, PublicKeyToken=c8a3ffc3f8f825cc, processorArchitecture=MSIL">
+      <HintPath>..\packages\Polly.7.2.0\lib\net472\Polly.dll</HintPath>
+    </Reference>
     <Reference Include="Serilog, Version=2.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
       <HintPath>..\packages\Serilog.2.9.0\lib\net46\Serilog.dll</HintPath>
-    </Reference>
-    <Reference Include="Serilog.Sinks.Console, Version=4.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
-      <HintPath>..\packages\Serilog.Sinks.Console.4.0.0-dev-00834\lib\net45\Serilog.Sinks.Console.dll</HintPath>
     </Reference>
     <Reference Include="SharePointPnP.IdentityModel.Extensions, Version=1.2.4.0, Culture=neutral, PublicKeyToken=5e633289e95c321a, processorArchitecture=MSIL">
       <HintPath>..\packages\SharePointPnP.IdentityModel.Extensions.1.2.4\lib\net45\SharePointPnP.IdentityModel.Extensions.dll</HintPath>
@@ -182,7 +182,6 @@
     <Reference Include="System.Diagnostics.DiagnosticSource, Version=4.0.4.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Diagnostics.DiagnosticSource.4.6.0\lib\net46\System.Diagnostics.DiagnosticSource.dll</HintPath>
     </Reference>
-    <Reference Include="System.Drawing" />
     <Reference Include="System.IdentityModel" />
     <Reference Include="System.IdentityModel.Selectors" />
     <Reference Include="System.IdentityModel.Tokens.Jwt, Version=5.2.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -196,7 +195,6 @@
     <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Memory.4.5.3\lib\netstandard2.0\System.Memory.dll</HintPath>
     </Reference>
-    <Reference Include="System.Net" />
     <Reference Include="System.Net.Http, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Net.Http.4.3.1\lib\net46\System.Net.Http.dll</HintPath>
       <Private>True</Private>
@@ -242,6 +240,9 @@
     <Reference Include="System.Spatial, Version=5.8.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Spatial.5.8.4\lib\net40\System.Spatial.dll</HintPath>
     </Reference>
+    <Reference Include="System.Threading.Tasks.Dataflow, Version=4.6.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Threading.Tasks.Dataflow.4.7.0\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
+    </Reference>
     <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.2\lib\netstandard2.0\System.Threading.Tasks.Extensions.dll</HintPath>
     </Reference>
@@ -255,51 +256,40 @@
     <Reference Include="System.Web.Http, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.AspNet.WebApi.Core.5.2.3\lib\net45\System.Web.Http.dll</HintPath>
     </Reference>
-    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Unity.Abstractions, Version=5.11.2.0, Culture=neutral, PublicKeyToken=489b6accfaf20ef0, processorArchitecture=MSIL">
-      <HintPath>..\packages\Unity.5.11.2\lib\net47\Unity.Abstractions.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.Container, Version=5.11.4.0, Culture=neutral, PublicKeyToken=489b6accfaf20ef0, processorArchitecture=MSIL">
-      <HintPath>..\packages\Unity.5.11.2\lib\net47\Unity.Container.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Configuration\AppConfigManager.cs" />
-    <Compile Include="Configuration\AutomapperManager.cs" />
-    <Compile Include="Configuration\UnityManager.cs" />
-    <Compile Include="LoggNotifier.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="GraphApiClientFactory.cs" />
+    <Compile Include="GraphApiManagers\BaseGraphApiClient.cs" />
+    <Compile Include="GraphApiManagers\GroupGraphApiClient.cs" />
+    <Compile Include="GraphApiManagers\UserGraphApiClient.cs" />
+    <Compile Include="GraphHttpProvider\Dto\GraphBatchRequest.cs" />
+    <Compile Include="GraphHttpProvider\Handlers\LoggingHandler.cs" />
+    <Compile Include="GraphHttpProvider\Handlers\CustomRetryHandler.cs" />
+    <Compile Include="GraphHttpProvider\Handlers\UserAgentHandler.cs" />
+    <Compile Include="GraphHttpProvider\IGraphHttpProvider.cs" />
+    <Compile Include="GraphHttpProvider\IGraphHttpProviderFactory.cs" />
+    <Compile Include="GraphServiceFactory.cs" />
+    <Compile Include="Office365MapProfile.cs" />
+    <Compile Include="Polly\CustomRetryPolicy.cs" />
+    <Compile Include="Polly\CustomRetryPolicyFactory.cs" />
+    <Compile Include="Polly\ICustomRetryPolicy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="GraphHttpProvider\GraphHttpProvider.cs" />
+    <Compile Include="GraphHttpProvider\GraphHttpProviderFactory.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SysKit.ODG.Authentication\SysKit.ODG.Authentication.csproj">
-      <Project>{6F321E3E-C6E5-424C-A51F-644BC3EA4E6C}</Project>
-      <Name>SysKit.ODG.Authentication</Name>
-    </ProjectReference>
     <ProjectReference Include="..\SysKit.ODG.Base\SysKit.ODG.Base.csproj">
       <Project>{AFE4A235-B9B3-41F3-858E-55722CB7ECF9}</Project>
       <Name>SysKit.ODG.Base</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SysKit.ODG.Generation\SysKit.ODG.Generation.csproj">
-      <Project>{A751356E-08AE-4347-A4B2-F97837EE358E}</Project>
-      <Name>SysKit.ODG.Generation</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SysKit.ODG.Office365Service\SysKit.ODG.Office365Service.csproj">
-      <Project>{D007589C-2428-42F7-A017-3F0C3E00BEB3}</Project>
-      <Name>SysKit.ODG.Office365Service</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SysKit.ODG.SampleData\SysKit.ODG.SampleData.csproj">
-      <Project>{2B279BD0-B7FB-4B30-B482-8277D050AE00}</Project>
-      <Name>SysKit.ODG.SampleData</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />
