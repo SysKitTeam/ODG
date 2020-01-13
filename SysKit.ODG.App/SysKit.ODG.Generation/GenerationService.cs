@@ -37,7 +37,7 @@ namespace SysKit.ODG.Generation
                     var stopwatch = new Stopwatch();
                     stopwatch.Start();
                     _logger.Information($"Started executing: {task.Key}");
-                    await task.Value.Execute(generationOptions);
+                    await task.Value.Execute(generationOptions, null);
                     stopwatch.Stop();
                     _logger.Information($"Finished executing: {task.Key}, Duration: {stopwatch.Elapsed}");
                 }

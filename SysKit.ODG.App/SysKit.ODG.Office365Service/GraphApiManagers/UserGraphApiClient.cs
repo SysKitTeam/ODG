@@ -16,6 +16,7 @@ using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Office365Service;
+using SysKit.ODG.Base.Notifier;
 using SysKit.ODG.Base.Office365;
 using SysKit.ODG.Office365Service.GraphHttpProvider;
 using SysKit.ODG.Office365Service.GraphHttpProvider.Dto;
@@ -24,14 +25,14 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 {
     public class UserGraphApiClient: BaseGraphApiClient, IUserGraphApiClient
     {
-        private readonly ILogger _logger;
+        private readonly INotifier _notifier;
         public UserGraphApiClient(IAccessTokenManager accessTokenManager,
-            ILogger logger,
+            INotifier notifier,
             IGraphHttpProviderFactory graphHttpProviderFactory,
             IGraphServiceFactory graphServiceFactory,
             IMapper autoMapper) : base(accessTokenManager, graphHttpProviderFactory, graphServiceFactory, autoMapper)
         {
-            _logger = logger;
+            _notifier = notifier;
         }
 
         /// <inheritdoc />
@@ -65,7 +66,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             {
                 if (userLookup.ContainsKey(user.UserPrincipalName))
                 {
-                    _logger.Warning($"Trying to create user with same name ({user.UserPrincipalName}), only the first one will be created");
+                    //_logger.Warning($"Trying to create user with same name ({user.UserPrincipalName}), only the first one will be created");
                 }
 
                 userLookup.Add(user.UserPrincipalName, user);
@@ -101,15 +102,15 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     }
                     else
                     {
-                        _logger.Warning(
-                            $"Failed to create user: {result.Key}. Status code: {(int) result.Value.StatusCode}");
+                        //_logger.Warning(
+                        //    $"Failed to create user: {result.Key}. Status code: {(int) result.Value.StatusCode}");
                     }
 
                     result.Value.Dispose();
                 }
 
                 Interlocked.Add(ref userProcessed, results.Count);
-                _logger.Information($"User processed: {userProcessed}/{userLookup.Count}");
+                //_logger.Information($"User processed: {userProcessed}/{userLookup.Count}");
             };
 
             await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult);

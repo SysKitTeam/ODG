@@ -14,6 +14,7 @@ using Serilog;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Office365Service;
+using SysKit.ODG.Base.Notifier;
 using SysKit.ODG.Base.Office365;
 using SysKit.ODG.Office365Service.GraphHttpProvider;
 using SysKit.ODG.Office365Service.GraphHttpProvider.Dto;
@@ -23,14 +24,14 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 {
     public class GroupGraphApiClient: BaseGraphApiClient, IGroupGraphApiClient
     {
-        private readonly ILogger _logger;
+        private readonly INotifier _notifier;
         public GroupGraphApiClient(IAccessTokenManager accessTokenManager,
-            ILogger logger,
+            INotifier notifier,
             IGraphHttpProviderFactory graphHttpProviderFactory,
             IGraphServiceFactory graphServiceFactory,
             IMapper autoMapper) : base(accessTokenManager, graphHttpProviderFactory, graphServiceFactory, autoMapper)
         {
-            _logger = logger;
+            _notifier = notifier;
         }
 
         /// <inheritdoc />
@@ -69,14 +70,14 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     }
                     else
                     {
-                        _logger.Warning($"Failed to create group: {result.Key}. Status code: {(int)result.Value.StatusCode}");
+                        //_logger.Warning($"Failed to create group: {result.Key}. Status code: {(int)result.Value.StatusCode}");
                     }
 
                     result.Value.Dispose();
                 }
 
                 Interlocked.Add(ref groupsProcessed, results.Count);
-                _logger.Information($"Groups processed: {groupsProcessed}/{batchEntries.Count}");
+                //_logger.Information($"Groups processed: {groupsProcessed}/{batchEntries.Count}");
             };
 
             await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult);
@@ -120,15 +121,15 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                         {
                             // TODO: handle only if group id doesnt exist
                             failedTeams.Add(teamLookup[result.Key]);
-                            _logger.Warning(
-                                $"Failed to create team: {result.Key}. Status code: {(int) result.Value.StatusCode}");
+                            //_logger.Warning(
+                            //    $"Failed to create team: {result.Key}. Status code: {(int) result.Value.StatusCode}");
                         }
 
                         result.Value.Dispose();
                     }
 
                     Interlocked.Add(ref teamsProcessed, results.Count);
-                    _logger.Information($"Teams processed: {teamsProcessed}/{newTeams.Count()}");
+                    //_logger.Information($"Teams processed: {teamsProcessed}/{newTeams.Count()}");
                 };
 
                 await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult, true);
@@ -143,7 +144,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 var toRepeat = failedTeams.ToList();
                 failedTeams = new ConcurrentBag<TeamEntry>();
                 // group provisioning was not finished, so lts wait and try again
-                _logger.Information($"Retry team creation for {toRepeat.Count}, time: {waitTime}");
+                //_logger.Information($"Retry team creation for {toRepeat.Count}, time: {waitTime}");
                 await Task.Delay(TimeSpan.FromSeconds(waitTime));
                 await executeCreateTeams(toRepeat);
                 waitTime += 15;
@@ -186,7 +187,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 if (!result.Value.IsSuccessStatusCode)
                 {
                     // TODO: better handling
-                    _logger.Warning("Failed to create channel");
+                    //_logger.Warning("Failed to create channel");
                 }
             }
         }
@@ -208,7 +209,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 if (!result.Value.IsSuccessStatusCode)
                 {
                     // TODO: better handling
-                    _logger.Warning("Failed to remove owner");
+                    //_logger.Warning("Failed to remove owner");
                 }
             }
         }
@@ -220,8 +221,8 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             graphGroup = null;
             if (groupLookup.ContainsKey(@group.MailNickname))
             {
-                _logger.Warning(
-                    $"Trying to create 2 groups with same mail nickname ({@group.MailNickname}). Only the first will be created.");
+                //_logger.Warning(
+                //    $"Trying to create 2 groups with same mail nickname ({@group.MailNickname}). Only the first will be created.");
                 return false;
             }
 
@@ -244,8 +245,8 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             graphTeam = null;
             if (teamLookup.ContainsKey(team.MailNickname))
             {
-                _logger.Warning(
-                    $"Trying to create 2 teams with same mail nickname ({team.MailNickname}). Only the first will be created.");
+                //_logger.Warning(
+                //    $"Trying to create 2 teams with same mail nickname ({team.MailNickname}). Only the first will be created.");
                 return false;
             }
 
@@ -307,7 +308,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 var memberEntry = users.FindMember(member);
                 if (memberEntry == null)
                 {
-                    _logger.Warning($"Failed to create team. User not found: {member.Name}");
+                    //_logger.Warning($"Failed to create team. User not found: {member.Name}");
                     // we want all or nothing
                     return false;
                 }
@@ -346,7 +347,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
                     if (ownerEntry == null)
                     {
-                        _logger.Warning($"Failed to create group: {@group.MailNickname}. Owner not found: {owner.Name}");
+                        //_logger.Warning($"Failed to create group: {@group.MailNickname}. Owner not found: {owner.Name}");
                         // we want all or nothing
                         return false;
                     }
@@ -380,7 +381,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
                     if (memberEntry == null)
                     {
-                        _logger.Warning($"Failed to create group: {@group.MailNickname}. Member not found: {member.Name}");
+                        //_logger.Warning($"Failed to create group: {@group.MailNickname}. Member not found: {member.Name}");
                         // we want all or nothing
                         return false;
                     }
