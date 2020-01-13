@@ -175,6 +175,11 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 }
             }
 
+            if (!batchEntries.Any())
+            {
+                return;
+            }
+
             var results = await _httpProvider.SendBatchAsync(batchEntries, _accessTokenManager, true);
             foreach (var result in results)
             {
