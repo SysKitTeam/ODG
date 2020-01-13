@@ -124,7 +124,7 @@ namespace SysKit.ODG.Generation.Groups
             populateSampleGroupProperties(sampleGroup, userEntryCollection, generationOptions.Template.RandomOptions);
             sampleGroup.IsPrivate = RandomThreadSafeGenerator.Next(0, 100) > 70;
 
-            string originalGroupMailNick = Regex.Replace(sampleGroup.DisplayName, @"[^a-z0-9]", "");
+            string originalGroupMailNick = Regex.Replace(sampleGroup.DisplayName.ToLower(), @"[^a-z0-9]", "");
             // sample values have entries that can produce null here
             string groupMailNick = string.IsNullOrEmpty(originalGroupMailNick) ? "testgroup" : originalGroupMailNick;
 

@@ -25,19 +25,20 @@ namespace SysKit.ODG.App
     {
         static void Main(string[] args)
         {
-            var defaultPassword = "hC7q95955D";
-            var tenantDomain = "M365B117306.onmicrosoft.com";
-            var userCredentials = new SimpleUserCredentials("admin@M365B117306.onmicrosoft.com", "hC7q95955D");
+            var clientId = "c24ff1fb-7b38-41d1-8b7a-681022bd3f37";
+            var defaultPassword = "7q6keJrX5M";
+            var tenantDomain = "M365B693698.onmicrosoft.com";
+            var userCredentials = new SimpleUserCredentials("admin@M365B693698.onmicrosoft.com", "7q6keJrX5M");
             var testTemplate = new XmlODGTemplate
             {
-                RandomOptions = new XmlRandomOptions
-                {
-                    NumberOfUsers = 10000,
-                    NumberOfUnifiedGroups = 1000,
-                    NumberOfTeams = 100,
-                    MaxNumberOfOwnersPerGroup = 3,
-                    MaxNumberOfMembersPerGroup = 50
-                },
+                //RandomOptions = new XmlRandomOptions
+                //{
+                //    NumberOfUsers = 10000,
+                //    NumberOfUnifiedGroups = 1000,
+                //    NumberOfTeams = 100,
+                //    MaxNumberOfOwnersPerGroup = 3,
+                //    MaxNumberOfMembersPerGroup = 50
+                //},
                 Users = new []
                 {
                     new XmlUser
@@ -55,45 +56,22 @@ namespace SysKit.ODG.App
                 },
                 Groups = new []
                 {
-                    //new XmlTeam
-                    //{
-                    //    Name = "point.new.dino1",
-                    //    DisplayName = "AAAB nova iteracija samo sa memberima",
-                    //    Members = new []
-                    //    {
-                    //        new XmlMember
-                    //        {
-                    //            Name = "dino.test"
-                    //        }
-                    //    }
-                    //},
-                    //new XmlTeam
-                    //{
-                    //    Name = "point.new.dino2",
-                    //    DisplayName = "AAAB nova iteracija samo sa memberima i public channel",
-                    //    Members = new []
-                    //    {
-                    //        new XmlMember
-                    //        {
-                    //            Name = "dino.test1"
-                    //        },
-                    //        new XmlMember
-                    //        {
-                    //            Name = "dino.test2"
-                    //        }
-                    //    },
-                    //    Channels = new []
-                    //    {
-                    //        new XmlTeamChannel
-                    //        {
-                    //            DisplayName = "Custom channel"
-                    //        }
-                    //    }
-                    //},
+                    new XmlUnifiedGroup
+                    {
+                        Name = "odg.new.group",
+                        DisplayName = "ODG Group",
+                        Members = new []
+                        {
+                            new XmlMember
+                            {
+                                Name = "dino.test"
+                            }
+                        }
+                    },
                     new XmlTeam
                     {
-                        Name = "point.monday.blue3",
-                        DisplayName = "Monday blues 3",
+                        Name = "odg.new.team1",
+                        DisplayName = "ODG Team 1",
                         Owners = new []
                         {
                             new XmlMember
@@ -113,7 +91,11 @@ namespace SysKit.ODG.App
                             },
                             new XmlMember
                             {
-                                Name = "adelev@M365B117306.onmicrosoft.com"
+                                Name = "adelev@M365B693698.onmicrosoft.com"
+                            },
+                            new XmlMember
+                            {
+                                Name = "admin@M365B693698.onmicrosoft.com"
                             }
                         },
                         Channels = new []
@@ -151,12 +133,12 @@ namespace SysKit.ODG.App
             };
 
             var xmlService = new XmlSpecificationService();
-            //xmlService.SerializeSpecification(testTemplate, @"C:\Users\dino.kacavenda\test.xml");
+            xmlService.SerializeSpecification(testTemplate, @"C:\Users\dino.kacavenda\test.xml");
             var template = xmlService.DeserializeSpecification(@"C:\Users\dino.kacavenda\test.xml");
 
             var unityContainer = UnityManager.CreateUnityContainer();
             var accessTokenFactory = unityContainer.Resolve<IAccessTokenManagerFactory>();
-            var accessTokenManager = accessTokenFactory.CreateAccessTokenManager(userCredentials);
+            var accessTokenManager = accessTokenFactory.CreateAccessTokenManager(userCredentials, clientId);
 
             var generationOptions = new GenerationOptions(accessTokenManager, tenantDomain, defaultPassword, template);
 
