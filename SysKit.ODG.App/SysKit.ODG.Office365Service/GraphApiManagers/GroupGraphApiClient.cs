@@ -37,7 +37,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         /// <inheritdoc />
         public async Task<CreatedGroupsResult> CreateUnifiedGroups(IEnumerable<UnifiedGroupEntry> groups, UserEntryCollection users)
         {
-            _notifier.Info(new NotifyEntry("Create Unified Groups", "Started"));
+            using var progressUpdater = new ProgressUpdater("Create Unified Groups", _notifier);
             var createdGroupsResult = new CreatedGroupsResult();
             var groupLookup = new Dictionary<string, UnifiedGroupEntry>();
             var batchEntries = new List<GraphBatchRequest>();
@@ -56,7 +56,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 return new CreatedGroupsResult();
             }
 
-            var progressUpdater = new ProgressUpdater(batchEntries.Count, "Create Unified Groups", _notifier);
+            progressUpdater.SetTotalCount(batchEntries.Count);
             Action<Dictionary<string, HttpResponseMessage>> handleBatchResult = results =>
             {
                 foreach (var result in results)
@@ -72,11 +72,11 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     {
                         if (isKnownError(GraphAPIKnownErrorMessages.GroupAlreadyExists, result.Value))
                         {
-                            _notifier.Warning(new NotifyEntry("Create Unified Groups", $"Failed to create: {originalGroup.MailNickname}. Group already exists"));
+                            _notifier.Warning($"Failed to create: {originalGroup.MailNickname}. Group already exists");
                         }
                         else
                         {
-                            _notifier.Error(new NotifyEntry("Create Unified Groups", $"Failed to create: {originalGroup.MailNickname}. {getErrorMessage(result.Value)}"));
+                            _notifier.Error($"Failed to create: {originalGroup.MailNickname}. {getErrorMessage(result.Value)}");
                         }
                     }
 
@@ -87,47 +87,19 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             };
 
             await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult);
-
-            _notifier.Info(new NotifyEntry("Create Unified Groups", $"Waiting for groups to provision"));
-            var failedGroupsCount = await waitForGroupProvisioning(createdGroupsResult.CreatedGroups.ToDictionary(g => g.GroupId, g => new GraphBatchRequest(g.MailNickname, $"groups/{g.GroupId}/drive",HttpMethod.Get)));
-            _notifier.Info(new NotifyEntry("Create Unified Groups", $"Group provisioning finished. Failed groups count: {failedGroupsCount}"));
-
             _notifier.Flush();
+
+            _notifier.Info($"Waiting for groups to provision");
+            var failedGroupsCount = await waitForGroupProvisioning(createdGroupsResult.CreatedGroups.ToDictionary(g => g.GroupId, g => new GraphBatchRequest(g.MailNickname, $"groups/{g.GroupId}/drive",HttpMethod.Get)));
+            _notifier.Info($"Group provisioning finished. Failed groups count: {failedGroupsCount}");
+
             return createdGroupsResult;
-        }
-
-        /// <summary>
-        /// Waits for Group drive to be available. This is a sign that group was provisioned
-        /// </summary>
-        /// <param name="groupDriveBatchRequests"></param>
-        /// <param name="attempts"></param>
-        /// <returns></returns>
-        private async Task<int> waitForGroupProvisioning(Dictionary<string, GraphBatchRequest> groupDriveBatchRequests, int attempts = 3)
-        {
-            await Task.Delay(TimeSpan.FromSeconds(15));
-
-            if (attempts <= 0 || !groupDriveBatchRequests.Any())
-            {
-                return groupDriveBatchRequests.Count;
-            }
-
-            var failedGroups = new Dictionary<string, GraphBatchRequest>();
-            var groupDriveResults = await _httpProvider.SendBatchAsync(groupDriveBatchRequests.Values, _accessTokenManager, false);
-            foreach (var result in groupDriveResults)
-            {
-                if (!result.Value.IsSuccessStatusCode)
-                {
-                    failedGroups.Add(result.Key, groupDriveBatchRequests[result.Key]);
-                }
-            }
-
-            return await waitForGroupProvisioning(failedGroups, attempts - 1);
         }
 
         /// <inheritdoc />
         public async Task<List<TeamEntry>> CreateTeamsFromGroups(IEnumerable<TeamEntry> teams, UserEntryCollection users)
         {
-            _notifier.Info(new NotifyEntry("Create Teams", "Started"));
+            using var progressUpdater = new ProgressUpdater("Create Teams", _notifier);
             var successfullyCreatedTeams = new ConcurrentBag<TeamEntry>();
             var failedTeams = new ConcurrentBag<TeamEntry>();
 
@@ -148,7 +120,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     return;
                 }
 
-                var progressUpdater = new ProgressUpdater(batchEntries.Count, "Create Teams", _notifier);
+
                 Action<Dictionary<string, HttpResponseMessage>> handleBatchResult = results =>
                 {
                     foreach (var result in results)
@@ -162,7 +134,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                         {
                             // TODO: handle only if group id doesnt exist
                             failedTeams.Add(teamLookup[result.Key]);
-                            _notifier.Error(new NotifyEntry("Create Teams", $"Failed to create: {originalTeam.MailNickname} .{getErrorMessage(result.Value)}"));
+                            _notifier.Error($"Failed to create: {originalTeam.MailNickname} .{getErrorMessage(result.Value)}");
                         }
 
                         result.Value.Dispose();
@@ -184,24 +156,22 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 var toRepeat = failedTeams.ToList();
                 failedTeams = new ConcurrentBag<TeamEntry>();
                 // group provisioning was not finished, so lts wait and try again
-                _notifier.Warning(new NotifyEntry("Create Teams", $"Retry team creation for {toRepeat.Count}, time: {waitTime}"));
+                _notifier.Warning($"Retry team creation for {toRepeat.Count}, time: {waitTime}");
                 await Task.Delay(TimeSpan.FromSeconds(waitTime));
                 await executeCreateTeams(toRepeat);
                 waitTime += 15;
                 attempts++;
             }
 
-            _notifier.Flush();
             return successfullyCreatedTeams.ToList();
         }
 
         /// <inheritdoc />
         public async Task CreateTeamChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users)
         {
-            _notifier.Info(new NotifyEntry("Create Channels", "Started"));
+            using var progressUpdater = new ProgressUpdater("Create Channels", _notifier);
             var batchEntries = new List<GraphBatchRequest>();
             var channelLookup = new Dictionary<string, TeamChannelEntry>();
-            var channelDrivesToProvision = new List<string>();
 
             var i = 0;
             foreach (var team in teams)
@@ -234,7 +204,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 var teamId = result.Key.Split('/')[1];
                 if (!result.Value.IsSuccessStatusCode)
                 {
-                    _notifier.Error(new NotifyEntry("Create Channel", $"Failed to create channel {channelEntry.DisplayName}(teamId: {teamId}). {getErrorMessage(result.Value)}"));
+                    _notifier.Error($"Failed to create channel {channelEntry.DisplayName}(teamId: {teamId}). {getErrorMessage(result.Value)}");
                 }
             }
         }
@@ -242,7 +212,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         /// <inheritdoc />
         public async Task RemoveGroupOwners(Dictionary<string, UnifiedGroupEntry> ownersMap)
         {
-            _notifier.Info(new NotifyEntry("Remove Group Owner", "Started"));
+            using var progressUpdater = new ProgressUpdater("Remove Group Owner", _notifier);
             var batchEntries = new List<GraphBatchRequest>();
 
             var i = 0;
@@ -261,19 +231,48 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             {
                 if (!result.Value.IsSuccessStatusCode)
                 {
-                    _notifier.Error(new NotifyEntry("Remove Group Owner", $"Failed to remove group owner. {getErrorMessage(result.Value)}"));
+                    _notifier.Error($"Failed to remove group owner. {getErrorMessage(result.Value)}");
                 }
             }
         }
 
         #region Helpers
 
+        private int _maxProvisioningAttempts = 3;
+        /// <summary>
+        /// Waits for Group drive to be available. This is a sign that group was provisioned
+        /// </summary>
+        /// <param name="groupDriveBatchRequests"></param>
+        /// <param name="attempt"></param>
+        /// <returns></returns>
+        private async Task<int> waitForGroupProvisioning(Dictionary<string, GraphBatchRequest> groupDriveBatchRequests, int attempt = 0)
+        {
+            if (attempt >= _maxProvisioningAttempts || !groupDriveBatchRequests.Any())
+            {
+                return groupDriveBatchRequests.Count;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(attempt * 15));
+
+            var failedGroups = new Dictionary<string, GraphBatchRequest>();
+            var groupDriveResults = await _httpProvider.SendBatchAsync(groupDriveBatchRequests.Values, _accessTokenManager, false);
+            foreach (var result in groupDriveResults)
+            {
+                if (!result.Value.IsSuccessStatusCode)
+                {
+                    failedGroups.Add(result.Key, groupDriveBatchRequests[result.Key]);
+                }
+            }
+
+            return await waitForGroupProvisioning(failedGroups, attempt + 1);
+        }
+
         private bool tryCreateGroupBatch(UserEntryCollection users, Dictionary<string, UnifiedGroupEntry> groupLookup, UnifiedGroupEntry @group, CreatedGroupsResult createResult, out GroupExtended graphGroup)
         {
             graphGroup = null;
             if (groupLookup.ContainsKey(@group.MailNickname))
             {
-                _notifier.Warning(new NotifyEntry("Create Unified Group", $"Trying to create 2 groups with same mail nickname ({@group.MailNickname}). Only the first will be created."));
+                _notifier.Warning( $"Trying to create 2 groups with same mail nickname ({@group.MailNickname}). Only the first will be created.");
                 return false;
             }
 
@@ -296,7 +295,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             graphTeam = null;
             if (teamLookup.ContainsKey(team.MailNickname))
             {
-                _notifier.Warning(new NotifyEntry("Create Teams", $"Trying to create 2 teams with same mail nickname ({team.MailNickname}). Only the first will be created."));
+                _notifier.Warning($"Trying to create 2 teams with same mail nickname ({team.MailNickname}). Only the first will be created.");
                 return false;
             }
 
@@ -359,7 +358,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 if (memberEntry == null)
                 {
                     // we want all or nothing
-                    _notifier.Warning(new NotifyEntry("Create Private Channel", $"{role} not found ({member.Name})."));
+                    _notifier.Warning($"{role} not found ({member.Name}).");
                     return false;
                 }
 
@@ -398,7 +397,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     if (ownerEntry == null)
                     {
                         // we want all or nothing
-                        _notifier.Warning(new NotifyEntry("Create Unified Group", $"Failed to create group: {@group.MailNickname}. Owner not found: {owner.Name}"));
+                        _notifier.Warning($"Failed to create group: {@group.MailNickname}. Owner not found: {owner.Name}");
                         return false;
                     }
                     else
@@ -432,7 +431,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     if (memberEntry == null)
                     {
                         // we want all or nothing
-                        _notifier.Warning(new NotifyEntry("Create Unified Group", $"Failed to create group: {@group.MailNickname}. Member not found: {member.Name}"));
+                        _notifier.Warning($"Failed to create group: {@group.MailNickname}. Member not found: {member.Name}");
                         return false;
                     }
                     else

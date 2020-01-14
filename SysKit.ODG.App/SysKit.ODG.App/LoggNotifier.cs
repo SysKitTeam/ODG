@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Timers;
 using Microsoft.Graph;
 using Serilog;
@@ -15,8 +16,9 @@ namespace SysKit.ODG.App
         private readonly ILogger _logger;
         private readonly LogLevelEnum _logLevel;
         private readonly object _lock = new object();
-        private NotifyEntry _lastEntry = null;
+        private ProgressEntry _lastEntry = null;
         private readonly Timer _progressUpdateTimer; 
+        private readonly ConcurrentStack<string> _correlationIds = new ConcurrentStack<string>();
 
         public LoggNotifier(ILogger logger, LoggOptions options)
         {
@@ -31,71 +33,59 @@ namespace SysKit.ODG.App
         /// <summary>
         /// Progress update. This will happen every n seconds (only latest update will be shown)
         /// </summary>
-        /// <param name="entry"></param>
-        public void Progress(NotifyEntry entry)
+        /// <param name="message"></param>
+        public void Progress(string message)
         {
             lock (_lock)
             {
-                _lastEntry = entry;
+                _lastEntry = new ProgressEntry(message, currentCorrelationId);
             }
         }
 
         /// <inheritdoc />
-        public void Info(NotifyEntry entry)
+        public void Info(string message)
         {
             if (!shouldLogg(LogLevelEnum.Information))
             {
                 return;
             }
 
-            _logger.Information($"{entry.CorrelationId}; {entry.Message}");
+            _logger.Information($"{currentCorrelationId}; {message}");
         }
 
         /// <inheritdoc />
-        public void Error(NotifyEntry entry)
+        public void Error(string message, Exception exception = null)
         {
             if (!shouldLogg(LogLevelEnum.Error))
             {
                 return;
             }
 
-            _logger.Error(entry.Exception, $"{entry.CorrelationId}; {entry.Message}");
+            _logger.Error(exception, $"{currentCorrelationId}; {message}");
         }
 
         /// <inheritdoc />
-        public void Warning(NotifyEntry entry)
+        public void Warning(string message)
         {
             if (!shouldLogg(LogLevelEnum.Warning))
             {
                 return;
             }
 
-            if (entry.Exception != null)
-            {
-                _logger.Warning(entry.Exception, $"{entry.CorrelationId}; {entry.Message}");
-            }
-            else
-            {
-                _logger.Warning($"{entry.CorrelationId}; {entry.Message}");
-            }
-
+            _logger.Warning($"{currentCorrelationId}; {message}");
         }
 
         /// <inheritdoc />
-        public void Debug(NotifyEntry entry)
+        public void Debug(string message)
         {
             if (!shouldLogg(LogLevelEnum.Debug))
             {
                 return;
             }
 
-            if (entry.Exception != null)
-            {
-                _logger.Verbose(entry.Exception, $"{entry.CorrelationId}; {entry.Message}");
-            }
             else
             {
-                _logger.Verbose($"{entry.CorrelationId}; {entry.Message}");
+                _logger.Verbose($"{currentCorrelationId}; {message}");
             }
         }
 
@@ -103,6 +93,18 @@ namespace SysKit.ODG.App
         public void Flush()
         {
             progressUpdateTimerOnElapsed(null, null);
+        }
+
+        /// <inheritdoc />
+        public void BeginContext(string contextId)
+        {
+            _correlationIds.Push(contextId);
+        }
+
+        /// <inheritdoc />
+        public void EndContext()
+        {
+            _correlationIds.TryPop(out string _);
         }
 
         #region Helpers
@@ -122,6 +124,8 @@ namespace SysKit.ODG.App
 
         private bool shouldLogg(LogLevelEnum loggLevel) => loggLevel >= _logLevel;
 
+        private string currentCorrelationId => _correlationIds.TryPeek(out string correlationId) ? correlationId : null;
+
         #endregion Helpers
     }
 
@@ -132,6 +136,18 @@ namespace SysKit.ODG.App
         public LoggOptions(LogLevelEnum logLevel)
         {
             LogLevel = logLevel;
+        }
+    }
+
+    class ProgressEntry
+    {
+        public string CorrelationId { get; }
+        public string Message { get; }
+
+        public ProgressEntry(string message, string correlationId)
+        {
+            CorrelationId = correlationId;
+            Message = message;
         }
     }
 }

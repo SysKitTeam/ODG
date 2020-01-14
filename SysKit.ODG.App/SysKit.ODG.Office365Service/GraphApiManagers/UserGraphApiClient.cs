@@ -51,6 +51,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         /// <inheritdoc />
         public async Task<List<UserEntry>> CreateTenantUsers(IEnumerable<UserEntry> users)
         {
+            using var progressUpdater = new ProgressUpdater("Create Users", _notifier);
             var userLookup = new Dictionary<string, UserEntry>();
             var successfullyCreatedUsers = new ConcurrentBag<UserEntry>();
             var batchEntries = new List<GraphBatchRequest>();
@@ -58,7 +59,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             {
                 if (userLookup.ContainsKey(user.UserPrincipalName))
                 {
-                    _notifier.Warning(new NotifyEntry("Create Users", $"Trying to create user with same name ({user.UserPrincipalName}), only the first one will be created"));
+                    _notifier.Warning($"Trying to create user with same name ({user.UserPrincipalName}), only the first one will be created");
                 }
 
                 userLookup.Add(user.UserPrincipalName, user);
@@ -79,7 +80,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 return new List<UserEntry>();
             }
 
-            var progressUpdater = new ProgressUpdater(batchEntries.Count, "Create Users", _notifier);
+            progressUpdater.SetTotalCount(batchEntries.Count);
             Action<Dictionary<string, HttpResponseMessage>> handleBatchResult = results =>
             {
                 foreach (var result in results)
@@ -96,11 +97,11 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     {
                         if (isKnownError(GraphAPIKnownErrorMessages.UserAlreadyExists, result.Value))
                         {
-                            _notifier.Warning(new NotifyEntry("Create Users", $"Failed to create: {originalUser.UserPrincipalName}. User already exists."));
+                            _notifier.Warning($"Failed to create: {originalUser.UserPrincipalName}. User already exists.");
                         }
                         else
                         {
-                            _notifier.Error(new NotifyEntry("Create Users", $"Failed to create: {originalUser.UserPrincipalName}. {getErrorMessage(result.Value)}"));
+                            _notifier.Error($"Failed to create: {originalUser.UserPrincipalName}. {getErrorMessage(result.Value)}");
                         }
                     }
 
@@ -112,7 +113,6 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
             await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult);
 
-            _notifier.Flush();
             return successfullyCreatedUsers.ToList();
         }
 

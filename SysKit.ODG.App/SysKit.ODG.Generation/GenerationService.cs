@@ -33,17 +33,14 @@ namespace SysKit.ODG.Generation
             {
                 try
                 {
-                    var stopwatch = new Stopwatch();
-                    stopwatch.Start();
-                    notifier.Info(new NotifyEntry($"{task.Key}", $"Started executing"));
-                    await task.Value.Execute(generationOptions, notifier);
-                    stopwatch.Stop();
-                    notifier.Flush();
-                    notifier.Info(new NotifyEntry($"{task.Key}", $"Finished executing, Duration: {stopwatch.Elapsed}"));
+                    using (new ProgressUpdater(task.Key, notifier))
+                    {
+                        await task.Value.Execute(generationOptions, notifier);
+                    }
                 }
                 catch (Exception e)
                 {
-                    notifier.Error(new NotifyEntry($"{task.Key}", e));
+                    notifier.Error($"Error while executing: {task.Key}", e);
                     throw;
                 }
             }

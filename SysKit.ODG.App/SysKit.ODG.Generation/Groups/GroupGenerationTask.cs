@@ -39,8 +39,6 @@ namespace SysKit.ODG.Generation.Groups
             var createdGroups = await groupGraphApiClient.CreateUnifiedGroups(groups, users);
             var createdTeams = await groupGraphApiClient.CreateTeamsFromGroups(createdGroups.TeamsToCreate, users);
 
-            notifier.Info(new NotifyEntry("Group Generation", $"Created Office365 groups: {createdGroups.CreatedGroups.Count}; Created Teams: {createdTeams.Count}"));
-
             await groupGraphApiClient.CreateTeamChannels(createdTeams, users);
 
             // we needed to add ourselfs to owners so we can create teams
@@ -51,6 +49,8 @@ namespace SysKit.ODG.Generation.Groups
                 await Task.Delay(TimeSpan.FromSeconds(10));
                 await groupGraphApiClient.RemoveGroupOwners(createdGroups.GroupsWithAddedOwners);
             }
+
+            notifier.Info($"Created Office365 groups: {createdGroups.CreatedGroups.Count}; Created Teams: {createdTeams.Count}");
         }
     }
 }
