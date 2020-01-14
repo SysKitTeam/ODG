@@ -71,12 +71,12 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
             batchesToProcess.LinkTo(executeRequestsBlock, new DataflowLinkOptions { PropagateCompletion = true });
             executeRequestsBlock.LinkTo(finalBlock, new DataflowLinkOptions { PropagateCompletion = true });
 
-            do
+            while (tmpRequests.Any())
             {
                 batchesToProcess.Post(tmpRequests.ToDictionary(x => x.Id, x => x));
                 page++;
                 tmpRequests = allRequests.Skip(page * maxRequestCountPerBatch).Take(maxRequestCountPerBatch).ToList();
-            } while (tmpRequests.Any());
+            }
 
             batchesToProcess.Complete();
 

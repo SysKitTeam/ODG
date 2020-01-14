@@ -94,7 +94,14 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     }
                     else
                     {
-                        _notifier.Error(new NotifyEntry("Create Users", $"Failed to create: {originalUser.UserPrincipalName}. {getErrorMessage(result.Value)}"));
+                        if (isKnownError(GraphAPIKnownErrorMessages.UserAlreadyExists, result.Value))
+                        {
+                            _notifier.Warning(new NotifyEntry("Create Users", $"Failed to create: {originalUser.UserPrincipalName}. User already exists."));
+                        }
+                        else
+                        {
+                            _notifier.Error(new NotifyEntry("Create Users", $"Failed to create: {originalUser.UserPrincipalName}. {getErrorMessage(result.Value)}"));
+                        }
                     }
 
                     result.Value.Dispose();
@@ -105,6 +112,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
             await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult);
 
+            _notifier.Flush();
             return successfullyCreatedUsers.ToList();
         }
 

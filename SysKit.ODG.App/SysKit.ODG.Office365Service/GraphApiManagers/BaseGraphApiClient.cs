@@ -64,8 +64,28 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             var content = responseMessage.Content != null ? responseMessage.Content.ReadAsStringAsync().GetAwaiter().GetResult() : null;
             return $"Status code: {responseMessage.StatusCode}; Error: {content}";
         }
-       
+
+        /// <summary>
+        /// Determine if it is known error from error message
+        /// </summary>
+        /// <param name="expectedMessage"></param>
+        /// <param name="responseMessage"></param>
+        /// <returns></returns>
+        protected bool isKnownError(string expectedMessage, HttpResponseMessage responseMessage)
+        {
+            if (responseMessage.Content == null)
+            {
+                return expectedMessage == null;
+            }
+
+            var content = responseMessage.Content.ReadAsAsync<GraphApiError>().GetAwaiter().GetResult();
+            return content.Error?.Message?.Contains(expectedMessage) == true;
+        }
         #endregion
 
+        class GraphApiError
+        {
+            public Error Error { get; set; }
+        }
     }
 }

@@ -41,11 +41,16 @@ namespace SysKit.ODG.Generation.Groups
 
             notifier.Info(new NotifyEntry("Group Generation", $"Created Office365 groups: {createdGroups.CreatedGroups.Count}; Created Teams: {createdTeams.Count}"));
 
-            await groupGraphApiClient.CreatePrivateChannels(createdTeams, users);
+            await groupGraphApiClient.CreateTeamChannels(createdTeams, users);
 
-            // just in case, if there is some provisioning (public channels believed strangely(don't get created))
-            await Task.Delay(TimeSpan.FromSeconds(10));
-            await groupGraphApiClient.RemoveGroupOwners(createdGroups.GroupsWithAddedOwners);
+            // we needed to add ourselfs to owners so we can create teams
+            var groupsToRemoveOwners = createdGroups.GroupsWithAddedOwners;
+            if (groupsToRemoveOwners.Any())
+            {
+                // just in case, if there is some provisioning (public channels believed strangely(don't get created))
+                await Task.Delay(TimeSpan.FromSeconds(10));
+                await groupGraphApiClient.RemoveGroupOwners(createdGroups.GroupsWithAddedOwners);
+            }
         }
     }
 }

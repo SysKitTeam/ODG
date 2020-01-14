@@ -70,7 +70,14 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     }
                     else
                     {
-                        _notifier.Error(new NotifyEntry("Create Unified Groups", $"Failed to create: {originalGroup.MailNickname} .{getErrorMessage(result.Value)}"));
+                        if (isKnownError(GraphAPIKnownErrorMessages.GroupAlreadyExists, result.Value))
+                        {
+                            _notifier.Warning(new NotifyEntry("Create Unified Groups", $"Failed to create: {originalGroup.MailNickname}. Group already exists"));
+                        }
+                        else
+                        {
+                            _notifier.Error(new NotifyEntry("Create Unified Groups", $"Failed to create: {originalGroup.MailNickname}. {getErrorMessage(result.Value)}"));
+                        }
                     }
 
                     result.Value.Dispose();
@@ -157,11 +164,12 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         }
 
         /// <inheritdoc />
-        public async Task CreatePrivateChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users)
+        public async Task CreateTeamChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users)
         {
-            _notifier.Info(new NotifyEntry("Create Private Channels", "Started"));
+            _notifier.Info(new NotifyEntry("Create Channels", "Started"));
             var batchEntries = new List<GraphBatchRequest>();
             var channelLookup = new Dictionary<string, TeamChannelEntry>();
+            var channelDrivesToProvision = new List<string>();
 
             var i = 0;
             foreach (var team in teams)
@@ -171,7 +179,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     continue;
                 }
 
-                foreach (var teamChannelEntry in team.Channels?.Where(c => c.IsPrivate))
+                foreach (var teamChannelEntry in team.Channels)
                 {
                     if (tryCreateChannel(users, teamChannelEntry, out var graphChannel))
                     {
@@ -191,12 +199,41 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             foreach (var result in results)
             {
                 var channelEntry = channelLookup[result.Key];
+                var teamId = result.Key.Split('/')[1];
                 if (!result.Value.IsSuccessStatusCode)
                 {
-                    var teamId = result.Key.Split('/')[1];
-                    _notifier.Error(new NotifyEntry("Create Private Channel", $"Failed to create private channel {channelEntry.DisplayName}(teamId: {teamId}). {getErrorMessage(result.Value)}"));
+                    _notifier.Error(new NotifyEntry("Create Channel", $"Failed to create channel {channelEntry.DisplayName}(teamId: {teamId}). {getErrorMessage(result.Value)}"));
+                }
+                else
+                {
+                    var channel = await deserializeGraphObject<Beta.Channel>(result.Value.Content);
+                    channelDrivesToProvision.Add($"teams/{teamId}/channels/{channel.Id}/filesFolder");
                 }
             }
+
+            // Office365 doesnt provision site/folder of a channel if we dont try to access it
+            int key = 0;
+            var channelFolderBatchEntries = channelDrivesToProvision.Select(filesFolderEndpoint => new GraphBatchRequest($"{++key}", filesFolderEndpoint, HttpMethod.Get)).ToList();
+
+            if (!channelFolderBatchEntries.Any())
+            {
+                return;
+            }
+
+            _notifier.Info(new NotifyEntry("Create Channels", "Started files folder provisioning"));
+
+            await Task.Delay(TimeSpan.FromMinutes(1));
+            var channelProvisioningResults = await _httpProvider.SendBatchAsync(channelFolderBatchEntries, _accessTokenManager, true);
+
+            foreach (var result in channelProvisioningResults)
+            {
+                if (!result.Value.IsSuccessStatusCode)
+                {
+                    _notifier.Error(new NotifyEntry("Create Channel", $"Failed to provision channel folder. {getErrorMessage(result.Value)}"));
+                }
+            }
+
+            _notifier.Info(new NotifyEntry("Create Channels", "Ended files folder provisioning"));
         }
 
         /// <inheritdoc />
@@ -209,6 +246,11 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             foreach (var ownerMap in ownersMap)
             {
                 batchEntries.Add(new GraphBatchRequest($"{++i}", $"/groups/{ownerMap.Value.GroupId}/owners/{ownerMap.Key}/$ref", HttpMethod.Delete));
+            }
+
+            if (!batchEntries.Any())
+            {
+                return;
             }
 
             var results = await _httpProvider.SendBatchAsync(batchEntries, _accessTokenManager);
@@ -258,16 +300,16 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             teamLookup.Add(team.MailNickname, team);
             graphTeam = new TeamExtended(team.GroupId);
 
-            if (team?.Channels.Any() == true)
-            {
-                graphTeam.Channels = new Beta.TeamChannelsCollectionPage();
-                // TODO: private channels are not supported currently. This will hopefully change :)
-                foreach (var channel in team.Channels.Where(c => !c.IsPrivate))
-                {
-                    if (!tryCreateChannel(users, channel, out var newChannel)) return false;
-                    graphTeam.Channels.Add(newChannel);
-                }
-            }
+            //if (team?.Channels.Any() == true)
+            //{
+            //    graphTeam.Channels = new Beta.TeamChannelsCollectionPage();
+            //    // TODO: private channels are not supported currently. This will hopefully change :)
+            //    foreach (var channel in team.Channels.Where(c => !c.IsPrivate))
+            //    {
+            //        if (!tryCreateChannel(users, channel, out var newChannel)) return false;
+            //        graphTeam.Channels.Add(newChannel);
+            //    }
+            //}
 
             return true;
         }
