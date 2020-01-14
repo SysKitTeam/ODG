@@ -204,36 +204,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 {
                     _notifier.Error(new NotifyEntry("Create Channel", $"Failed to create channel {channelEntry.DisplayName}(teamId: {teamId}). {getErrorMessage(result.Value)}"));
                 }
-                else
-                {
-                    var channel = await deserializeGraphObject<Beta.Channel>(result.Value.Content);
-                    channelDrivesToProvision.Add($"teams/{teamId}/channels/{channel.Id}/filesFolder");
-                }
             }
-
-            // Office365 doesnt provision site/folder of a channel if we dont try to access it
-            int key = 0;
-            var channelFolderBatchEntries = channelDrivesToProvision.Select(filesFolderEndpoint => new GraphBatchRequest($"{++key}", filesFolderEndpoint, HttpMethod.Get)).ToList();
-
-            if (!channelFolderBatchEntries.Any())
-            {
-                return;
-            }
-
-            _notifier.Info(new NotifyEntry("Create Channels", "Started files folder provisioning"));
-
-            await Task.Delay(TimeSpan.FromMinutes(1));
-            var channelProvisioningResults = await _httpProvider.SendBatchAsync(channelFolderBatchEntries, _accessTokenManager, true);
-
-            foreach (var result in channelProvisioningResults)
-            {
-                if (!result.Value.IsSuccessStatusCode)
-                {
-                    _notifier.Error(new NotifyEntry("Create Channel", $"Failed to provision channel folder. {getErrorMessage(result.Value)}"));
-                }
-            }
-
-            _notifier.Info(new NotifyEntry("Create Channels", "Ended files folder provisioning"));
         }
 
         /// <inheritdoc />

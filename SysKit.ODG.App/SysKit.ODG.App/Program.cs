@@ -143,7 +143,7 @@ namespace SysKit.ODG.App
             };
 
             var xmlService = new XmlSpecificationService();
-            xmlService.SerializeSpecification(testTemplate, @"C:\Users\dino.kacavenda\test.xml");
+            //xmlService.SerializeSpecification(testTemplate, @"C:\Users\dino.kacavenda\test.xml");
             var template = xmlService.DeserializeSpecification(@"C:\Users\dino.kacavenda\test.xml");
 
             var unityContainer = UnityManager.CreateUnityContainer();
