@@ -87,9 +87,41 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             };
 
             await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult);
-            
+
+            _notifier.Info(new NotifyEntry("Create Unified Groups", $"Waiting for groups to provision"));
+            var failedGroupsCount = await waitForGroupProvisioning(createdGroupsResult.CreatedGroups.ToDictionary(g => g.GroupId, g => new GraphBatchRequest(g.MailNickname, $"groups/{g.GroupId}/drive",HttpMethod.Get)));
+            _notifier.Info(new NotifyEntry("Create Unified Groups", $"Group provisioning finished. Failed groups count: {failedGroupsCount}"));
+
             _notifier.Flush();
             return createdGroupsResult;
+        }
+
+        /// <summary>
+        /// Waits for Group drive to be available. This is a sign that group was provisioned
+        /// </summary>
+        /// <param name="groupDriveBatchRequests"></param>
+        /// <param name="attempts"></param>
+        /// <returns></returns>
+        private async Task<int> waitForGroupProvisioning(Dictionary<string, GraphBatchRequest> groupDriveBatchRequests, int attempts = 3)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(15));
+
+            if (attempts <= 0 || !groupDriveBatchRequests.Any())
+            {
+                return groupDriveBatchRequests.Count;
+            }
+
+            var failedGroups = new Dictionary<string, GraphBatchRequest>();
+            var groupDriveResults = await _httpProvider.SendBatchAsync(groupDriveBatchRequests.Values, _accessTokenManager, false);
+            foreach (var result in groupDriveResults)
+            {
+                if (!result.Value.IsSuccessStatusCode)
+                {
+                    failedGroups.Add(result.Key, groupDriveBatchRequests[result.Key]);
+                }
+            }
+
+            return await waitForGroupProvisioning(failedGroups, attempts - 1);
         }
 
         /// <inheritdoc />

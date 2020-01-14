@@ -80,8 +80,8 @@ namespace SysKit.ODG.App
                     },
                     new XmlTeam
                     {
-                        Name = "odg.new.team2345",
-                        DisplayName = "ODG Team with Provisioned channels 2",
+                        Name = "odg.new.team23456",
+                        DisplayName = "ODG Team with Provisioned channels 3",
                         Owners = new []
                         {
                             new XmlMember
