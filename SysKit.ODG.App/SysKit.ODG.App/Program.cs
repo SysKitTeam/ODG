@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Serilog;
 using SysKit.ODG.App.Configuration;
 using SysKit.ODG.Authentication;
 using SysKit.ODG.Base.Authentication;
 using SysKit.ODG.Base.DTO;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
+using SysKit.ODG.Base.Enums;
 using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
@@ -33,7 +35,7 @@ namespace SysKit.ODG.App
             {
                 //RandomOptions = new XmlRandomOptions
                 //{
-                //    NumberOfUsers = 10000,
+                //    NumberOfUsers = 1000,
                 //    NumberOfUnifiedGroups = 1000,
                 //    NumberOfTeams = 100,
                 //    MaxNumberOfOwnersPerGroup = 3,
@@ -52,6 +54,14 @@ namespace SysKit.ODG.App
                     new XmlUser
                     {
                         Name = "dino.test2"
+                    },
+                    new XmlUser
+                    {
+                        Name = "dino.test3"
+                    },
+                    new XmlUser
+                    {
+                        Name = "dino.test4"
                     }
                 },
                 Groups = new []
@@ -139,13 +149,15 @@ namespace SysKit.ODG.App
             var unityContainer = UnityManager.CreateUnityContainer();
             var accessTokenFactory = unityContainer.Resolve<IAccessTokenManagerFactory>();
             var accessTokenManager = accessTokenFactory.CreateAccessTokenManager(userCredentials, clientId);
+            var logger = unityContainer.Resolve<ILogger>();
+            var notifier = new LoggNotifier(logger, new LoggOptions(LogLevelEnum.Debug));
 
             var generationOptions = new GenerationOptions(accessTokenManager, tenantDomain, defaultPassword, template);
 
             var generationService = unityContainer.Resolve<IGenerationService>();
             generationService.AddGenerationTask("User Creation", unityContainer.Resolve<IGenerationTask>("userTask"));
             generationService.AddGenerationTask("Group Creation", unityContainer.Resolve<IGenerationTask>("groupTask"));
-            generationService.Start(generationOptions).GetAwaiter().GetResult();
+            generationService.Start(generationOptions, notifier).GetAwaiter().GetResult();
 
             Console.WriteLine("Finished ;)");
             Console.ReadLine();

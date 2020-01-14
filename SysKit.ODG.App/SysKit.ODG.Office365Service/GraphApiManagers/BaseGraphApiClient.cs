@@ -49,9 +49,20 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         /// <typeparam name="TResult"></typeparam>
         /// <param name="content"></param>
         /// <returns></returns>
-        protected async Task<TResult> DeserializeGraphObject<TResult>(HttpContent content)
+        protected async Task<TResult> deserializeGraphObject<TResult>(HttpContent content)
         {
             return _graphServiceClient.HttpProvider.Serializer.DeserializeObject<TResult>(await content.ReadAsStreamAsync());
+        }
+
+        /// <summary>
+        /// Extracts error message and status code from response
+        /// </summary>
+        /// <param name="responseMessage"></param>
+        /// <returns></returns>
+        protected string getErrorMessage(HttpResponseMessage responseMessage)
+        {
+            var content = responseMessage.Content != null ? responseMessage.Content.ReadAsStringAsync().GetAwaiter().GetResult() : null;
+            return $"Status code: {responseMessage.StatusCode}; Error: {content}";
         }
        
         #endregion

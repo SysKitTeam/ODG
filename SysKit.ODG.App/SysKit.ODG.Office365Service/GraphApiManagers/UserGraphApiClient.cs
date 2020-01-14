@@ -3,17 +3,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Graph;
-using Newtonsoft.Json;
-using OfficeDevPnP.Core.Utilities;
-using Serilog;
 using SysKit.ODG.Base.DTO.Generation;
-using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Base.Notifier;
@@ -58,7 +51,6 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         /// <inheritdoc />
         public async Task<List<UserEntry>> CreateTenantUsers(IEnumerable<UserEntry> users)
         {
-            int userProcessed = 0;
             var userLookup = new Dictionary<string, UserEntry>();
             var successfullyCreatedUsers = new ConcurrentBag<UserEntry>();
             var batchEntries = new List<GraphBatchRequest>();
@@ -66,7 +58,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             {
                 if (userLookup.ContainsKey(user.UserPrincipalName))
                 {
-                    //_logger.Warning($"Trying to create user with same name ({user.UserPrincipalName}), only the first one will be created");
+                    _notifier.Warning(new NotifyEntry("Create Users", $"Trying to create user with same name ({user.UserPrincipalName}), only the first one will be created"));
                 }
 
                 userLookup.Add(user.UserPrincipalName, user);
@@ -87,30 +79,28 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 return new List<UserEntry>();
             }
 
+            var progressUpdater = new ProgressUpdater(batchEntries.Count, "Create Users", _notifier);
             Action<Dictionary<string, HttpResponseMessage>> handleBatchResult = results =>
             {
                 foreach (var result in results)
                 {
+                    var originalUser = userLookup[result.Key];
                     if (result.Value.IsSuccessStatusCode)
                     {
-                        var originalUser = userLookup[result.Key];
-                        var graphUser = DeserializeGraphObject<User>(result.Value.Content).GetAwaiter().GetResult();
-
+                        var graphUser = deserializeGraphObject<User>(result.Value.Content).GetAwaiter().GetResult();
                         originalUser.Id = graphUser.Id;
                         graphUser.UserPrincipalName = graphUser.UserPrincipalName;
                         successfullyCreatedUsers.Add(originalUser);
                     }
                     else
                     {
-                        //_logger.Warning(
-                        //    $"Failed to create user: {result.Key}. Status code: {(int) result.Value.StatusCode}");
+                        _notifier.Error(new NotifyEntry("Create Users", $"Failed to create: {originalUser.UserPrincipalName}. {getErrorMessage(result.Value)}"));
                     }
 
                     result.Value.Dispose();
                 }
 
-                Interlocked.Add(ref userProcessed, results.Count);
-                //_logger.Information($"User processed: {userProcessed}/{userLookup.Count}");
+                progressUpdater.UpdateProgress(results.Count);
             };
 
             await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult);

@@ -10,6 +10,35 @@ namespace SysKit.ODG.Base.Notifier
         /// Progress update
         /// </summary>
         /// <param name="entry"></param>
-        void Notify(NotifyEntry entry);
+        void Progress(NotifyEntry entry);
+
+        /// <summary>
+        /// Information update
+        /// </summary>
+        /// <param name="entry"></param>
+        void Info(NotifyEntry entry);
+
+        /// <summary>
+        /// Error entry
+        /// </summary>
+        /// <param name="entry"></param>
+        void Error(NotifyEntry entry);
+
+        /// <summary>
+        /// Warning entry
+        /// </summary>
+        /// <param name="entry"></param>
+        void Warning(NotifyEntry entry);
+
+        /// <summary>
+        /// Debug entry
+        /// </summary>
+        /// <param name="entry"></param>
+        void Debug(NotifyEntry entry);
+
+        /// <summary>
+        /// Flushes any buffered entries
+        /// </summary>
+        void Flush();
     }
 }

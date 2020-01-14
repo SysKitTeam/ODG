@@ -63,7 +63,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     if (result.Value.IsSuccessStatusCode)
                     {
                         var originalGroup = groupLookup[result.Key];
-                        var createdGroup = DeserializeGraphObject<Group>(result.Value.Content).GetAwaiter().GetResult();
+                        var createdGroup = deserializeGraphObject<Group>(result.Value.Content).GetAwaiter().GetResult();
 
                         originalGroup.GroupId = createdGroup.Id;
                         createdGroupsResult.AddGroup(originalGroup);

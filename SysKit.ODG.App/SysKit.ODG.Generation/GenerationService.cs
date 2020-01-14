@@ -10,17 +10,16 @@ using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.Office365Service;
+using SysKit.ODG.Base.Notifier;
 
 namespace SysKit.ODG.Generation
 {
     public class GenerationService: IGenerationService
     {
         private readonly Dictionary<string, IGenerationTask> _generationTasks = new Dictionary<string, IGenerationTask>();
-        private readonly ILogger _logger;
 
-        public GenerationService(ILogger logger)
+        public GenerationService()
         {
-            _logger = logger;
         }
 
         public void AddGenerationTask(string taskKey, IGenerationTask task)
@@ -28,7 +27,7 @@ namespace SysKit.ODG.Generation
             _generationTasks.Add(taskKey, task);
         }
 
-        public async Task Start(GenerationOptions generationOptions)
+        public async Task Start(GenerationOptions generationOptions, INotifier notifier)
         {
             foreach (var task in _generationTasks)
             {
@@ -36,14 +35,15 @@ namespace SysKit.ODG.Generation
                 {
                     var stopwatch = new Stopwatch();
                     stopwatch.Start();
-                    _logger.Information($"Started executing: {task.Key}");
-                    await task.Value.Execute(generationOptions, null);
+                    notifier.Info(new NotifyEntry($"{task.Key}", $"Started executing"));
+                    await task.Value.Execute(generationOptions, notifier);
                     stopwatch.Stop();
-                    _logger.Information($"Finished executing: {task.Key}, Duration: {stopwatch.Elapsed}");
+                    notifier.Flush();
+                    notifier.Info(new NotifyEntry($"{task.Key}", $"Finished executing, Duration: {stopwatch.Elapsed}"));
                 }
                 catch (Exception e)
                 {
-                    _logger.Error(e, $"Task {task.Key} failed with error");
+                    notifier.Error(new NotifyEntry($"{task.Key}", e));
                     throw;
                 }
             }
