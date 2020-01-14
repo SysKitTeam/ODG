@@ -38,6 +38,9 @@ namespace SysKit.ODG.Generation.Groups
 
             var createdGroups = await groupGraphApiClient.CreateUnifiedGroups(groups, users);
             var createdTeams = await groupGraphApiClient.CreateTeamsFromGroups(createdGroups.TeamsToCreate, users);
+
+            notifier.Info(new NotifyEntry("Group Generation", $"Created Office365 groups: {createdGroups.CreatedGroups.Count}; Created Teams: {createdTeams.Count}"));
+
             await groupGraphApiClient.CreatePrivateChannels(createdTeams, users);
 
             // just in case, if there is some provisioning (public channels believed strangely(don't get created))

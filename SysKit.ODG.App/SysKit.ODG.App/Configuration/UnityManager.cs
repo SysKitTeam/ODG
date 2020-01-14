@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System;
+using AutoMapper;
 using Serilog;
 using SysKit.ODG.Authentication;
 using SysKit.ODG.Base.Authentication;
@@ -67,6 +68,8 @@ namespace SysKit.ODG.App.Configuration
             var logger = new LoggerConfiguration()
                 .WriteTo
                 .Console()
+                .WriteTo
+                .File($"{Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)}\\ODGLog.txt", rollingInterval: RollingInterval.Minute)
                 .CreateLogger();
 
             container.RegisterInstance<ILogger>(logger, new SingletonLifetimeManager());

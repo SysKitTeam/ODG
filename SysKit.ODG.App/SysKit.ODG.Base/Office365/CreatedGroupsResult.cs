@@ -34,7 +34,23 @@ namespace SysKit.ODG.Base.Office365
         public List<TeamEntry> TeamsToCreate => _createdGroups.Where(g => g.IsTeam).Cast<TeamEntry>().ToList();
         public List<UnifiedGroupEntry> CreatedGroups => _createdGroups.ToList();
 
-        public Dictionary<string, UnifiedGroupEntry> GroupsWithAddedOwners =>
-            _groupsWithAddedOwners.ToDictionary(x => x.Key, x => x.Value);
+        public Dictionary<string, UnifiedGroupEntry> GroupsWithAddedOwners
+        {
+            get
+            {
+                var result = new Dictionary<string, UnifiedGroupEntry>();
+                foreach (var groupsWithAddedOwner in _groupsWithAddedOwners)
+                {
+                    // we want only succesfully created groups
+                    if (_createdGroups.Contains(groupsWithAddedOwner.Value))
+                    {
+                        result.Add(groupsWithAddedOwner.Key, groupsWithAddedOwner.Value);
+                    }
+                }
+
+                return result;
+            }
+        }
+            
     }
 }
