@@ -108,6 +108,7 @@ namespace SysKit.ODG.App
                 return consolePassword();
             }
 
+            Console.WriteLine();
             return pass;
         }
     }
