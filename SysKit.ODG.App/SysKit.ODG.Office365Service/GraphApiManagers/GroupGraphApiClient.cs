@@ -19,6 +19,7 @@ using SysKit.ODG.Base.Office365;
 using SysKit.ODG.Office365Service.GraphHttpProvider;
 using SysKit.ODG.Office365Service.GraphHttpProvider.Dto;
 using Beta = BetaLib.Microsoft.Graph;
+using DriveItem = Microsoft.Graph.DriveItem;
 
 namespace SysKit.ODG.Office365Service.GraphApiManagers
 {
@@ -74,7 +75,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             });
             
             _notifier.Info($"Waiting for groups to provision");
-            var failedGroupsCount = await waitForGroupProvisioning(createdGroupsResult.CreatedGroups.ToDictionary(g => g.GroupId, g => new GraphBatchRequest(g.MailNickname, $"groups/{g.GroupId}/drive",HttpMethod.Get)));
+            var failedGroupsCount = await waitForGroupProvisioning(createdGroupsResult.CreatedGroups.ToDictionary(g => g.GroupId, g => new GraphBatchRequest(g.GroupId, $"groups/{g.GroupId}/drive",HttpMethod.Get)));
             _notifier.Info($"Group provisioning finished. Failed groups count: {failedGroupsCount}");
 
             return createdGroupsResult;
@@ -99,7 +100,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     }
                 }
 
-                await executeActionWithProgress(progressUpdater, batchEntries, onResult: (key, value) =>
+                await executeActionWithProgress(progressUpdater, batchEntries, true, onResult: (key, value) =>
                 {
                     var originalTeam = teamLookup[key];
                     if (value.IsSuccessStatusCode)
@@ -131,6 +132,10 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 attempts++;
             }
 
+            _notifier.Info($"Waiting for teams to provision");
+            var failedTeamsCount = await waitForTeamProvisioning(successfullyCreatedTeams.ToDictionary(g => g.GroupId, g => new GraphBatchRequest(g.GroupId, $"teams/{g.GroupId}", HttpMethod.Get)));
+            _notifier.Info($"Team provisioning finished. Failed teams count: {failedTeamsCount}");
+
             return successfullyCreatedTeams.ToList();
         }
 
@@ -160,7 +165,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 }
             }
 
-            await executeActionWithProgress(progressUpdater, batchEntries, onResult: (key, value) =>
+            await executeActionWithProgress(progressUpdater, batchEntries, true, onResult: (key, value) =>
             {
                 var channelEntry = channelLookup[key];
                 var teamId = key.Split('/')[1];
@@ -211,16 +216,58 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             await Task.Delay(TimeSpan.FromSeconds(attempt * 15));
 
             var failedGroups = new Dictionary<string, GraphBatchRequest>();
-            var groupDriveResults = await _httpProvider.SendBatchAsync(groupDriveBatchRequests.Values, _accessTokenManager, false);
+            var groupDriveResults = await _httpProvider.SendBatchAsync(groupDriveBatchRequests.Values, _accessTokenManager, true);
             foreach (var result in groupDriveResults)
             {
                 if (!result.Value.IsSuccessStatusCode)
                 {
-                    failedGroups.Add(result.Key, groupDriveBatchRequests[result.Key]);
+                    if (isKnownError(GraphAPIKnownErrorMessages.GroupProvisionError, result.Value))
+                    {
+                        failedGroups.Add(result.Key, groupDriveBatchRequests[result.Key]);
+                    }
+                    else
+                    {
+                        _notifier.Error(getErrorMessage(result.Value));
+                    }
                 }
             }
 
             return await waitForGroupProvisioning(failedGroups, attempt + 1);
+        }
+
+        /// <summary>
+        /// Waits for Team to be available
+        /// </summary>
+        /// <param name="groupDriveBatchRequests"></param>
+        /// <param name="attempt"></param>
+        /// <returns></returns>
+        private async Task<int> waitForTeamProvisioning(Dictionary<string, GraphBatchRequest> teamBatchRequests, int attempt = 0)
+        {
+            if (attempt >= _maxProvisioningAttempts || !teamBatchRequests.Any())
+            {
+                return teamBatchRequests.Count;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(attempt * 15));
+
+            var failedTeams = new Dictionary<string, GraphBatchRequest>();
+            var groupDriveResults = await _httpProvider.SendBatchAsync(teamBatchRequests.Values, _accessTokenManager, true);
+            foreach (var result in groupDriveResults)
+            {
+                if (!result.Value.IsSuccessStatusCode)
+                {
+                    if (isKnownError(GraphAPIKnownErrorMessages.TeamProvisionError, result.Value))
+                    {
+                        failedTeams.Add(result.Key, teamBatchRequests[result.Key]);
+                    }
+                    else
+                    {
+                        _notifier.Error(getErrorMessage(result.Value));
+                    }
+                }
+            }
+
+            return await waitForTeamProvisioning(failedTeams, attempt + 1);
         }
 
         private bool tryCreateGroupBatch(UserEntryCollection users, Dictionary<string, UnifiedGroupEntry> groupLookup, UnifiedGroupEntry @group, CreatedGroupsResult createResult, out GroupExtended graphGroup)

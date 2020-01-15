@@ -16,5 +16,9 @@ namespace SysKit.ODG.Office365Service
 
         public static string GroupAlreadyExists =>
             "Another object with the same value for property mailNickname already exists.";
+
+        public static string GroupProvisionError => "Resource provisioning is in progress";
+
+        public static string TeamProvisionError => "No team found with Group Id";
     }
 }
