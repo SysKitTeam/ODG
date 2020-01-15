@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using SysKit.ODG.Base.DTO.Generation;
+using SysKit.ODG.Base.Exceptions;
 using SysKit.ODG.Base.Utils;
 using SysKit.ODG.Base.XmlTemplate.Model;
 
@@ -48,6 +49,35 @@ namespace SysKit.ODG.Base.Office365
             {
                 yield return new MemberEntry(entryValue.UserPrincipalName);
             }
+        }
+
+        /// <summary>
+        /// Returns User AAD Ids, or fails if some user is missing
+        /// </summary>
+        /// <param name="members"></param>
+        /// <returns></returns>
+        public HashSet<string> GetMemberIds(IEnumerable<MemberEntry> members)
+        {
+            var userIds = new HashSet<string>();
+
+            if (members == null)
+            {
+                return userIds;
+            }
+
+            foreach (var member in members)
+            {
+                var memberEntry = FindMember(member);
+
+                if (memberEntry == null)
+                {
+                    throw new MemberNotFoundException(member.Name);
+                }
+
+                userIds.Add(memberEntry.Id);
+            }
+
+            return userIds;
         }
     }
 }

@@ -6,7 +6,6 @@ namespace SysKit.ODG.Base.DTO.Generation
 {
     public class UnifiedGroupEntry: GroupEntry
     {
-        public string GroupId { get; set; }
         public string MailNickname { get; set; }
         public string SiteUrl { get; set; }
         public bool IsPrivate { get; set; }

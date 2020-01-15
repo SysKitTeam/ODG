@@ -19,6 +19,8 @@ namespace SysKit.ODG.Office365Service
 
         public static string GroupProvisionError => "Resource provisioning is in progress";
 
+        public static string GroupProvisionError1 => "Unable to provision resource";
+
         public static string TeamProvisionError => "No team found with Group Id";
     }
 }

@@ -96,12 +96,13 @@ namespace SysKit.ODG.Generation.Groups
             {
                 var isPrivateChannel = RandomThreadSafeGenerator.Next(0, 100) > 80;
                 var channelName = _sampleDataService.GetRandomValue(_sampleDataService.GroupNames);
-                var channelEntry = new TeamChannelEntry(channelName, isPrivateChannel);
+                var cleanChannelName = Regex.Replace(channelName, @"[^a-zA-Z0-9]", "");
+                var channelEntry = new TeamChannelEntry(cleanChannelName, isPrivateChannel);
 
                 if (channelEntry.IsPrivate)
                 {
                     // for testing purposes I want both channel owners and members to be from group members
-                    channelEntry.Owners = sampleTeam.Members.GetRandom(RandomThreadSafeGenerator.Next(3)).ToList();
+                    channelEntry.Owners = sampleTeam.Members.GetRandom(RandomThreadSafeGenerator.Next(1, 3)).ToList();
                     channelEntry.Members = sampleTeam.Members.GetRandom(RandomThreadSafeGenerator.Next(5)).ToList();
                 }
 

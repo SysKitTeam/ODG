@@ -9,7 +9,7 @@ namespace SysKit.ODG.Base.Office365
 {
     public class CreatedGroupsResult
     {
-        private readonly ConcurrentBag<UnifiedGroupEntry> _createdGroups = new ConcurrentBag<UnifiedGroupEntry>();
+        private ConcurrentBag<UnifiedGroupEntry> _createdGroups = new ConcurrentBag<UnifiedGroupEntry>();
         /// <summary>
         /// Groups that didn't have current user as owner. We need to add him to owners so we can create a team from group
         /// Key => userid, Value => group where owner was added
@@ -24,6 +24,27 @@ namespace SysKit.ODG.Base.Office365
         public void AddGroup(UnifiedGroupEntry createdGroup)
         {
             _createdGroups.Add(createdGroup);
+        }
+
+        public void RemoveGroupsByGroupId(IEnumerable<string> groupIds)
+        {
+            var groupIdsHash = new HashSet<string>(groupIds);
+            if (!groupIdsHash.Any())
+            {
+                return;;
+            }
+
+            _createdGroups = new ConcurrentBag<UnifiedGroupEntry>(_createdGroups.Where(g => !groupIdsHash.Contains(g.GroupId)));
+        }
+
+        /// <summary>
+        /// Filters groups to be only created
+        /// </summary>
+        /// <param name="groups"></param>
+        /// <returns></returns>
+        public IEnumerable<UnifiedGroupEntry> FilterOnlyCreatedGroups(IEnumerable<UnifiedGroupEntry> groups)
+        {
+            return _createdGroups.Intersect(groups);
         }
 
         public void AddGroupWhereOwnerWasAdded(string ownerId, UnifiedGroupEntry group)

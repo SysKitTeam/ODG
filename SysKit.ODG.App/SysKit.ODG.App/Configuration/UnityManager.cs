@@ -69,7 +69,7 @@ namespace SysKit.ODG.App.Configuration
                 .WriteTo
                 .Console()
                 .WriteTo
-                .File($"{Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)}\\ODGLog.txt", rollingInterval: RollingInterval.Minute)
+                .File($"{Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)}\\ODGLog_{DateTime.Now:yyyy-dd-M--HH-mm}.txt")
                 .CreateLogger();
 
             container.RegisterInstance<ILogger>(logger, new SingletonLifetimeManager());
