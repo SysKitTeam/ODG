@@ -45,9 +45,17 @@ namespace SysKit.ODG.Base.Notifier
             _notifier.Progress($"Processed: {count}/{_totalCount}");
         }
 
-        public void Dispose()
+        /// <summary>
+        /// Flushes any update changes
+        /// </summary>
+        public void Flush()
         {
             _notifier.Flush();
+        }
+
+        public void Dispose()
+        {
+            Flush();
             _notifier.Info($"FINISHED ({_stopwatch.Elapsed.TotalSeconds}s)");
             _notifier.EndContext();
         }

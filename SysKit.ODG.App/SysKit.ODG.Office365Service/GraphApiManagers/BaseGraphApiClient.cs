@@ -10,7 +10,9 @@ using Microsoft.Graph;
 using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Office365Service;
+using SysKit.ODG.Base.Notifier;
 using SysKit.ODG.Office365Service.GraphHttpProvider;
+using SysKit.ODG.Office365Service.GraphHttpProvider.Dto;
 
 namespace SysKit.ODG.Office365Service.GraphApiManagers
 {
@@ -80,6 +82,37 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
             var content = responseMessage.Content.ReadAsAsync<GraphApiError>().GetAwaiter().GetResult();
             return content.Error?.Message?.Contains(expectedMessage) == true;
+        }
+
+        /// <summary>
+        /// Executes request with progress update
+        /// </summary>
+        /// <param name="progressUpdater"></param>
+        /// <param name="batchEntries"></param>
+        /// <param name="useBetaEndpoint"></param>
+        /// <param name="onResult"></param>
+        /// <returns></returns>
+        protected async Task executeActionWithProgress(ProgressUpdater progressUpdater, List<GraphBatchRequest> batchEntries, bool useBetaEndpoint = false, Action<string, HttpResponseMessage> onResult = null)
+        {
+            if (!batchEntries.Any())
+            {
+                return;
+            }
+
+            progressUpdater.SetTotalCount(batchEntries.Count);
+            Action<Dictionary<string, HttpResponseMessage>> handleBatchResult = results =>
+            {
+                foreach (var result in results)
+                {
+                    onResult?.Invoke(result.Key, result.Value);
+                    result.Value.Dispose();
+                }
+
+                progressUpdater.UpdateProgress(results.Count);
+            };
+
+            await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult, useBetaEndpoint);
+            progressUpdater.Flush();
         }
         #endregion
 

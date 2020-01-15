@@ -75,43 +75,28 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 batchEntries.Add(new GraphBatchRequest(graphUser.UserPrincipalName, "users", HttpMethod.Post, graphUser));
             }
 
-            if (!batchEntries.Any())
+            await executeActionWithProgress(progressUpdater, batchEntries, onResult: (key, value) =>
             {
-                return new List<UserEntry>();
-            }
-
-            progressUpdater.SetTotalCount(batchEntries.Count);
-            Action<Dictionary<string, HttpResponseMessage>> handleBatchResult = results =>
-            {
-                foreach (var result in results)
+                var originalUser = userLookup[key];
+                if (value.IsSuccessStatusCode)
                 {
-                    var originalUser = userLookup[result.Key];
-                    if (result.Value.IsSuccessStatusCode)
+                    var graphUser = deserializeGraphObject<User>(value.Content).GetAwaiter().GetResult();
+                    originalUser.Id = graphUser.Id;
+                    graphUser.UserPrincipalName = graphUser.UserPrincipalName;
+                    successfullyCreatedUsers.Add(originalUser);
+                }
+                else
+                {
+                    if (isKnownError(GraphAPIKnownErrorMessages.UserAlreadyExists, value))
                     {
-                        var graphUser = deserializeGraphObject<User>(result.Value.Content).GetAwaiter().GetResult();
-                        originalUser.Id = graphUser.Id;
-                        graphUser.UserPrincipalName = graphUser.UserPrincipalName;
-                        successfullyCreatedUsers.Add(originalUser);
+                        _notifier.Warning($"Failed to create: {originalUser.UserPrincipalName}. User already exists.");
                     }
                     else
                     {
-                        if (isKnownError(GraphAPIKnownErrorMessages.UserAlreadyExists, result.Value))
-                        {
-                            _notifier.Warning($"Failed to create: {originalUser.UserPrincipalName}. User already exists.");
-                        }
-                        else
-                        {
-                            _notifier.Error($"Failed to create: {originalUser.UserPrincipalName}. {getErrorMessage(result.Value)}");
-                        }
+                        _notifier.Error($"Failed to create: {originalUser.UserPrincipalName}. {getErrorMessage(value)}");
                     }
-
-                    result.Value.Dispose();
                 }
-
-                progressUpdater.UpdateProgress(results.Count);
-            };
-
-            await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult);
+            });
 
             return successfullyCreatedUsers.ToList();
         }

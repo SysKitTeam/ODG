@@ -51,44 +51,28 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 }
             }
 
-            if (!batchEntries.Any())
+            await executeActionWithProgress(progressUpdater, batchEntries, onResult: (key, value) =>
             {
-                return new CreatedGroupsResult();
-            }
-
-            progressUpdater.SetTotalCount(batchEntries.Count);
-            Action<Dictionary<string, HttpResponseMessage>> handleBatchResult = results =>
-            {
-                foreach (var result in results)
+                var originalGroup = groupLookup[key];
+                if (value.IsSuccessStatusCode)
                 {
-                    var originalGroup = groupLookup[result.Key];
-                    if (result.Value.IsSuccessStatusCode)
+                    var createdGroup = deserializeGraphObject<Group>(value.Content).GetAwaiter().GetResult();
+                    originalGroup.GroupId = createdGroup.Id;
+                    createdGroupsResult.AddGroup(originalGroup);
+                }
+                else
+                {
+                    if (isKnownError(GraphAPIKnownErrorMessages.GroupAlreadyExists, value))
                     {
-                        var createdGroup = deserializeGraphObject<Group>(result.Value.Content).GetAwaiter().GetResult();
-                        originalGroup.GroupId = createdGroup.Id;
-                        createdGroupsResult.AddGroup(originalGroup);
+                        _notifier.Warning($"Failed to create: {originalGroup.MailNickname}. Group already exists");
                     }
                     else
                     {
-                        if (isKnownError(GraphAPIKnownErrorMessages.GroupAlreadyExists, result.Value))
-                        {
-                            _notifier.Warning($"Failed to create: {originalGroup.MailNickname}. Group already exists");
-                        }
-                        else
-                        {
-                            _notifier.Error($"Failed to create: {originalGroup.MailNickname}. {getErrorMessage(result.Value)}");
-                        }
+                        _notifier.Error($"Failed to create: {originalGroup.MailNickname}. {getErrorMessage(value)}");
                     }
-
-                    result.Value.Dispose();
                 }
-
-                progressUpdater.UpdateProgress(results.Count);
-            };
-
-            await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult);
-            _notifier.Flush();
-
+            });
+            
             _notifier.Info($"Waiting for groups to provision");
             var failedGroupsCount = await waitForGroupProvisioning(createdGroupsResult.CreatedGroups.ToDictionary(g => g.GroupId, g => new GraphBatchRequest(g.MailNickname, $"groups/{g.GroupId}/drive",HttpMethod.Get)));
             _notifier.Info($"Group provisioning finished. Failed groups count: {failedGroupsCount}");
@@ -115,36 +99,20 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     }
                 }
 
-                if (!batchEntries.Any())
+                await executeActionWithProgress(progressUpdater, batchEntries, onResult: (key, value) =>
                 {
-                    return;
-                }
-
-
-                Action<Dictionary<string, HttpResponseMessage>> handleBatchResult = results =>
-                {
-                    foreach (var result in results)
+                    var originalTeam = teamLookup[key];
+                    if (value.IsSuccessStatusCode)
                     {
-                        var originalTeam = teamLookup[result.Key];
-                        if (result.Value.IsSuccessStatusCode)
-                        {
-                            successfullyCreatedTeams.Add(originalTeam);
-                        }
-                        else
-                        {
-                            // TODO: handle only if group id doesnt exist
-                            failedTeams.Add(teamLookup[result.Key]);
-                            _notifier.Error($"Failed to create: {originalTeam.MailNickname} .{getErrorMessage(result.Value)}");
-                        }
-
-                        result.Value.Dispose();
+                        successfullyCreatedTeams.Add(originalTeam);
                     }
-
-                    progressUpdater.UpdateProgress(results.Count);
-                };
-
-                await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult, true);
-                _notifier.Flush();
+                    else
+                    {
+                        // TODO: handle only if group id doesnt exist
+                        failedTeams.Add(teamLookup[key]);
+                        _notifier.Error($"Failed to create: {originalTeam.MailNickname} .{getErrorMessage(value)}");
+                    }
+                });
             }
 
             await executeCreateTeams(teams);
@@ -192,21 +160,15 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 }
             }
 
-            if (!batchEntries.Any())
+            await executeActionWithProgress(progressUpdater, batchEntries, onResult: (key, value) =>
             {
-                return;
-            }
-
-            var results = await _httpProvider.SendBatchAsync(batchEntries, _accessTokenManager, true);
-            foreach (var result in results)
-            {
-                var channelEntry = channelLookup[result.Key];
-                var teamId = result.Key.Split('/')[1];
-                if (!result.Value.IsSuccessStatusCode)
+                var channelEntry = channelLookup[key];
+                var teamId = key.Split('/')[1];
+                if (!value.IsSuccessStatusCode)
                 {
-                    _notifier.Error($"Failed to create channel {channelEntry.DisplayName}(teamId: {teamId}). {getErrorMessage(result.Value)}");
+                    _notifier.Error($"Failed to create channel {channelEntry.DisplayName}(teamId: {teamId}). {getErrorMessage(value)}");
                 }
-            }
+            });
         }
 
         /// <inheritdoc />
@@ -221,19 +183,13 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 batchEntries.Add(new GraphBatchRequest($"{++i}", $"/groups/{ownerMap.Value.GroupId}/owners/{ownerMap.Key}/$ref", HttpMethod.Delete));
             }
 
-            if (!batchEntries.Any())
+            await executeActionWithProgress(progressUpdater, batchEntries, onResult: (key, value) =>
             {
-                return;
-            }
-
-            var results = await _httpProvider.SendBatchAsync(batchEntries, _accessTokenManager);
-            foreach (var result in results)
-            {
-                if (!result.Value.IsSuccessStatusCode)
+                if (!value.IsSuccessStatusCode)
                 {
-                    _notifier.Error($"Failed to remove group owner. {getErrorMessage(result.Value)}");
+                    _notifier.Error($"Failed to remove group owner. {getErrorMessage(value)}");
                 }
-            }
+            });
         }
 
         #region Helpers
