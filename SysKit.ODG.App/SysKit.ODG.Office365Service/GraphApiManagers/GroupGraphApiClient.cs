@@ -226,7 +226,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
         #region Helpers
 
-        private int _maxProvisioningAttempts = 3;
+        private int _maxProvisioningAttempts = 5;
         /// <summary>
         /// Waits for Group drive to be available. This is a sign that group was provisioned
         /// </summary>
@@ -243,13 +243,13 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             await Task.Delay(TimeSpan.FromSeconds(attempt * 15));
 
             var failedGroups = new Dictionary<string, GraphBatchRequest>();
-            var groupDriveResults = await _httpProvider.SendBatchAsync(groupDriveBatchRequests.Values, _accessTokenManager, true);
+            var groupDriveResults = await _httpProvider.SendBatchAsync(groupDriveBatchRequests.Values, _accessTokenManager, true, 4);
             foreach (var result in groupDriveResults)
             {
                 if (!result.Value.IsSuccessStatusCode)
                 {
                     failedGroups.Add(result.Key, groupDriveBatchRequests[result.Key]);
-                    if (!isKnownError(GraphAPIKnownErrorMessages.GroupProvisionError, result.Value) && !isKnownError(GraphAPIKnownErrorMessages.GroupProvisionError1, result.Value))
+                    if (!isKnownError(GraphAPIKnownErrorMessages.GroupProvisionError, result.Value) || !isKnownError(GraphAPIKnownErrorMessages.GroupProvisionError1, result.Value))
                     {
                         _notifier.Error($"Failed to provision group: {result.Key}. {getErrorMessage(result.Value)}");
                     }
@@ -275,7 +275,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             await Task.Delay(TimeSpan.FromSeconds(attempt * 15));
 
             var failedTeams = new Dictionary<string, GraphBatchRequest>();
-            var groupDriveResults = await _httpProvider.SendBatchAsync(teamBatchRequests.Values, _accessTokenManager, true);
+            var groupDriveResults = await _httpProvider.SendBatchAsync(teamBatchRequests.Values, _accessTokenManager, true, 4);
             foreach (var result in groupDriveResults)
             {
                 if (!result.Value.IsSuccessStatusCode)

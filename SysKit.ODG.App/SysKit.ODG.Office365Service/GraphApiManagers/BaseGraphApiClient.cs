@@ -81,7 +81,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             }
 
             var content = responseMessage.Content.ReadAsAsync<GraphApiError>().GetAwaiter().GetResult();
-            return content.Error?.Message?.Contains(expectedMessage) == true;
+            return content?.Error?.Message?.Contains(expectedMessage) == true;
         }
 
         /// <summary>
