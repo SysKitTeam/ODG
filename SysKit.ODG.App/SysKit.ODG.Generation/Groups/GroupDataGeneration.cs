@@ -142,9 +142,15 @@ namespace SysKit.ODG.Generation.Groups
         private void populateSampleGroupProperties(GroupEntry groupEntry, IUserEntryCollection userEntryCollection, XmlRandomOptions generationOptions)
         {
             groupEntry.DisplayName = _sampleDataService.GetRandomValue(_sampleDataService.GroupNames);
-            groupEntry.Owners = userEntryCollection.GetRandomEntries(RandomThreadSafeGenerator.Next(generationOptions.MaxNumberOfOwnersPerGroup))
+            var maxOwners = generationOptions.MaxNumberOfOwnersPerGroup <= 0
+                ? 3
+                : generationOptions.MaxNumberOfOwnersPerGroup;
+            var maxMembers = generationOptions.MaxNumberOfMembersPerGroup <= 0
+                ? 15
+                : generationOptions.MaxNumberOfOwnersPerGroup;
+            groupEntry.Owners = userEntryCollection.GetRandomEntries(RandomThreadSafeGenerator.Next(maxOwners))
                 .ToList();
-            groupEntry.Members = userEntryCollection.GetRandomEntries(RandomThreadSafeGenerator.Next(generationOptions.MaxNumberOfMembersPerGroup))
+            groupEntry.Members = userEntryCollection.GetRandomEntries(RandomThreadSafeGenerator.Next(maxMembers))
                 .ToList();
         }
     }
