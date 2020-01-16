@@ -14,7 +14,7 @@
     <Deterministic>true</Deterministic>
     <IsWebBootstrapper>true</IsWebBootstrapper>
     <PublishUrl>C:\dino.kacavenda.odg\ODG\releases\ClickOnce\</PublishUrl>
-    <Install>false</Install>
+    <Install>true</Install>
     <InstallFrom>Web</InstallFrom>
     <UpdateEnabled>true</UpdateEnabled>
     <UpdateMode>Foreground</UpdateMode>
@@ -24,9 +24,11 @@
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
     <InstallUrl>https://github.com/SysKitTeam/ODG/raw/master/releases/ClickOnce/</InstallUrl>
-    <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
+    <ProductName>SysKit.ODG</ProductName>
+    <PublisherName>SysKit Ltd.</PublisherName>
     <WebPage>publish.htm</WebPage>
-    <ApplicationRevision>3</ApplicationRevision>
+    <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
+    <ApplicationRevision>4</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
