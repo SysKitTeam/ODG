@@ -90,11 +90,14 @@ namespace SysKit.ODG.Generation.Groups
             var sampleTeam = new TeamEntry();
             populateSampleUnifiedGroupProperties(generationOptions, userEntryCollection, sampleTeam);
             var maxChannels = 10;
+            // TODO: there is some limit on the Graph API endpoint where it starts falling if we try to add more than 2 private channels at once. Try to add retry logic
+            var maxNumberOfPrivateChannels = 2;
+            var numberOfPrivateChannels = 0;
             var currentTeamChannels = RandomThreadSafeGenerator.Next(maxChannels);
 
             for (int i = 0; i < currentTeamChannels; i++)
             {
-                var isPrivateChannel = RandomThreadSafeGenerator.Next(0, 100) > 80;
+                var isPrivateChannel = RandomThreadSafeGenerator.Next(0, 100) > 80 && numberOfPrivateChannels < maxNumberOfPrivateChannels;
                 var channelName = _sampleDataService.GetRandomValue(_sampleDataService.GroupNames);
                 var cleanChannelName = Regex.Replace(channelName, @"[^a-zA-Z0-9]", "");
                 var channelEntry = new TeamChannelEntry(cleanChannelName, isPrivateChannel);
@@ -104,6 +107,7 @@ namespace SysKit.ODG.Generation.Groups
                     // for testing purposes I want both channel owners and members to be from group members
                     channelEntry.Owners = sampleTeam.Members.GetRandom(RandomThreadSafeGenerator.Next(1, 3)).ToList();
                     channelEntry.Members = sampleTeam.Members.GetRandom(RandomThreadSafeGenerator.Next(5)).ToList();
+                    numberOfPrivateChannels++;
                 }
 
                 sampleTeam.Channels.Add(channelEntry);

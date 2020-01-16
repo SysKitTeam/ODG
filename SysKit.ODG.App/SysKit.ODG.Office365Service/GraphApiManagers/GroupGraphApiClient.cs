@@ -166,9 +166,9 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         }
 
         /// <inheritdoc />
-        public async Task CreateTeamChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users)
+        public async Task CreatePrivateTeamChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users)
         {
-            using var progressUpdater = new ProgressUpdater("Create Channels", _notifier);
+            using var progressUpdater = new ProgressUpdater("Create Private Channels", _notifier);
             var batchEntries = new List<GraphBatchRequest>();
             var channelLookup = new Dictionary<string, TeamChannelEntry>();
 
@@ -180,7 +180,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     continue;
                 }
 
-                foreach (var teamChannelEntry in team.Channels)
+                foreach (var teamChannelEntry in team.Channels.Where(c => c.IsPrivate))
                 {
                     try
                     {
@@ -350,16 +350,16 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             teamLookup.Add(team.MailNickname, team);
             var graphTeam = new TeamExtended(team.GroupId);
 
-            //if (team?.Channels.Any() == true)
-            //{
-            //    graphTeam.Channels = new Beta.TeamChannelsCollectionPage();
-            //    // TODO: private channels are not supported currently. This will hopefully change :)
-            //    foreach (var channel in team.Channels.Where(c => !c.IsPrivate))
-            //    {
-            //        if (!tryCreateChannel(users, channel, out var newChannel)) return false;
-            //        graphTeam.Channels.Add(newChannel);
-            //    }
-            //}
+            if (team?.Channels.Any() == true)
+            {
+                graphTeam.Channels = new Beta.TeamChannelsCollectionPage();
+                // TODO: private channels are not supported currently. This will hopefully change :)
+                foreach (var channel in team.Channels.Where(c => !c.IsPrivate))
+                {
+                    var graphChannel = createGraphChannel(users, channel);
+                    graphTeam.Channels.Add(graphChannel);
+                }
+            }
 
             return graphTeam;
         }

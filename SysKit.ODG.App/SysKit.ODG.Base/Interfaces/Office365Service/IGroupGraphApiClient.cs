@@ -24,12 +24,12 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         Task<List<TeamEntry>> CreateTeamsFromGroups(IEnumerable<TeamEntry> teams, UserEntryCollection users);
 
         /// <summary>
-        /// Creates channels for existing groups
+        /// Creates private channels for existing groups
         /// </summary>
         /// <param name="teams"></param>
         /// <param name="users"></param>
         /// <returns></returns>
-        Task CreateTeamChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users);
+        Task CreatePrivateTeamChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users);
 
         /// <summary>
         /// Removes group owners. Key =>userId, Value => group from which to remove owner

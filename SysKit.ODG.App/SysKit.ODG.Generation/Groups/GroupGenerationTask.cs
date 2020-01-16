@@ -39,7 +39,7 @@ namespace SysKit.ODG.Generation.Groups
             var createdGroups = await groupGraphApiClient.CreateUnifiedGroups(groups, users);
             var createdTeams = await groupGraphApiClient.CreateTeamsFromGroups(createdGroups.TeamsToCreate, users);
 
-            await groupGraphApiClient.CreateTeamChannels(createdTeams, users);
+            await groupGraphApiClient.CreatePrivateTeamChannels(createdTeams, users);
 
             // we needed to add ourselfs to owners so we can create teams
             var groupsToRemoveOwners = createdGroups.GroupsWithAddedOwners;

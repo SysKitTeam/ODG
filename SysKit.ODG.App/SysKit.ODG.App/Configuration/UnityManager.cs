@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using AutoMapper;
 using Serilog;
 using SysKit.ODG.Authentication;
@@ -65,11 +66,12 @@ namespace SysKit.ODG.App.Configuration
     {
         public static UnityContainer addLogging(this UnityContainer container)
         {
+            var logPath = $"{Path.GetTempPath()}ODG\\ODGLog_{DateTime.Now:yyyy-dd-M--HH-mm}.txt";
             var logger = new LoggerConfiguration()
                 .WriteTo
                 .Console()
                 .WriteTo
-                .File($"{Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)}\\ODG\\ODGLog_{DateTime.Now:yyyy-dd-M--HH-mm}.txt")
+                .File(logPath, retainedFileCountLimit: 5)
                 .CreateLogger();
 
             container.RegisterInstance<ILogger>(logger, new SingletonLifetimeManager());
