@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -132,9 +133,11 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     }
                     else
                     {
-                        // TODO: handle only if group id doesnt exist
                         failedTeams.Add(teamLookup[key]);
-                        _notifier.Error($"Failed to create: {originalTeam.MailNickname} .{getErrorMessage(value)}");
+                        if (!isKnownError(HttpStatusCode.NotFound, value))
+                        {
+                            _notifier.Error($"Failed to create: {originalTeam.MailNickname} .{getErrorMessage(value)}");
+                        }
                     }
                 });
             }
@@ -287,7 +290,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 if (!result.Value.IsSuccessStatusCode)
                 {
                     failedTeams.Add(result.Key, teamBatchRequests[result.Key]);
-                    if (!isKnownError(GraphAPIKnownErrorMessages.TeamProvisionError, result.Value))
+                    if (!isKnownError(GraphAPIKnownErrorMessages.TeamProvisionError, result.Value) && !isKnownError(HttpStatusCode.NotFound, result.Value))
                     {
                         _notifier.Error(getErrorMessage(result.Value));
                     }

@@ -31,17 +31,9 @@ namespace SysKit.ODG.Generation
         {
             foreach (var task in _generationTasks)
             {
-                try
+                using (new ProgressUpdater(task.Key, notifier))
                 {
-                    using (new ProgressUpdater(task.Key, notifier))
-                    {
-                        await task.Value.Execute(generationOptions, notifier);
-                    }
-                }
-                catch (Exception e)
-                {
-                    notifier.Error($"Error while executing: {task.Key}", e);
-                    throw;
+                    await task.Value.Execute(generationOptions, notifier);
                 }
             }
         }

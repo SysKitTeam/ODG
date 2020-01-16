@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using AutoMapper;
 using SysKit.ODG.Base.DTO.Generation;
+using SysKit.ODG.Base.Exceptions;
 using SysKit.ODG.Base.XmlTemplate.Model;
 using SysKit.ODG.Base.XmlTemplate.Model.Groups;
 
@@ -51,6 +52,7 @@ namespace SysKit.ODG.Generation.Groups
 
         private UnifiedGroupEntry populateGroupEntry(XmlUnifiedGroup unifiedGroup, UnifiedGroupEntry groupEntry)
         {
+            validateGroup(unifiedGroup);
             groupEntry.DisplayName = unifiedGroup.DisplayName;
             groupEntry.MailNickname = unifiedGroup.Name;
             groupEntry.IsPrivate = unifiedGroup.IsPrivate;
@@ -61,9 +63,17 @@ namespace SysKit.ODG.Generation.Groups
             return groupEntry;
         }
 
-        private void validate(XmlUnifiedGroup xmlGroup)
+        private void validateGroup(XmlGroup xmlGroup)
         {
-            // TODO: private channel at least one owner
+            if (string.IsNullOrEmpty(xmlGroup.DisplayName))
+            {
+                throw new XmlValidationException("Group DisplayName property is not defined");
+            }
+
+            if (string.IsNullOrEmpty(xmlGroup.Name))
+            {
+                throw new XmlValidationException("Group Name property is not defined");
+            }
         }
     }
 }

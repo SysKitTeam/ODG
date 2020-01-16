@@ -38,13 +38,25 @@ namespace SysKit.ODG.App
             var templateLocation = nonNullConsoleRead("ODG template location:");
 
             var userCredentials = new SimpleUserCredentials(userName, password);
-            run(userCredentials, clientId, tenantDomain, password, templateLocation);
+
+            try
+            {
+                run(userCredentials, clientId, tenantDomain, password, templateLocation);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Execution failed: {ex.Message}");
+            }
+
+            Console.WriteLine("Finished ;)");
+            Console.ReadLine();
         }
 
         private static void run(SimpleUserCredentials userCredentials, string clientId, string tenantDomain, string defaultPassword, string templateLocation)
         {
             var xmlService = new XmlSpecificationService();
-            //xmlService.SerializeSpecification(testTemplate, templateLocation);
+
+            //xmlService.SerializeSpecification(testTemplate, @"C:\ProgramData\ODG\test.xml");
             var template = xmlService.DeserializeSpecification(templateLocation);
 
             var unityContainer = UnityManager.CreateUnityContainer();
@@ -59,9 +71,6 @@ namespace SysKit.ODG.App
             generationService.AddGenerationTask("User Creation", unityContainer.Resolve<IGenerationTask>("userTask"));
             generationService.AddGenerationTask("Group Creation", unityContainer.Resolve<IGenerationTask>("groupTask"));
             generationService.Start(generationOptions, notifier).GetAwaiter().GetResult();
-
-            Console.WriteLine("Finished ;)");
-            Console.ReadLine();
         }
 
         private static string nonNullConsoleRead(string message)

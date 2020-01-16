@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -82,6 +83,17 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
             var content = responseMessage.Content.ReadAsAsync<GraphApiError>().GetAwaiter().GetResult();
             return content?.Error?.Message?.Contains(expectedMessage) == true;
+        }
+
+        /// <summary>
+        /// Determine if it is known error from error status code
+        /// </summary>
+        /// <param name="statusCode"></param>
+        /// <param name="responseMessage"></param>
+        /// <returns></returns>
+        protected bool isKnownError(HttpStatusCode statusCode, HttpResponseMessage responseMessage)
+        {
+            return responseMessage.StatusCode == statusCode;
         }
 
         /// <summary>

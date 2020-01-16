@@ -31,7 +31,7 @@ namespace SysKit.ODG.Generation.Users
 
             var createdUsers = await userGraphApiClient.CreateTenantUsers(users);
             notifier.Info($"Created Users: {createdUsers.Count}/{users.Count}");
-           
+
             // TODO: assign licences
             // TODO: add external users
             // TODO: invite external users
