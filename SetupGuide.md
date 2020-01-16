@@ -19,3 +19,12 @@ To be able to run ODG you will need:
 8. Go to Manifest and change "allowPublicClient" from null to true
 9. Use the Application (client) ID from the overview page
 
+## Run the application
+
+To run the application you can:
+1. Use the [ClickOnce](https://github.com/SysKitTeam/ODG/raw/master/releases/ClickOnce/setup.exe) installer
+2. Build the binaries yourself
+
+## ODG Template
+
+[Click here](ODGTemplate) to learn more about the ODG Provisioning Schema. There are also sample templates int the SampleTemplates folder.
