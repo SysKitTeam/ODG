@@ -66,7 +66,8 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 }
             }
 
-            await executeActionWithProgress(progressUpdater, batchEntries, onResult: (key, value) =>
+            var maxConcurrentRequests = batchEntries.Count > 1000 ? 1 : 6;
+            await executeActionWithProgress(progressUpdater, batchEntries, true, maxConcurrentRequests: maxConcurrentRequests, onResult: (key, value) =>
             {
                 var originalGroup = groupLookup[key];
                 if (value.IsSuccessStatusCode)
@@ -88,10 +89,10 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 }
             });
             
-            _notifier.Info($"Waiting for groups to provision");
-            var failedGroups = await waitForGroupProvisioning(createdGroupsResult.CreatedGroups.ToDictionary(g => g.GroupId, g => new GraphBatchRequest(g.GroupId, $"groups/{g.GroupId}/drive",HttpMethod.Get)));
-            _notifier.Info($"Group provisioning finished. Failed groups count: {failedGroups.Count}");
-            createdGroupsResult.RemoveGroupsByGroupId(failedGroups);
+            //_notifier.Info($"Waiting for groups to provision");
+            //var failedGroups = await waitForGroupProvisioning(createdGroupsResult.CreatedGroups.ToDictionary(g => g.GroupId, g => new GraphBatchRequest(g.GroupId, $"groups/{g.GroupId}/drive",HttpMethod.Get)));
+            //_notifier.Info($"Group provisioning finished. Failed groups count: {failedGroups.Count}");
+            //createdGroupsResult.RemoveGroupsByGroupId(failedGroups);
 
             createdGroupsResult.RemoveGroupsByGroupId(await addGroupMemberships(createdGroupsResult.FilterOnlyCreatedGroups(groupsWithTooManyMembers).Cast<GroupEntry>().ToList(), users));
             return createdGroupsResult;
@@ -121,7 +122,8 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     }
                 }
 
-                await executeActionWithProgress(progressUpdater, batchEntries, true, onResult: (key, value) =>
+                var maxConcurrentRequests = batchEntries.Count > 1000 ? 1 : 6;
+                await executeActionWithProgress(progressUpdater, batchEntries, true, maxConcurrentRequests: maxConcurrentRequests, onResult: (key, value) =>
                 {
                     var originalTeam = teamLookup[key];
                     if (value.IsSuccessStatusCode)
@@ -198,7 +200,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 var teamId = key.Split('/')[1];
                 if (!value.IsSuccessStatusCode)
                 {
-                    _notifier.Error($"Failed to create channel {channelEntry.DisplayName}(teamId: {teamId}). {getErrorMessage(value)}");
+                    _notifier.Error($"Failed to create {(channelEntry.IsPrivate ? "Private" : "Standard" )} Channel {channelEntry.DisplayName}(teamId: {teamId}). {getErrorMessage(value)}");
                 }
             });
         }
@@ -240,16 +242,18 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 return groupDriveBatchRequests.Keys.ToList();
             }
 
+            _notifier.Warning($"Group provision. Attempt: {attempt}. Number: {groupDriveBatchRequests.Count}");
+
             await Task.Delay(TimeSpan.FromSeconds(attempt * 15));
 
             var failedGroups = new Dictionary<string, GraphBatchRequest>();
-            var groupDriveResults = await _httpProvider.SendBatchAsync(groupDriveBatchRequests.Values, _accessTokenManager, true, 4);
+            var groupDriveResults = await _httpProvider.SendBatchAsync(groupDriveBatchRequests.Values, _accessTokenManager, true);
             foreach (var result in groupDriveResults)
             {
                 if (!result.Value.IsSuccessStatusCode)
                 {
                     failedGroups.Add(result.Key, groupDriveBatchRequests[result.Key]);
-                    if (!isKnownError(GraphAPIKnownErrorMessages.GroupProvisionError, result.Value) || !isKnownError(GraphAPIKnownErrorMessages.GroupProvisionError1, result.Value))
+                    if (!isKnownError(GraphAPIKnownErrorMessages.GroupProvisionError, result.Value) && !isKnownError(GraphAPIKnownErrorMessages.GroupProvisionError1, result.Value))
                     {
                         _notifier.Error($"Failed to provision group: {result.Key}. {getErrorMessage(result.Value)}");
                     }
@@ -272,11 +276,13 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 return teamBatchRequests.Keys.ToList();
             }
 
+            _notifier.Warning($"Retrying team provision. Attempt: {attempt}. Number: {teamBatchRequests.Count}");
+
             await Task.Delay(TimeSpan.FromSeconds(attempt * 15));
 
             var failedTeams = new Dictionary<string, GraphBatchRequest>();
-            var groupDriveResults = await _httpProvider.SendBatchAsync(teamBatchRequests.Values, _accessTokenManager, true, 4);
-            foreach (var result in groupDriveResults)
+            var teamResults = await _httpProvider.SendBatchAsync(teamBatchRequests.Values, _accessTokenManager, true);
+            foreach (var result in teamResults)
             {
                 if (!result.Value.IsSuccessStatusCode)
                 {

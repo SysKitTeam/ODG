@@ -75,7 +75,9 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 batchEntries.Add(new GraphBatchRequest(graphUser.UserPrincipalName, "users", HttpMethod.Post, graphUser));
             }
 
-            await executeActionWithProgress(progressUpdater, batchEntries, onResult: (key, value) =>
+            // there is a limit of around 5k users every 5-10min
+            var maxConcurrentRequests = batchEntries.Count > 4000 ? 2 : 6;
+            await executeActionWithProgress(progressUpdater, batchEntries, maxConcurrentRequests: maxConcurrentRequests, onResult: (key, value) =>
             {
                 var originalUser = userLookup[key];
                 if (value.IsSuccessStatusCode)

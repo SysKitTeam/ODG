@@ -29,7 +29,7 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
         }
 
         /// <inheritdoc />
-        public async Task<Dictionary<string, HttpResponseMessage>> SendBatchAsync(IEnumerable<GraphBatchRequest> batchEntries, IAccessTokenManager tokenRetriever, bool useBetaEndpoint = false, int maxConcurrent = 3)
+        public async Task<Dictionary<string, HttpResponseMessage>> SendBatchAsync(IEnumerable<GraphBatchRequest> batchEntries, IAccessTokenManager tokenRetriever, bool useBetaEndpoint = false, int maxConcurrent = 4)
         {
             var results = new ConcurrentDictionary<string, HttpResponseMessage>();
             
@@ -47,7 +47,7 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
         }
 
         /// <inheritdoc />
-        public async Task StreamBatchAsync(IEnumerable<GraphBatchRequest> batchEntries, IAccessTokenManager tokenRetriever, Action<Dictionary<string, HttpResponseMessage>> handleBatchResult, bool useBetaEndpoint = false, int maxConcurrent = 3)
+        public async Task StreamBatchAsync(IEnumerable<GraphBatchRequest> batchEntries, IAccessTokenManager tokenRetriever, Action<Dictionary<string, HttpResponseMessage>> handleBatchResult, bool useBetaEndpoint = false, int maxConcurrent = 4)
         {
             var endpoint = useBetaEndpoint ? "beta" : "v1.0";
             Func<string, string> createUrl = relativeUrl => $"https://graph.microsoft.com/{endpoint}/{relativeUrl}";
@@ -62,10 +62,15 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
             var batchesToProcess = new BufferBlock<Dictionary<string, GraphBatchRequest>>();
             var executeRequestsBlock = new TransformBlock<Dictionary<string, GraphBatchRequest>, Dictionary<string, HttpResponseMessage>>(batches => execute(tokenRetriever, batches, createUrl), new ExecutionDataflowBlockOptions
             {
-                MaxDegreeOfParallelism = maxConcurrent
+                MaxDegreeOfParallelism = maxConcurrent,
+                EnsureOrdered = false
             });
 
-            var finalBlock = new ActionBlock<Dictionary<string, HttpResponseMessage>>(handleBatchResult);
+            var finalBlock = new ActionBlock<Dictionary<string, HttpResponseMessage>>(handleBatchResult, new ExecutionDataflowBlockOptions
+            {
+                MaxDegreeOfParallelism = maxConcurrent,
+                EnsureOrdered = false
+            });
 
             // link blocks: batches => execute them => save results
             batchesToProcess.LinkTo(executeRequestsBlock, new DataflowLinkOptions { PropagateCompletion = true });

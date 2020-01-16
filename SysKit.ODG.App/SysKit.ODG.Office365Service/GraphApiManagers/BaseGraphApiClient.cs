@@ -92,7 +92,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         /// <param name="useBetaEndpoint"></param>
         /// <param name="onResult"></param>
         /// <returns></returns>
-        protected async Task executeActionWithProgress(ProgressUpdater progressUpdater, List<GraphBatchRequest> batchEntries, bool useBetaEndpoint = false, Action<string, HttpResponseMessage> onResult = null)
+        protected async Task executeActionWithProgress(ProgressUpdater progressUpdater, List<GraphBatchRequest> batchEntries, bool useBetaEndpoint = false, Action<string, HttpResponseMessage> onResult = null, int maxConcurrentRequests = 3)
         {
             if (!batchEntries.Any())
             {
@@ -111,7 +111,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 progressUpdater.UpdateProgress(results.Count);
             };
 
-            await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult, useBetaEndpoint);
+            await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult, useBetaEndpoint, maxConcurrentRequests);
             progressUpdater.Flush();
         }
         #endregion
