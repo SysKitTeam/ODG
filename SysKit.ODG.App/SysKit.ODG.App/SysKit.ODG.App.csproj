@@ -26,9 +26,10 @@
     <InstallUrl>https://github.com/SysKitTeam/ODG/raw/master/releases/ClickOnce/</InstallUrl>
     <ProductName>SysKit.ODG</ProductName>
     <PublisherName>SysKit Ltd.</PublisherName>
+    <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
     <WebPage>publish.htm</WebPage>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
-    <ApplicationRevision>5</ApplicationRevision>
+    <ApplicationRevision>7</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
