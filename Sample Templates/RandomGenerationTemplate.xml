@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<ODGTemplate xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <RandomOptions>
+    <NumberOfUsers>5000</NumberOfUsers>
+    <NumberOfUnifiedGroups>1000</NumberOfUnifiedGroups>
+    <NumberOfTeams>500</NumberOfTeams>
+    <MaxNumberOfOwnersPerGroup>5</MaxNumberOfOwnersPerGroup>
+    <MaxNumberOfMembersPerGroup>15</MaxNumberOfMembersPerGroup>
+  </RandomOptions>
+</ODGTemplate>

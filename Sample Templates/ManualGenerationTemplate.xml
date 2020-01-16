@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<ODGTemplate xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Users>
+		<User Name="brady.gaines" />
+		<User Name="malik.hunter" />
+		<User Name="carley.coombes" AccountDisabled="true" />
+		<User Name="saul.warner" />
+		<User Name="pablo.escobar" />
+  </Users>
+  <Groups>
+		<Group xsi:type="UnifiedGroup" Name="odg.test.group" DisplayName="ODG Generated Test Group" >
+			<Owners>
+				<Member Name="admin" />
+				<Member Name="brady.gaines" />
+			</Owners>
+			<Members>
+				<Member Name="saul.warner" />
+				<Member Name="pablo.escobar" />
+			</Members>
+		</Group>
+		<Group xsi:type="UnifiedGroup" Name="odg.test.group1" DisplayName="ODG Generated Test Group" IsPrivate="true" >
+			<Members>
+				<Member Name="malik.hunter" />
+			</Members>
+		</Group>
+		<Group xsi:type="Team" Name="odg.test.team" DisplayName="ODG Generated Test Team" >
+			<Owners>
+				<Member Name="brady.gaines" />
+				<Member Name="malik.hunter" />
+			</Owners>
+			<Members>
+				<Member Name="saul.warner" />
+				<Member Name="pablo.escobar" />
+				<Member Name="malik.hunter" />
+			</Members>
+			<Channels>
+				<Channel DisplayName="Custom Public Channel" />
+				<Channel DisplayName="Custom Public Channel 2" />
+				<Channel DisplayName="Custom Private Channel" IsPrivate="true" >
+					<Owners>
+						<Member Name="pablo.escobar" />
+					</Owners>
+					<Members>
+						<Member Name="malik.hunter" />
+					</Members>
+				</Channel>
+			</Channels>
+		</Group>
+  </Groups>
+</ODGTemplate>
