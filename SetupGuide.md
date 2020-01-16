@@ -27,4 +27,4 @@ To run the application you can:
 
 ## ODG Template
 
-[Click here](ODGTemplate) to learn more about the ODG Provisioning Schema. There are also sample templates int the SampleTemplates folder.
+[Click here](ODGTemplate.md) to learn more about the ODG Provisioning Schema. There are also sample templates int the [SampleTemplates](SampleTemplates) folder.
