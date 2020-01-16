@@ -10,6 +10,6 @@ ODG is an open-source tool developed by [SysKit Ltd.](https://www.syskit.com/) t
 ## More information
 More information and documentation can be found here:
 
-- [Setup Guide](documentation/SetupGuide.md)
-- [ODG Provisioning Schema](documentation/ODGTemplate.md)
+- [Setup Guide](SetupGuide.md)
+- [ODG Provisioning Schema](ODGTemplate.md)
 - [Template Examples](SampleTemplates)

@@ -31,6 +31,7 @@ namespace SysKit.ODG.Generation.Groups
 
             foreach (var channel in team.Channels)
             {
+                validateChannel(channel);
                 var channelEntry = new TeamChannelEntry(channel.DisplayName, channel.IsPrivate);
                 if (channelEntry.IsPrivate)
                 {
@@ -73,6 +74,19 @@ namespace SysKit.ODG.Generation.Groups
             if (string.IsNullOrEmpty(xmlGroup.Name))
             {
                 throw new XmlValidationException("Group Name property is not defined");
+            }
+        }
+
+        private void validateChannel(XmlTeamChannel xmlChannel)
+        {
+            if (string.IsNullOrEmpty(xmlChannel.DisplayName))
+            {
+                throw new XmlValidationException("Channel DisplayName property is not defined");
+            }
+
+            if (xmlChannel.IsPrivate && xmlChannel.Owners?.Any() == false)
+            {
+                throw new XmlValidationException("Private channel need at least one owner");
             }
         }
     }
