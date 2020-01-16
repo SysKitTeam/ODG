@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,151 +13,164 @@ using Microsoft.Graph;
 using Newtonsoft.Json;
 using Serilog;
 using SysKit.ODG.Base.DTO.Generation;
+using SysKit.ODG.Base.Exceptions;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Office365Service;
+using SysKit.ODG.Base.Notifier;
 using SysKit.ODG.Base.Office365;
 using SysKit.ODG.Office365Service.GraphHttpProvider;
 using SysKit.ODG.Office365Service.GraphHttpProvider.Dto;
 using Beta = BetaLib.Microsoft.Graph;
+using DriveItem = Microsoft.Graph.DriveItem;
 
 namespace SysKit.ODG.Office365Service.GraphApiManagers
 {
     public class GroupGraphApiClient: BaseGraphApiClient, IGroupGraphApiClient
     {
-        private readonly ILogger _logger;
+        private readonly INotifier _notifier;
         public GroupGraphApiClient(IAccessTokenManager accessTokenManager,
-            ILogger logger,
+            INotifier notifier,
             IGraphHttpProviderFactory graphHttpProviderFactory,
             IGraphServiceFactory graphServiceFactory,
             IMapper autoMapper) : base(accessTokenManager, graphHttpProviderFactory, graphServiceFactory, autoMapper)
         {
-            _logger = logger;
+            _notifier = notifier;
         }
 
         /// <inheritdoc />
         public async Task<CreatedGroupsResult> CreateUnifiedGroups(IEnumerable<UnifiedGroupEntry> groups, UserEntryCollection users)
         {
+            using var progressUpdater = new ProgressUpdater("Create Unified Groups", _notifier);
             var createdGroupsResult = new CreatedGroupsResult();
-            int groupsProcessed = 0;
             var groupLookup = new Dictionary<string, UnifiedGroupEntry>();
             var batchEntries = new List<GraphBatchRequest>();
+            var groupsWithTooManyMembers = new HashSet<UnifiedGroupEntry>();
 
             int i = 0;
             foreach (var group in groups)
             {
-                if (tryCreateGroupBatch(users, groupLookup, @group, createdGroupsResult, out var graphGroup))
+                try
                 {
+                    var graphGroup = createGraphGroup(users, groupLookup, @group, createdGroupsResult);
+                    if (graphGroup.HasTooManyMembers())
+                    {
+                        groupsWithTooManyMembers.Add(group);
+                        graphGroup.MembersODataBind = null;
+                        graphGroup.OwnersODataBind = null;
+                    }
+
                     batchEntries.Add(new GraphBatchRequest(group.MailNickname, "groups", HttpMethod.Post, graphGroup));
+                }
+                catch (Exception ex)
+                {
+                    _notifier.Error(ex.Message);
                 }
             }
 
-            if (!batchEntries.Any())
+            var maxConcurrentRequests = batchEntries.Count > 1000 ? 1 : 6;
+            await executeActionWithProgress(progressUpdater, batchEntries, maxConcurrentRequests: maxConcurrentRequests, onResult: (key, value) =>
             {
-                return new CreatedGroupsResult();
-            }
-
-            Action<Dictionary<string, HttpResponseMessage>> handleBatchResult = results =>
-            {
-                foreach (var result in results)
+                var originalGroup = groupLookup[key];
+                if (value.IsSuccessStatusCode)
                 {
-                    if (result.Value.IsSuccessStatusCode)
+                    var createdGroup = deserializeGraphObject<Group>(value.Content).GetAwaiter().GetResult();
+                    originalGroup.GroupId = createdGroup.Id;
+                    createdGroupsResult.AddGroup(originalGroup);
+                }
+                else
+                {
+                    if (isKnownError(GraphAPIKnownErrorMessages.GroupAlreadyExists, value))
                     {
-                        var originalGroup = groupLookup[result.Key];
-                        var createdGroup = DeserializeGraphObject<Group>(result.Value.Content).GetAwaiter().GetResult();
-
-                        originalGroup.GroupId = createdGroup.Id;
-                        createdGroupsResult.AddGroup(originalGroup);
+                        _notifier.Warning($"Failed to create: {originalGroup.MailNickname}. Group already exists");
                     }
                     else
                     {
-                        _logger.Warning($"Failed to create group: {result.Key}. Status code: {(int)result.Value.StatusCode}");
+                        _notifier.Error($"Failed to create: {originalGroup.MailNickname}. {getErrorMessage(value)}");
                     }
-
-                    result.Value.Dispose();
                 }
+            });
 
-                Interlocked.Add(ref groupsProcessed, results.Count);
-                _logger.Information($"Groups processed: {groupsProcessed}/{batchEntries.Count}");
-            };
+            //_notifier.Info($"Waiting for groups to provision");
+            //var failedGroups = await waitForGroupProvisioning(createdGroupsResult.CreatedGroups.ToDictionary(g => g.GroupId, g => new GraphBatchRequest(g.GroupId, $"groups/{g.GroupId}/drive", HttpMethod.Get)));
+            //_notifier.Info($"Group provisioning finished. Failed groups count: {failedGroups.Count}");
+            //createdGroupsResult.RemoveGroupsByGroupId(failedGroups);
 
-            await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult);
+            createdGroupsResult.RemoveGroupsByGroupId(await addGroupMemberships(createdGroupsResult.FilterOnlyCreatedGroups(groupsWithTooManyMembers).Cast<GroupEntry>().ToList(), users));
             return createdGroupsResult;
         }
 
         /// <inheritdoc />
         public async Task<List<TeamEntry>> CreateTeamsFromGroups(IEnumerable<TeamEntry> teams, UserEntryCollection users)
         {
+            using var progressUpdater = new ProgressUpdater("Create Teams", _notifier);
             var successfullyCreatedTeams = new ConcurrentBag<TeamEntry>();
             var failedTeams = new ConcurrentBag<TeamEntry>();
 
             async Task executeCreateTeams(IEnumerable<TeamEntry> newTeams)
             {
-                int teamsProcessed = 0;
                 var teamLookup = new Dictionary<string, TeamEntry>();
                 var batchEntries = new List<GraphBatchRequest>();
                 foreach (var team in newTeams)
                 {
-                    if (tryCreateTeamBatch(users, teamLookup, team, out var graphTeam))
+                    try
                     {
+                        var graphTeam = createGraphTeam(users, teamLookup, team);
                         batchEntries.Add(new GraphBatchRequest(team.MailNickname, "teams", HttpMethod.Post, graphTeam));
                     }
-                }
-
-                if (!batchEntries.Any())
-                {
-                    return;
-                }
-
-                Action<Dictionary<string, HttpResponseMessage>> handleBatchResult = results =>
-                {
-                    foreach (var result in results)
+                    catch (Exception ex)
                     {
-                        if (result.Value.IsSuccessStatusCode)
-                        {
-                            var originalTeam = teamLookup[result.Key];
-                            successfullyCreatedTeams.Add(originalTeam);
-                        }
-                        else
-                        {
-                            // TODO: handle only if group id doesnt exist
-                            failedTeams.Add(teamLookup[result.Key]);
-                            _logger.Warning(
-                                $"Failed to create team: {result.Key}. Status code: {(int) result.Value.StatusCode}");
-                        }
-
-                        result.Value.Dispose();
+                        _notifier.Error(ex.Message);
                     }
+                }
 
-                    Interlocked.Add(ref teamsProcessed, results.Count);
-                    _logger.Information($"Teams processed: {teamsProcessed}/{newTeams.Count()}");
-                };
-
-                await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult, true);
+                var maxConcurrentRequests = batchEntries.Count > 1000 ? 1 : 6;
+                await executeActionWithProgress(progressUpdater, batchEntries, true, maxConcurrentRequests: maxConcurrentRequests, onResult: (key, value) =>
+                {
+                    var originalTeam = teamLookup[key];
+                    if (value.IsSuccessStatusCode)
+                    {
+                        successfullyCreatedTeams.Add(originalTeam);
+                    }
+                    else
+                    {
+                        failedTeams.Add(teamLookup[key]);
+                        if (!isKnownError(HttpStatusCode.NotFound, value))
+                        {
+                            _notifier.Error($"Failed to create: {originalTeam.MailNickname} .{getErrorMessage(value)}");
+                        }
+                    }
+                });
             }
 
             await executeCreateTeams(teams);
 
             int waitTime = 10;
             int attempts = 0;
-            while (failedTeams.Any() || attempts < 3)
+            while (failedTeams.Any() && attempts < 3)
             {
                 var toRepeat = failedTeams.ToList();
                 failedTeams = new ConcurrentBag<TeamEntry>();
                 // group provisioning was not finished, so lts wait and try again
-                _logger.Information($"Retry team creation for {toRepeat.Count}, time: {waitTime}");
+                _notifier.Warning($"Retry team creation for {toRepeat.Count}, time: {waitTime}");
                 await Task.Delay(TimeSpan.FromSeconds(waitTime));
                 await executeCreateTeams(toRepeat);
                 waitTime += 15;
                 attempts++;
             }
 
-            return successfullyCreatedTeams.ToList();
+            _notifier.Info($"Waiting for teams to provision");
+            var failedProvisioning = await waitForTeamProvisioning(successfullyCreatedTeams.ToDictionary(g => g.GroupId, g => new GraphBatchRequest(g.GroupId, $"teams/{g.GroupId}", HttpMethod.Get)));
+            _notifier.Info($"Team provisioning finished. Failed teams count: {failedProvisioning.Count}");
+
+            return successfullyCreatedTeams.Where(t => !failedProvisioning.Contains(t.GroupId)).ToList();
         }
 
         /// <inheritdoc />
-        public async Task CreatePrivateChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users)
+        public async Task CreateTeamChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users)
         {
+            using var progressUpdater = new ProgressUpdater("Create Channels", _notifier);
             var batchEntries = new List<GraphBatchRequest>();
+            var channelLookup = new Dictionary<string, TeamChannelEntry>();
 
             var i = 0;
             foreach (var team in teams)
@@ -166,29 +180,38 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     continue;
                 }
 
-                foreach (var teamChannelEntry in team.Channels?.Where(c => c.IsPrivate))
+                foreach (var teamChannelEntry in team.Channels)
                 {
-                    if (tryCreateChannel(users, teamChannelEntry, out var graphChannel))
+                    try
                     {
-                        batchEntries.Add(new GraphBatchRequest($"{++i}", $"teams/{team.GroupId}/channels", HttpMethod.Post, graphChannel));
+                        var graphChannel = createGraphChannel(users, teamChannelEntry);
+                        var requestKey = $"{++i}/{team.GroupId}";
+                        channelLookup.Add(requestKey, teamChannelEntry);
+                        batchEntries.Add(new GraphBatchRequest(requestKey, $"teams/{team.GroupId}/channels",
+                            HttpMethod.Post, graphChannel));
+                    }
+                    catch (Exception ex)
+                    {
+                        _notifier.Error(ex.Message);
                     }
                 }
             }
 
-            var results = await _httpProvider.SendBatchAsync(batchEntries, _accessTokenManager, true);
-            foreach (var result in results)
+            await executeActionWithProgress(progressUpdater, batchEntries, true, onResult: (key, value) =>
             {
-                if (!result.Value.IsSuccessStatusCode)
+                var channelEntry = channelLookup[key];
+                var teamId = key.Split('/')[1];
+                if (!value.IsSuccessStatusCode)
                 {
-                    // TODO: better handling
-                    _logger.Warning("Failed to create channel");
+                    _notifier.Error($"Failed to create {(channelEntry.IsPrivate ? "Private" : "Standard" )} Channel {channelEntry.DisplayName}(teamId: {teamId}). {getErrorMessage(value)}");
                 }
-            }
+            });
         }
 
         /// <inheritdoc />
         public async Task RemoveGroupOwners(Dictionary<string, UnifiedGroupEntry> ownersMap)
         {
+            using var progressUpdater = new ProgressUpdater("Remove Group Owner", _notifier);
             var batchEntries = new List<GraphBatchRequest>();
 
             var i = 0;
@@ -197,31 +220,95 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 batchEntries.Add(new GraphBatchRequest($"{++i}", $"/groups/{ownerMap.Value.GroupId}/owners/{ownerMap.Key}/$ref", HttpMethod.Delete));
             }
 
-            var results = await _httpProvider.SendBatchAsync(batchEntries, _accessTokenManager);
-            foreach (var result in results)
+            await executeActionWithProgress(progressUpdater, batchEntries, onResult: (key, value) =>
             {
-                if (!result.Value.IsSuccessStatusCode)
+                if (!value.IsSuccessStatusCode)
                 {
-                    // TODO: better handling
-                    _logger.Warning("Failed to remove owner");
+                    _notifier.Error($"Failed to remove group owner. {getErrorMessage(value)}");
                 }
-            }
+            });
         }
 
         #region Helpers
 
-        private bool tryCreateGroupBatch(UserEntryCollection users, Dictionary<string, UnifiedGroupEntry> groupLookup, UnifiedGroupEntry @group, CreatedGroupsResult createResult, out GroupExtended graphGroup)
+        private int _maxProvisioningAttempts = 5;
+        /// <summary>
+        /// Waits for Group drive to be available. This is a sign that group was provisioned
+        /// </summary>
+        /// <param name="groupDriveBatchRequests"></param>
+        /// <param name="attempt"></param>
+        /// <returns>Group groupIds that failed to provision</returns>
+        private async Task<List<string>> waitForGroupProvisioning(Dictionary<string, GraphBatchRequest> groupDriveBatchRequests, int attempt = 0)
         {
-            graphGroup = null;
+            if (attempt >= _maxProvisioningAttempts || !groupDriveBatchRequests.Any())
+            {
+                return groupDriveBatchRequests.Keys.ToList();
+            }
+
+            _notifier.Info($"Group provision. Attempt: {attempt}. Number: {groupDriveBatchRequests.Count}");
+
+            await Task.Delay(TimeSpan.FromSeconds((attempt + 1) * 15));
+
+            var failedGroups = new Dictionary<string, GraphBatchRequest>();
+            var groupDriveResults = await _httpProvider.SendBatchAsync(groupDriveBatchRequests.Values, _accessTokenManager, true);
+            foreach (var result in groupDriveResults)
+            {
+                if (!result.Value.IsSuccessStatusCode)
+                {
+                    failedGroups.Add(result.Key, groupDriveBatchRequests[result.Key]);
+                    if (!isKnownError(GraphAPIKnownErrorMessages.GroupProvisionError, result.Value) && !isKnownError(GraphAPIKnownErrorMessages.GroupProvisionError1, result.Value) && !isKnownError(HttpStatusCode.NotFound, result.Value))
+                    {
+                        _notifier.Error($"Failed to provision group: {result.Key}. {getErrorMessage(result.Value)}");
+                    }
+                }
+            }
+
+            return await waitForGroupProvisioning(failedGroups, attempt + 1);
+        }
+
+        /// <summary>
+        /// Waits for Team to be available
+        /// </summary>
+        /// <param name="teamBatchRequests"></param>
+        /// <param name="attempt"></param>
+        /// <returns>Returns group ids of failed teams</returns>
+        private async Task<List<string>> waitForTeamProvisioning(Dictionary<string, GraphBatchRequest> teamBatchRequests, int attempt = 0)
+        {
+            if (attempt >= _maxProvisioningAttempts || !teamBatchRequests.Any())
+            {
+                return teamBatchRequests.Keys.ToList();
+            }
+
+            _notifier.Info($"Team provision. Attempt: {attempt + 1}. Number: {teamBatchRequests.Count}");
+
+            await Task.Delay(TimeSpan.FromSeconds((attempt + 1) * 15));
+
+            var failedTeams = new Dictionary<string, GraphBatchRequest>();
+            var teamResults = await _httpProvider.SendBatchAsync(teamBatchRequests.Values, _accessTokenManager, true);
+            foreach (var result in teamResults)
+            {
+                if (!result.Value.IsSuccessStatusCode)
+                {
+                    failedTeams.Add(result.Key, teamBatchRequests[result.Key]);
+                    if (!isKnownError(GraphAPIKnownErrorMessages.TeamProvisionError, result.Value) && !isKnownError(HttpStatusCode.NotFound, result.Value))
+                    {
+                        _notifier.Error(getErrorMessage(result.Value));
+                    }
+                }
+            }
+
+            return await waitForTeamProvisioning(failedTeams, attempt + 1);
+        }
+
+        private GroupExtended createGraphGroup(UserEntryCollection users, Dictionary<string, UnifiedGroupEntry> groupLookup, UnifiedGroupEntry @group, CreatedGroupsResult createResult)
+        {
             if (groupLookup.ContainsKey(@group.MailNickname))
             {
-                _logger.Warning(
-                    $"Trying to create 2 groups with same mail nickname ({@group.MailNickname}). Only the first will be created.");
-                return false;
+                throw  new ArgumentException($"Trying to create 2 groups with same mail nickname ({@group.MailNickname}). Only the first will be created.");
             }
 
             groupLookup.Add(@group.MailNickname, @group);
-            graphGroup = new GroupExtended
+            var graphGroup = new GroupExtended
             {
                 DisplayName = @group.DisplayName,
                 MailNickname = @group.MailNickname,
@@ -231,39 +318,55 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 GroupTypes = new List<string> {"Unified"}
             };
 
-            return tryCreateMembersOwnersBindings(group, graphGroup, users, createResult);
+            var groupMembership = getGroupMemberships(users, @group);
+
+            if (groupMembership.MemberIds.Any())
+            {
+                graphGroup.MembersODataBind =
+                    groupMembership.MemberIds.Select(id => $"https://graph.microsoft.com/v1.0/users/{id}").ToArray();
+            }
+
+            if (groupMembership.OwnerIds.Any())
+            {
+                graphGroup.OwnersODataBind =
+                    groupMembership.OwnerIds.Select(id => $"https://graph.microsoft.com/v1.0/users/{id}").ToArray();
+            }
+
+            if (groupMembership.CurrentUserAddedToOwners)
+            {
+                createResult.AddGroupWhereOwnerWasAdded(groupMembership.CurrentUserId, @group);
+            }
+
+            return graphGroup;
         }
 
-        private bool tryCreateTeamBatch(UserEntryCollection users, Dictionary<string, TeamEntry> teamLookup, TeamEntry team, out TeamExtended graphTeam)
+        private TeamExtended createGraphTeam(UserEntryCollection users, Dictionary<string, TeamEntry> teamLookup, TeamEntry team)
         {
-            graphTeam = null;
             if (teamLookup.ContainsKey(team.MailNickname))
             {
-                _logger.Warning(
-                    $"Trying to create 2 teams with same mail nickname ({team.MailNickname}). Only the first will be created.");
-                return false;
+                throw new ArgumentException($"Trying to create 2 teams with same mail nickname ({team.MailNickname}). Only the first will be created.");
             }
 
             teamLookup.Add(team.MailNickname, team);
-            graphTeam = new TeamExtended(team.GroupId);
+            var graphTeam = new TeamExtended(team.GroupId);
 
-            if (team?.Channels.Any() == true)
-            {
-                graphTeam.Channels = new Beta.TeamChannelsCollectionPage();
-                // TODO: private channels are not supported currently. This will hopefully change :)
-                foreach (var channel in team.Channels.Where(c => !c.IsPrivate))
-                {
-                    if (!tryCreateChannel(users, channel, out var newChannel)) return false;
-                    graphTeam.Channels.Add(newChannel);
-                }
-            }
+            //if (team?.Channels.Any() == true)
+            //{
+            //    graphTeam.Channels = new Beta.TeamChannelsCollectionPage();
+            //    // TODO: private channels are not supported currently. This will hopefully change :)
+            //    foreach (var channel in team.Channels.Where(c => !c.IsPrivate))
+            //    {
+            //        if (!tryCreateChannel(users, channel, out var newChannel)) return false;
+            //        graphTeam.Channels.Add(newChannel);
+            //    }
+            //}
 
-            return true;
+            return graphTeam;
         }
 
-        private bool tryCreateChannel(UserEntryCollection users, TeamChannelEntry channel, out Beta.Channel newChannel)
+        private Beta.Channel createGraphChannel(UserEntryCollection users, TeamChannelEntry channel)
         {
-            newChannel = new Beta.Channel()
+            var newChannel = new Beta.Channel()
             {
                 DisplayName = channel.DisplayName,
                 MembershipType = channel.IsPrivate
@@ -275,26 +378,26 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             {
                 var channelMembers = new Beta.ChannelMembersCollectionPage();
 
-                if (!tryCreateChannelMemberCollection(users, channel.Owners, "owner", out var owners)) return false;
+                var owners = createChannelMemberCollection(users, channel.Owners, "owner");
                 owners.ForEach(o => channelMembers.Add(o));
 
-                if (!tryCreateChannelMemberCollection(users, channel.Members, "member", out var members)) return false;
+                var members = createChannelMemberCollection(users, channel.Members, "member");
                 members.ForEach(o => channelMembers.Add(o));
 
                 newChannel.Members = channelMembers;
             }
 
-            return true;
+            return newChannel;
         }
 
-        private bool tryCreateChannelMemberCollection(UserEntryCollection users, IEnumerable<MemberEntry> memberEntries, string role, out List<Beta.AadUserConversationMember> members)
+        private List<Beta.AadUserConversationMember> createChannelMemberCollection(UserEntryCollection users, IEnumerable<MemberEntry> memberEntries, string role)
         {
-            members = new List<Beta.AadUserConversationMember>();
+            var members = new List<Beta.AadUserConversationMember>();
 
             if (memberEntries == null)
             {
                 // we do nothing
-                return true;
+                return members;
             }
 
             foreach (var member in memberEntries)
@@ -302,9 +405,8 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 var memberEntry = users.FindMember(member);
                 if (memberEntry == null)
                 {
-                    _logger.Warning($"Failed to create team. User not found: {member.Name}");
                     // we want all or nothing
-                    return false;
+                    throw new MemberNotFoundException($"Channel {role} not found ({member.Name}).");
                 }
 
                 members.Add(new Beta.AadUserConversationMember
@@ -320,79 +422,78 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 });
             }
 
-            return true;
+            return members;
         }
 
         /// <summary>
-        /// Sets owners/members to graph group. If any owner/member is missing it will return false
+        /// If group has more than 20 owners/members combined we need to add them one by one (graph api problem)
         /// </summary>
-        /// <param name="group"></param>
-        /// <param name="graphGroup"></param>
+        /// <param name="groups"></param>
         /// <param name="users"></param>
-        /// <returns></returns>
-        private bool tryCreateMembersOwnersBindings(UnifiedGroupEntry @group, IGroupMembership graphGroup, UserEntryCollection users, CreatedGroupsResult createResult)
+        /// <returns>Returns groupIds of failed groups</returns>
+        private async Task<HashSet<string>> addGroupMemberships(List<GroupEntry> groups, UserEntryCollection users)
         {
-            if (@group.Owners?.Any() == true)
+            if (!groups.Any())
             {
-                var userIds = new HashSet<string>();
-                foreach (var owner in @group.Owners)
-                {
-                    var ownerEntry = users.FindMember(owner);
-
-                    if (ownerEntry == null)
-                    {
-                        _logger.Warning($"Failed to create group: {@group.MailNickname}. Owner not found: {owner.Name}");
-                        // we want all or nothing
-                        return false;
-                    }
-                    else
-                    {
-                        userIds.Add(ownerEntry.Id);
-                    }
-                }
-
-                var currentUserUsername = _accessTokenManager.GetUsernameFromToken();
-                var currentUserEntry = users.FindMember(new MemberEntry(currentUserUsername));
-                if (currentUserEntry != null && !userIds.Contains(currentUserEntry.Id))
-                {
-                    userIds.Add(currentUserEntry.Id);
-                    createResult.AddGroupWhereOwnerWasAdded(currentUserEntry.Id, group);
-                }
-
-                if (userIds.Any())
-                {
-                    graphGroup.OwnersODataBind =
-                        userIds.Select(id => $"https://graph.microsoft.com/v1.0/users/{id}").ToArray();
-                }
+                return new HashSet<string>();
             }
-            
-            if (@group.Members?.Any() == true)
-            {
-                var userIds = new HashSet<string>();
-                foreach (var member in @group.Members)
-                {
-                    var memberEntry = users.FindMember(member);
 
-                    if (memberEntry == null)
-                    {
-                        _logger.Warning($"Failed to create group: {@group.MailNickname}. Member not found: {member.Name}");
-                        // we want all or nothing
-                        return false;
-                    }
-                    else
-                    {
-                        userIds.Add(memberEntry.Id);
-                    }
+            using var progressUpdater = new ProgressUpdater("Add Group Members/Owners", _notifier);
+            var batchEntries = new List<GraphBatchRequest>();
+            var failedGroupIds = new ConcurrentBag<string>();
+
+            int i = 0;
+            foreach (var group in groups)
+            {
+                var groupMembership = getGroupMemberships(users, @group, false);
+                foreach (var ownerId in groupMembership.OwnerIds)
+                {
+                    batchEntries.Add(new GraphBatchRequest($"{group.GroupId}/{++i}", $"/groups/{group.GroupId}/owners/$ref", HttpMethod.Post, new GroupMember(ownerId)));
                 }
 
-                if (userIds.Any())
+                foreach (var memberId in groupMembership.MemberIds)
                 {
-                    graphGroup.MembersODataBind =
-                        userIds.Select(id => $"https://graph.microsoft.com/v1.0/users/{id}").ToArray();
+                    batchEntries.Add(new GraphBatchRequest($"{group.GroupId}/{++i}", $"/groups/{group.GroupId}/members/$ref", HttpMethod.Post, new GroupMember(memberId)));
                 }
             }
 
-            return true;
+            progressUpdater.SetTotalCount(batchEntries.Count);
+            await executeActionWithProgress(progressUpdater, batchEntries, onResult: (key, value) =>
+            {
+                if (!value.IsSuccessStatusCode)
+                {
+                    _notifier.Error($"Failed to add group owner/member. {getErrorMessage(value)}");
+                    failedGroupIds.Add(key.Split('/')[0]);
+                }
+            });
+
+            return failedGroupIds.ToHashSet();
+        }
+
+        /// <summary>
+        /// Maps owner/member ids
+        /// </summary>
+        /// <param name="users"></param>
+        /// <param name="group"></param>
+        /// <param name="insertCurrentUserToOwners">adds current user to owners if set to true</param>
+        /// <returns></returns>
+        private GroupMembershipDto getGroupMemberships(UserEntryCollection users, GroupEntry @group, bool insertCurrentUserToOwners = true)
+        {
+            bool userAddedToOwners = false;
+            var ownerIds = users.GetMemberIds(@group.Owners);
+            var memberIds = users.GetMemberIds(@group.Members);
+            var currentUserUsername = _accessTokenManager.GetUsernameFromToken();
+            var currentUserEntry = users.FindMember(new MemberEntry(currentUserUsername));
+            if (insertCurrentUserToOwners && ownerIds.Any() && !ownerIds.Contains(currentUserEntry?.Id) && currentUserEntry != null)
+            {
+                ownerIds.Add(currentUserEntry.Id);
+                userAddedToOwners = true;
+            }
+
+            return new GroupMembershipDto(ownerIds, memberIds, userAddedToOwners)
+            {
+                CurrentUserId = currentUserEntry?.Id
+            };
         }
 
         interface IGroupMembership
@@ -407,6 +508,14 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             public string[] OwnersODataBind { get; set; }
             [JsonProperty("members@odata.bind", NullValueHandling = NullValueHandling.Ignore)]
             public string[] MembersODataBind { get; set; }
+
+            public bool HasTooManyMembers()
+            {
+                // graph api has a limit of 20 linked items in one request
+                var ownerCount = OwnersODataBind?.Count() ?? 0;
+                var memberCount = MembersODataBind?.Count() ?? 0;
+                return (ownerCount + memberCount) >= 20;
+            }
         }
 
         class TeamExtended: Beta.Team
@@ -420,6 +529,32 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             public TeamExtended(string groupId)
             {
                 GroupBind = $"https://graph.microsoft.com/v1.0/groups('{groupId}')";
+            }
+        }
+
+        class GroupMember
+        {
+            [JsonProperty("@odata.id", NullValueHandling = NullValueHandling.Ignore)]
+            public string Id { get; }
+
+            public GroupMember(string id)
+            {
+                Id = $"https://graph.microsoft.com/v1.0/directoryObjects/{id}";
+            }
+        }
+
+        class GroupMembershipDto
+        {
+            public HashSet<string> OwnerIds { get; }
+            public HashSet<string> MemberIds { get; }
+            public bool CurrentUserAddedToOwners { get; }
+            public string CurrentUserId { get; set; }
+
+            public GroupMembershipDto(HashSet<string> ownerIds, HashSet<string> memberIds, bool currentUserAddedToOwners)
+            {
+                OwnerIds = ownerIds;
+                MemberIds = memberIds;
+                CurrentUserAddedToOwners = currentUserAddedToOwners;
             }
         }
 

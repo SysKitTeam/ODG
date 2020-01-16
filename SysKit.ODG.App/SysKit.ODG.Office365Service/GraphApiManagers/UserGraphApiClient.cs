@@ -3,19 +3,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Graph;
-using Newtonsoft.Json;
-using OfficeDevPnP.Core.Utilities;
-using Serilog;
 using SysKit.ODG.Base.DTO.Generation;
-using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Office365Service;
+using SysKit.ODG.Base.Notifier;
 using SysKit.ODG.Base.Office365;
 using SysKit.ODG.Office365Service.GraphHttpProvider;
 using SysKit.ODG.Office365Service.GraphHttpProvider.Dto;
@@ -24,14 +18,14 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 {
     public class UserGraphApiClient: BaseGraphApiClient, IUserGraphApiClient
     {
-        private readonly ILogger _logger;
+        private readonly INotifier _notifier;
         public UserGraphApiClient(IAccessTokenManager accessTokenManager,
-            ILogger logger,
+            INotifier notifier,
             IGraphHttpProviderFactory graphHttpProviderFactory,
             IGraphServiceFactory graphServiceFactory,
             IMapper autoMapper) : base(accessTokenManager, graphHttpProviderFactory, graphServiceFactory, autoMapper)
         {
-            _logger = logger;
+            _notifier = notifier;
         }
 
         /// <inheritdoc />
@@ -57,7 +51,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         /// <inheritdoc />
         public async Task<List<UserEntry>> CreateTenantUsers(IEnumerable<UserEntry> users)
         {
-            int userProcessed = 0;
+            using var progressUpdater = new ProgressUpdater("Create Users", _notifier);
             var userLookup = new Dictionary<string, UserEntry>();
             var successfullyCreatedUsers = new ConcurrentBag<UserEntry>();
             var batchEntries = new List<GraphBatchRequest>();
@@ -65,7 +59,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             {
                 if (userLookup.ContainsKey(user.UserPrincipalName))
                 {
-                    _logger.Warning($"Trying to create user with same name ({user.UserPrincipalName}), only the first one will be created");
+                    _notifier.Warning($"Trying to create user with same name ({user.UserPrincipalName}), only the first one will be created");
                 }
 
                 userLookup.Add(user.UserPrincipalName, user);
@@ -81,38 +75,30 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 batchEntries.Add(new GraphBatchRequest(graphUser.UserPrincipalName, "users", HttpMethod.Post, graphUser));
             }
 
-            if (!batchEntries.Any())
+            // there is a limit of around 5k users every 5-10min
+            var maxConcurrentRequests = batchEntries.Count > 4000 ? 2 : 6;
+            await executeActionWithProgress(progressUpdater, batchEntries, maxConcurrentRequests: maxConcurrentRequests, onResult: (key, value) =>
             {
-                return new List<UserEntry>();
-            }
-
-            Action<Dictionary<string, HttpResponseMessage>> handleBatchResult = results =>
-            {
-                foreach (var result in results)
+                var originalUser = userLookup[key];
+                if (value.IsSuccessStatusCode)
                 {
-                    if (result.Value.IsSuccessStatusCode)
+                    var graphUser = deserializeGraphObject<User>(value.Content).GetAwaiter().GetResult();
+                    originalUser.Id = graphUser.Id;
+                    graphUser.UserPrincipalName = graphUser.UserPrincipalName;
+                    successfullyCreatedUsers.Add(originalUser);
+                }
+                else
+                {
+                    if (isKnownError(GraphAPIKnownErrorMessages.UserAlreadyExists, value))
                     {
-                        var originalUser = userLookup[result.Key];
-                        var graphUser = DeserializeGraphObject<User>(result.Value.Content).GetAwaiter().GetResult();
-
-                        originalUser.Id = graphUser.Id;
-                        graphUser.UserPrincipalName = graphUser.UserPrincipalName;
-                        successfullyCreatedUsers.Add(originalUser);
+                        _notifier.Warning($"Failed to create: {originalUser.UserPrincipalName}. User already exists.");
                     }
                     else
                     {
-                        _logger.Warning(
-                            $"Failed to create user: {result.Key}. Status code: {(int) result.Value.StatusCode}");
+                        _notifier.Error($"Failed to create: {originalUser.UserPrincipalName}. {getErrorMessage(value)}");
                     }
-
-                    result.Value.Dispose();
                 }
-
-                Interlocked.Add(ref userProcessed, results.Count);
-                _logger.Information($"User processed: {userProcessed}/{userLookup.Count}");
-            };
-
-            await _httpProvider.StreamBatchAsync(batchEntries, _accessTokenManager, handleBatchResult);
+            });
 
             return successfullyCreatedUsers.ToList();
         }

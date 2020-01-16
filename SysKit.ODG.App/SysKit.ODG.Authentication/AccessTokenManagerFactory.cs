@@ -15,9 +15,9 @@ namespace SysKit.ODG.Authentication
             _appConfigManager = appConfigManager;
         }
 
-        public IAccessTokenManager CreateAccessTokenManager(SimpleUserCredentials userCredentials)
+        public IAccessTokenManager CreateAccessTokenManager(SimpleUserCredentials userCredentials, string clientId)
         {
-            return  new AccessTokenManager(_appConfigManager, userCredentials);
+            return  new AccessTokenManager(_appConfigManager, userCredentials, clientId);
         }
     }
 }

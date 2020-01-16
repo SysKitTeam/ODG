@@ -62,21 +62,26 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
             var batchesToProcess = new BufferBlock<Dictionary<string, GraphBatchRequest>>();
             var executeRequestsBlock = new TransformBlock<Dictionary<string, GraphBatchRequest>, Dictionary<string, HttpResponseMessage>>(batches => execute(tokenRetriever, batches, createUrl), new ExecutionDataflowBlockOptions
             {
-                MaxDegreeOfParallelism = maxConcurrent
+                MaxDegreeOfParallelism = maxConcurrent,
+                EnsureOrdered = false
             });
 
-            var finalBlock = new ActionBlock<Dictionary<string, HttpResponseMessage>>(handleBatchResult);
+            var finalBlock = new ActionBlock<Dictionary<string, HttpResponseMessage>>(handleBatchResult, new ExecutionDataflowBlockOptions
+            {
+                MaxDegreeOfParallelism = maxConcurrent,
+                EnsureOrdered = false
+            });
 
             // link blocks: batches => execute them => save results
             batchesToProcess.LinkTo(executeRequestsBlock, new DataflowLinkOptions { PropagateCompletion = true });
             executeRequestsBlock.LinkTo(finalBlock, new DataflowLinkOptions { PropagateCompletion = true });
 
-            do
+            while (tmpRequests.Any())
             {
                 batchesToProcess.Post(tmpRequests.ToDictionary(x => x.Id, x => x));
                 page++;
                 tmpRequests = allRequests.Skip(page * maxRequestCountPerBatch).Take(maxRequestCountPerBatch).ToList();
-            } while (tmpRequests.Any());
+            }
 
             batchesToProcess.Complete();
 

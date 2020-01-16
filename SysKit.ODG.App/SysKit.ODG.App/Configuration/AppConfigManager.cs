@@ -12,7 +12,7 @@ namespace SysKit.ODG.App.Configuration
     public class AppConfigManager: IAppConfigManager
     {
         public string UserAgent => (string)ConfigurationManager.AppSettings["userAgent"];
-        public string ClientId => (string)ConfigurationManager.AppSettings["clientId"];
+        //public string ClientId => (string)ConfigurationManager.AppSettings["clientId"];
 
         private string[] _scopes;
 

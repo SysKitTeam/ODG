@@ -2,6 +2,7 @@
 using Serilog;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Office365Service;
+using SysKit.ODG.Base.Notifier;
 using SysKit.ODG.Office365Service.GraphApiManagers;
 using SysKit.ODG.Office365Service.GraphHttpProvider;
 
@@ -12,27 +13,24 @@ namespace SysKit.ODG.Office365Service
         private readonly IGraphHttpProviderFactory _graphHttpProviderFactory;
         private readonly IGraphServiceFactory _graphServiceFactory;
         private readonly IMapper _mapper;
-        private readonly ILogger _logger;
 
-        public GraphApiClientFactory(ILogger logger,
-            IGraphHttpProviderFactory graphHttpProviderFactory,
+        public GraphApiClientFactory(IGraphHttpProviderFactory graphHttpProviderFactory,
             IGraphServiceFactory graphServiceFactory,
             IMapper mapper)
         {
             _graphHttpProviderFactory = graphHttpProviderFactory;
             _graphServiceFactory = graphServiceFactory;
             _mapper = mapper;
-            _logger = logger;
         }
 
-        public IUserGraphApiClient CreateUserGraphApiClient(IAccessTokenManager accessTokenManager)
+        public IUserGraphApiClient CreateUserGraphApiClient(IAccessTokenManager accessTokenManager, INotifier notifier)
         {
-            return new UserGraphApiClient(accessTokenManager, _logger, _graphHttpProviderFactory, _graphServiceFactory, _mapper);
+            return new UserGraphApiClient(accessTokenManager, notifier, _graphHttpProviderFactory, _graphServiceFactory, _mapper);
         }
 
-        public IGroupGraphApiClient CreateGroupGraphApiClient(IAccessTokenManager accessTokenManager)
+        public IGroupGraphApiClient CreateGroupGraphApiClient(IAccessTokenManager accessTokenManager, INotifier notifier)
         {
-            return new GroupGraphApiClient(accessTokenManager, _logger, _graphHttpProviderFactory, _graphServiceFactory, _mapper);
+            return new GroupGraphApiClient(accessTokenManager, notifier, _graphHttpProviderFactory, _graphServiceFactory, _mapper);
         }
     }
 }

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Office365;
@@ -26,12 +24,12 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         Task<List<TeamEntry>> CreateTeamsFromGroups(IEnumerable<TeamEntry> teams, UserEntryCollection users);
 
         /// <summary>
-        /// Creates private channels for existing groups
+        /// Creates channels for existing groups
         /// </summary>
         /// <param name="teams"></param>
         /// <param name="users"></param>
         /// <returns></returns>
-        Task CreatePrivateChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users);
+        Task CreateTeamChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users);
 
         /// <summary>
         /// Removes group owners. Key =>userId, Value => group from which to remove owner

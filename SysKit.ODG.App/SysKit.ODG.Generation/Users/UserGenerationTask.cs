@@ -8,6 +8,7 @@ using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.Office365Service;
+using SysKit.ODG.Base.Notifier;
 
 namespace SysKit.ODG.Generation.Users
 {
@@ -15,23 +16,21 @@ namespace SysKit.ODG.Generation.Users
     {
         private readonly IUserDataGeneration _userDataGenerationService;
         private readonly IGraphApiClientFactory _graphApiClientFactory;
-        private readonly ILogger _logger;
 
-        public UserGenerationTask(ILogger logger, IUserDataGeneration userDataGenerationService, IGraphApiClientFactory graphApiClientFactory)
+        public UserGenerationTask(IUserDataGeneration userDataGenerationService, IGraphApiClientFactory graphApiClientFactory)
         {
-            _logger = logger;
             _userDataGenerationService = userDataGenerationService;
             _graphApiClientFactory = graphApiClientFactory;
         }
 
-        public async Task Execute(GenerationOptions options)
+        public async Task Execute(GenerationOptions options, INotifier notifier)
         {
-            var userGraphApiClient = _graphApiClientFactory.CreateUserGraphApiClient(options.UserAccessTokenManager);
+            var userGraphApiClient = _graphApiClientFactory.CreateUserGraphApiClient(options.UserAccessTokenManager, notifier);
             var userGenerationOptions = UserGenerationOptions.CreateFromGenerationOptions(options);
             var users = _userDataGenerationService.CreateUsers(userGenerationOptions).ToList();
 
             var createdUsers = await userGraphApiClient.CreateTenantUsers(users);
-            _logger.Information($"Created {createdUsers.Count}/{users.Count}");
+            notifier.Info($"Created Users: {createdUsers.Count}/{users.Count}");
 
             // TODO: assign licences
             // TODO: add external users

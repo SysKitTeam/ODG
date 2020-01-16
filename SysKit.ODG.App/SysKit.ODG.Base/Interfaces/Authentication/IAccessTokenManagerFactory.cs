@@ -7,6 +7,6 @@ namespace SysKit.ODG.Base.Interfaces.Authentication
 {
     public interface IAccessTokenManagerFactory
     {
-        IAccessTokenManager CreateAccessTokenManager(SimpleUserCredentials userCredentials);
+        IAccessTokenManager CreateAccessTokenManager(SimpleUserCredentials userCredentials, string clientId);
     }
 }

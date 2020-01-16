@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Serilog;
 using SysKit.ODG.App.Configuration;
 using SysKit.ODG.Authentication;
 using SysKit.ODG.Base.Authentication;
 using SysKit.ODG.Base.DTO;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
+using SysKit.ODG.Base.Enums;
 using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
@@ -25,148 +27,98 @@ namespace SysKit.ODG.App
     {
         static void Main(string[] args)
         {
-            var defaultPassword = "hC7q95955D";
-            var tenantDomain = "M365B117306.onmicrosoft.com";
-            var userCredentials = new SimpleUserCredentials("admin@M365B117306.onmicrosoft.com", "hC7q95955D");
-            var testTemplate = new XmlODGTemplate
-            {
-                RandomOptions = new XmlRandomOptions
-                {
-                    NumberOfUsers = 10000,
-                    NumberOfUnifiedGroups = 1000,
-                    NumberOfTeams = 100,
-                    MaxNumberOfOwnersPerGroup = 3,
-                    MaxNumberOfMembersPerGroup = 50
-                },
-                Users = new []
-                {
-                    new XmlUser
-                    {
-                        Name = "dino.test"
-                    },
-                    new XmlUser
-                    {
-                        Name = "dino.test1"
-                    },
-                    new XmlUser
-                    {
-                        Name = "dino.test2"
-                    }
-                },
-                Groups = new []
-                {
-                    //new XmlTeam
-                    //{
-                    //    Name = "point.new.dino1",
-                    //    DisplayName = "AAAB nova iteracija samo sa memberima",
-                    //    Members = new []
-                    //    {
-                    //        new XmlMember
-                    //        {
-                    //            Name = "dino.test"
-                    //        }
-                    //    }
-                    //},
-                    //new XmlTeam
-                    //{
-                    //    Name = "point.new.dino2",
-                    //    DisplayName = "AAAB nova iteracija samo sa memberima i public channel",
-                    //    Members = new []
-                    //    {
-                    //        new XmlMember
-                    //        {
-                    //            Name = "dino.test1"
-                    //        },
-                    //        new XmlMember
-                    //        {
-                    //            Name = "dino.test2"
-                    //        }
-                    //    },
-                    //    Channels = new []
-                    //    {
-                    //        new XmlTeamChannel
-                    //        {
-                    //            DisplayName = "Custom channel"
-                    //        }
-                    //    }
-                    //},
-                    new XmlTeam
-                    {
-                        Name = "point.monday.blue3",
-                        DisplayName = "Monday blues 3",
-                        Owners = new []
-                        {
-                            new XmlMember
-                            {
-                                Name = "dino.test2"
-                            }
-                        },
-                        Members = new []
-                        {
-                            new XmlMember
-                            {
-                                Name = "dino.test1"
-                            },
-                            new XmlMember
-                            {
-                                Name = "dino.test2"
-                            },
-                            new XmlMember
-                            {
-                                Name = "adelev@M365B117306.onmicrosoft.com"
-                            }
-                        },
-                        Channels = new []
-                        {
-                            new XmlTeamChannel
-                            {
-                                DisplayName = "Custom public channel"
-                            },
-                            new XmlTeamChannel
-                            {
-                                DisplayName = "Custom public channel 2"
-                            },
-                            new XmlTeamChannel
-                            {
-                                DisplayName = "Custom Private channel",
-                                IsPrivate = true,
-                                Owners = new []
-                                {
-                                    new XmlMember
-                                    {
-                                        Name = "dino.test1"
-                                    }
-                                },
-                                Members = new []
-                                {
-                                    new XmlMember
-                                    {
-                                        Name = "dino.test2"
-                                    }
-                                }
-                            }
-                        }
-                    } 
-                }
-            };
+            var userName = nonNullConsoleRead("Enter Global Admin username:");
+            var tenantDomain = userName.Split('@')[1];
 
+            Console.WriteLine("Enter Global Admin password:");
+            var password = consolePassword();
+
+            var clientId = nonNullConsoleRead("Enter client id:");
+
+            var templateLocation = nonNullConsoleRead("ODG template location:");
+
+            var userCredentials = new SimpleUserCredentials(userName, password);
+
+            try
+            {
+                run(userCredentials, clientId, tenantDomain, password, templateLocation);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Execution failed: {ex.Message}");
+            }
+
+            Console.WriteLine("Finished ;)");
+            Console.ReadLine();
+        }
+
+        private static void run(SimpleUserCredentials userCredentials, string clientId, string tenantDomain, string defaultPassword, string templateLocation)
+        {
             var xmlService = new XmlSpecificationService();
-            //xmlService.SerializeSpecification(testTemplate, @"C:\Users\dino.kacavenda\test.xml");
-            var template = xmlService.DeserializeSpecification(@"C:\Users\dino.kacavenda\test.xml");
+
+            //xmlService.SerializeSpecification(testTemplate, @"C:\ProgramData\ODG\test.xml");
+            var template = xmlService.DeserializeSpecification(templateLocation);
 
             var unityContainer = UnityManager.CreateUnityContainer();
             var accessTokenFactory = unityContainer.Resolve<IAccessTokenManagerFactory>();
-            var accessTokenManager = accessTokenFactory.CreateAccessTokenManager(userCredentials);
+            var accessTokenManager = accessTokenFactory.CreateAccessTokenManager(userCredentials, clientId);
+            var logger = unityContainer.Resolve<ILogger>();
+            var notifier = new LoggNotifier(logger, new LoggOptions(LogLevelEnum.Debug));
 
             var generationOptions = new GenerationOptions(accessTokenManager, tenantDomain, defaultPassword, template);
 
             var generationService = unityContainer.Resolve<IGenerationService>();
             generationService.AddGenerationTask("User Creation", unityContainer.Resolve<IGenerationTask>("userTask"));
             generationService.AddGenerationTask("Group Creation", unityContainer.Resolve<IGenerationTask>("groupTask"));
-            generationService.Start(generationOptions).GetAwaiter().GetResult();
+            generationService.Start(generationOptions, notifier).GetAwaiter().GetResult();
+        }
 
-            Console.WriteLine("Finished ;)");
-            Console.ReadLine();
+        private static string nonNullConsoleRead(string message)
+        {
+            Console.WriteLine(message);
+            var value = Console.ReadLine();
+
+            if (string.IsNullOrEmpty(value))
+            {
+                return nonNullConsoleRead(message);
+            }
+
+            return value;
+        }
+
+        private static string consolePassword()
+        {
+            string pass = "";
+            do
+            {
+                ConsoleKeyInfo key = Console.ReadKey(true);
+                // Backspace Should Not Work
+                if (key.Key != ConsoleKey.Backspace && key.Key != ConsoleKey.Enter)
+                {
+                    pass += key.KeyChar;
+                    Console.Write("*");
+                }
+                else
+                {
+                    if (key.Key == ConsoleKey.Backspace && pass.Length > 0)
+                    {
+                        pass = pass.Substring(0, (pass.Length - 1));
+                        Console.Write("\b \b");
+                    }
+                    else if (key.Key == ConsoleKey.Enter)
+                    {
+                        break;
+                    }
+                }
+            } while (true);
+
+            if (string.IsNullOrEmpty(pass))
+            {
+                return consolePassword();
+            }
+
+            Console.WriteLine();
+            return pass;
         }
     }
 }

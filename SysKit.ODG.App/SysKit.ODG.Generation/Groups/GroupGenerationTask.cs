@@ -8,6 +8,7 @@ using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.Office365Service;
+using SysKit.ODG.Base.Notifier;
 
 namespace SysKit.ODG.Generation.Groups
 {
@@ -15,19 +16,17 @@ namespace SysKit.ODG.Generation.Groups
     {
         private readonly IGroupDataGeneration _groupDataGeneration;
         private readonly IGraphApiClientFactory _graphApiClientFactory;
-        private readonly ILogger _logger;
 
-        public GroupGenerationTask(ILogger logger, IGroupDataGeneration groupDataGeneration, IGraphApiClientFactory graphApiClientFactory)
+        public GroupGenerationTask(IGroupDataGeneration groupDataGeneration, IGraphApiClientFactory graphApiClientFactory)
         {
-            _logger = logger;
             _groupDataGeneration = groupDataGeneration;
             _graphApiClientFactory = graphApiClientFactory;
         }
 
-        public async Task Execute(GenerationOptions options)
+        public async Task Execute(GenerationOptions options, INotifier notifier)
         {
-            var userGraphApiClient = _graphApiClientFactory.CreateUserGraphApiClient(options.UserAccessTokenManager);
-            var groupGraphApiClient = _graphApiClientFactory.CreateGroupGraphApiClient(options.UserAccessTokenManager);
+            var userGraphApiClient = _graphApiClientFactory.CreateUserGraphApiClient(options.UserAccessTokenManager, notifier);
+            var groupGraphApiClient = _graphApiClientFactory.CreateGroupGraphApiClient(options.UserAccessTokenManager, notifier);
             var users = await userGraphApiClient.GetAllTenantUsers(options.TenantDomain);
 
             var groups = _groupDataGeneration.CreateUnifiedGroupsAndTeams(options, users).ToList();
@@ -39,11 +38,19 @@ namespace SysKit.ODG.Generation.Groups
 
             var createdGroups = await groupGraphApiClient.CreateUnifiedGroups(groups, users);
             var createdTeams = await groupGraphApiClient.CreateTeamsFromGroups(createdGroups.TeamsToCreate, users);
-            await groupGraphApiClient.CreatePrivateChannels(createdTeams, users);
 
-            // just in case, if there is some provisioning (public channels believed strangely(don't get created))
-            await Task.Delay(TimeSpan.FromSeconds(10));
-            await groupGraphApiClient.RemoveGroupOwners(createdGroups.GroupsWithAddedOwners);
+            await groupGraphApiClient.CreateTeamChannels(createdTeams, users);
+
+            // we needed to add ourselfs to owners so we can create teams
+            var groupsToRemoveOwners = createdGroups.GroupsWithAddedOwners;
+            if (groupsToRemoveOwners.Any())
+            {
+                // just in case, if there is some provisioning (public channels believed strangely(don't get created))
+                await Task.Delay(TimeSpan.FromSeconds(10));
+                await groupGraphApiClient.RemoveGroupOwners(createdGroups.GroupsWithAddedOwners);
+            }
+
+            notifier.Info($"Created Office365 groups: {createdGroups.CreatedGroups.Count}; Created Teams: {createdTeams.Count}");
         }
     }
 }

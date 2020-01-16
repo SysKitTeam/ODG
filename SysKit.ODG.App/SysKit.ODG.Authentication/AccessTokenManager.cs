@@ -17,18 +17,21 @@ namespace SysKit.ODG.Authentication
 
         private IPublicClientApplication _app;
         private const string _authorityFormat = "https://login.microsoftonline.com/{0}/v2.0";
+        // TODO: depending on registration this will maybe go back to IAppConfigManager
+        private readonly string _clientId;
 
-        public AccessTokenManager(IAppConfigManager appConfigManager, SimpleUserCredentials userCredentials)
+        public AccessTokenManager(IAppConfigManager appConfigManager, SimpleUserCredentials userCredentials, string clientId)
         {
             _appConfigManager = appConfigManager;
             _userCredentials = userCredentials;
+            _clientId = clientId;
             initializeApp();
         }
 
         private void initializeApp()
         {
             string authority = "https://login.microsoftonline.com/organizations/oauth2/v2.0";
-            _app = PublicClientApplicationBuilder.Create(_appConfigManager.ClientId)
+            _app = PublicClientApplicationBuilder.Create(_clientId)
                 .WithAuthority(authority)
                 .Build();
         }

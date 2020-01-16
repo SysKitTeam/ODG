@@ -96,12 +96,13 @@ namespace SysKit.ODG.Generation.Groups
             {
                 var isPrivateChannel = RandomThreadSafeGenerator.Next(0, 100) > 80;
                 var channelName = _sampleDataService.GetRandomValue(_sampleDataService.GroupNames);
-                var channelEntry = new TeamChannelEntry(channelName, isPrivateChannel);
+                var cleanChannelName = Regex.Replace(channelName, @"[^a-zA-Z0-9]", "");
+                var channelEntry = new TeamChannelEntry(cleanChannelName, isPrivateChannel);
 
                 if (channelEntry.IsPrivate)
                 {
                     // for testing purposes I want both channel owners and members to be from group members
-                    channelEntry.Owners = sampleTeam.Members.GetRandom(RandomThreadSafeGenerator.Next(3)).ToList();
+                    channelEntry.Owners = sampleTeam.Members.GetRandom(RandomThreadSafeGenerator.Next(1, 3)).ToList();
                     channelEntry.Members = sampleTeam.Members.GetRandom(RandomThreadSafeGenerator.Next(5)).ToList();
                 }
 
@@ -124,7 +125,7 @@ namespace SysKit.ODG.Generation.Groups
             populateSampleGroupProperties(sampleGroup, userEntryCollection, generationOptions.Template.RandomOptions);
             sampleGroup.IsPrivate = RandomThreadSafeGenerator.Next(0, 100) > 70;
 
-            string originalGroupMailNick = Regex.Replace(sampleGroup.DisplayName, @"[^a-z0-9]", "");
+            string originalGroupMailNick = Regex.Replace(sampleGroup.DisplayName.ToLower(), @"[^a-z0-9]", "");
             // sample values have entries that can produce null here
             string groupMailNick = string.IsNullOrEmpty(originalGroupMailNick) ? "testgroup" : originalGroupMailNick;
 
@@ -141,9 +142,15 @@ namespace SysKit.ODG.Generation.Groups
         private void populateSampleGroupProperties(GroupEntry groupEntry, IUserEntryCollection userEntryCollection, XmlRandomOptions generationOptions)
         {
             groupEntry.DisplayName = _sampleDataService.GetRandomValue(_sampleDataService.GroupNames);
-            groupEntry.Owners = userEntryCollection.GetRandomEntries(RandomThreadSafeGenerator.Next(generationOptions.MaxNumberOfOwnersPerGroup))
+            var maxOwners = generationOptions.MaxNumberOfOwnersPerGroup <= 0
+                ? 3
+                : generationOptions.MaxNumberOfOwnersPerGroup;
+            var maxMembers = generationOptions.MaxNumberOfMembersPerGroup <= 0
+                ? 15
+                : generationOptions.MaxNumberOfOwnersPerGroup;
+            groupEntry.Owners = userEntryCollection.GetRandomEntries(RandomThreadSafeGenerator.Next(maxOwners))
                 .ToList();
-            groupEntry.Members = userEntryCollection.GetRandomEntries(RandomThreadSafeGenerator.Next(generationOptions.MaxNumberOfMembersPerGroup))
+            groupEntry.Members = userEntryCollection.GetRandomEntries(RandomThreadSafeGenerator.Next(maxMembers))
                 .ToList();
         }
     }

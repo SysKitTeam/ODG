@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using AutoMapper;
 using SysKit.ODG.Base.DTO.Generation;
+using SysKit.ODG.Base.Exceptions;
 using SysKit.ODG.Base.XmlTemplate.Model;
 
 namespace SysKit.ODG.Generation.Users
@@ -17,6 +18,7 @@ namespace SysKit.ODG.Generation.Users
         {
             var userEntry = new UserEntry();
 
+            validateXmlUser(xmlUser);
             userEntry.AccountEnabled = !xmlUser.AccountDisabled;
             userEntry.UserPrincipalName = xmlUser.Name.Contains("@") ? xmlUser.Name : $"{xmlUser.Name}@{tenantDomainName}";
 
@@ -48,7 +50,10 @@ namespace SysKit.ODG.Generation.Users
 
         private void validateXmlUser(XmlUser xmlUser)
         {
-            // TODO: validation
+            if (string.IsNullOrEmpty(xmlUser.Name))
+            {
+                throw new XmlValidationException("User Name property is not defined");
+            }
         }
     }
 }
