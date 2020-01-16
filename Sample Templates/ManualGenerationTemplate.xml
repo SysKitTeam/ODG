@@ -35,7 +35,7 @@
 			</Members>
 			<Channels>
 				<Channel DisplayName="Custom Public Channel" />
-				<Channel DisplayName="Custom Public Channel 2" />
+				<Channel DisplayName="Another Custom Public Channel" />
 				<Channel DisplayName="Custom Private Channel" IsPrivate="true" >
 					<Owners>
 						<Member Name="pablo.escobar" />
