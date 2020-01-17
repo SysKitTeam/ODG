@@ -5,19 +5,25 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SysKit.ODG.Base\SysKit.ODG.Base.csproj" />
+    <None Remove="Samples\firstName.csv" />
+    <None Remove="Samples\groupName.csv" />
+    <None Remove="Samples\lastName.csv" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Samples\firstName.csv">
+    <EmbeddedResource Include="Samples\firstName.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Samples\groupName.csv">
+    </EmbeddedResource>
+    <EmbeddedResource Include="Samples\groupName.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Samples\lastName.csv">
+    </EmbeddedResource>
+    <EmbeddedResource Include="Samples\lastName.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SysKit.ODG.Base\SysKit.ODG.Base.csproj" />
   </ItemGroup>
 
 </Project>

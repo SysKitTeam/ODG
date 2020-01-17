@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Reflection;
 using System.Text;
 
 namespace SysKit.ODG.SampleData
@@ -55,15 +56,35 @@ namespace SysKit.ODG.SampleData
 
         #region Helpers
 
+        //private static ReadOnlyCollection<string> createSampleCollection(string csvFileName)
+        //{
+        //    var reader = new StreamReader(File.OpenRead(@"Samples\" + csvFileName));
+        //    List<string> listA = new List<string>();
+        //    while (!reader.EndOfStream)
+        //    {
+        //        var line = reader.ReadLine();
+
+        //        listA.Add(line);
+        //    }
+
+        //    return new ReadOnlyCollection<string>(listA);
+        //}
+
         private static ReadOnlyCollection<string> createSampleCollection(string csvFileName)
         {
-            var reader = new StreamReader(File.OpenRead(@"Samples\" + csvFileName));
             List<string> listA = new List<string>();
-            while (!reader.EndOfStream)
-            {
-                var line = reader.ReadLine();
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceName = $"SysKit.ODG.SampleData.Samples.{csvFileName}";
 
-                listA.Add(line);
+            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+            using (StreamReader reader = new StreamReader(stream))
+            {
+                while (!reader.EndOfStream)
+                {
+                    var line = reader.ReadLine();
+
+                    listA.Add(line);
+                }
             }
 
             return new ReadOnlyCollection<string>(listA);
