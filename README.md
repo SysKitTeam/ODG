@@ -1,4 +1,4 @@
-# Office365 Data Generator
+# Office 365 Data Generator
 
 ODG is an open-source tool developed by [SysKit Ltd.](https://www.syskit.com/) to generate mock data for Office 365.
 
