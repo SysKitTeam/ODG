@@ -22,7 +22,10 @@ To be able to run ODG you will need:
 ## Run the application
 
 To run the application you can:
-1. Use the [ClickOnce](https://github.com/SysKitTeam/ODG/raw/master/releases/ClickOnce/setup.exe) installer
+1. Run the installer
+   1. Download the latest version from [Releases](releases) folder
+   2. Unpack it
+   3. Run the Setup.exe
 2. Build the binaries yourself
 
 ## ODG Template
