@@ -57,7 +57,7 @@ namespace SysKit.ODG.App
             var xmlService = new XmlSpecificationService();
 
             //xmlService.SerializeSpecification(testTemplate, @"C:\ProgramData\ODG\test.xml");
-            var template = xmlService.DeserializeSpecification(templateLocation);
+            var template = xmlService.DeserializeSpecification<XmlODGTemplate>(templateLocation);
 
             var unityContainer = UnityManager.CreateUnityContainer();
             var accessTokenFactory = unityContainer.Resolve<IAccessTokenManagerFactory>();

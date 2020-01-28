@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
+using SysKit.ODG.Base.DTO.Generation.Results;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Notifier;
 
@@ -23,7 +24,7 @@ namespace SysKit.ODG.Base.Interfaces.Generation
         /// </summary>
         /// <param name="generationOptions"></param>
         /// <param name="notifier"></param>
-        /// <returns></returns>
-        Task Start(GenerationOptions generationOptions, INotifier notifier);
+        /// <returns>Returns executed task results (key is taskKey)</returns>
+        Task<GenerationResult> Start(GenerationOptions generationOptions, INotifier notifier);
     }
 }
