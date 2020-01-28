@@ -31,11 +31,13 @@ namespace SysKit.ODG.Generation
                 if (taskResult is UserGenerationTaskResult userGenerationTask)
                 {
                     directoryElements.AddRange(_userDataGeneration.CreateDirectoryElements(userGenerationTask.CreatedUsers));
+                    continue;
                 }
 
                 if (taskResult is GroupGenerationTaskResult groupGenerationTask)
                 {
                     directoryElements.AddRange(_groupDataGeneration.CreateDirectoryElements(groupGenerationTask.CreatedGroups));
+                    continue;
                 }
 
                 throw new ArgumentException("Task result is not supported for creating a cleanup template");

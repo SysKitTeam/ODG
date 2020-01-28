@@ -21,7 +21,6 @@ using SysKit.ODG.Base.Office365;
 using SysKit.ODG.Office365Service.GraphHttpProvider;
 using SysKit.ODG.Office365Service.GraphHttpProvider.Dto;
 using Beta = BetaLib.Microsoft.Graph;
-using DriveItem = Microsoft.Graph.DriveItem;
 
 namespace SysKit.ODG.Office365Service.GraphApiManagers
 {
@@ -68,7 +67,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 }
             }
 
-            var maxConcurrentRequests = batchEntries.Count > 1000 ? 1 : 6;
+            var maxConcurrentRequests = batchEntries.Count > 100 ? 1 : 6;
             await executeActionWithProgress(progressUpdater, batchEntries, maxConcurrentRequests: maxConcurrentRequests, onResult: (key, value) =>
             {
                 var originalGroup = groupLookup[key];
@@ -91,9 +90,10 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 }
             });
 
-            //_notifier.Info($"Waiting for groups to provision");
-            //var failedGroups = await waitForGroupProvisioning(createdGroupsResult.CreatedGroups.ToDictionary(g => g.GroupId, g => new GraphBatchRequest(g.GroupId, $"groups/{g.GroupId}/drive", HttpMethod.Get)));
-            //_notifier.Info($"Group provisioning finished. Failed groups count: {failedGroups.Count}");
+            _notifier.Info($"Waiting for groups to provision");
+            var failedGroups = await waitForGroupProvisioning(createdGroupsResult.CreatedGroups.ToDictionary(g => g.GroupId, g => new GraphBatchRequest(g.GroupId, $"groups/{g.GroupId}/drive", HttpMethod.Get)));
+            _notifier.Info($"Group provisioning finished. Failed groups count: {failedGroups.Count}");
+            // provisioning step here is just to give SP time to do it's thing. Groups will be created but maybe SP is still not provisioned
             //createdGroupsResult.RemoveGroupsByGroupId(failedGroups);
 
             createdGroupsResult.RemoveGroupsByGroupId(await addGroupMemberships(createdGroupsResult.FilterOnlyCreatedGroups(groupsWithTooManyMembers).Cast<GroupEntry>().ToList(), users));
@@ -126,7 +126,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     }
                 }
 
-                var maxConcurrentRequests = batchEntries.Count > 1000 ? 1 : 6;
+                var maxConcurrentRequests = batchEntries.Count > 100 ? 1 : 6;
                 await executeActionWithProgress(progressUpdater, batchEntries, true, maxConcurrentRequests: maxConcurrentRequests, onResult: (key, value) =>
                 {
                     var originalTeam = teamLookup[key];
@@ -243,7 +243,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
         #region Helpers
 
-        private int _maxProvisioningAttempts = 5;
+        private int _maxProvisioningAttempts = 10;
         /// <summary>
         /// Waits for Group drive to be available. This is a sign that group was provisioned
         /// </summary>
@@ -257,20 +257,33 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 return groupDriveBatchRequests.Keys.ToList();
             }
 
-            _notifier.Info($"Group provision. Attempt: {attempt}. Number: {groupDriveBatchRequests.Count}");
+            TimeSpan delayTime;
 
-            await Task.Delay(TimeSpan.FromSeconds((attempt + 1) * 15));
+            if (groupDriveBatchRequests.Count < 20)
+            {
+                // we need to wait less time if we didn't try to create too much groups
+                 delayTime = TimeSpan.FromSeconds(attempt * 2 * 10);
+            }
+            else
+            {
+                delayTime = TimeSpan.FromSeconds((attempt + 1) * 4 * 10);
+            }
+
+            _notifier.Info($"Group provision. Attempt: {attempt + 1}. Number: {groupDriveBatchRequests.Count}. Delay time: {delayTime.TotalSeconds}s");
+            await Task.Delay(delayTime);
 
             var failedGroups = new Dictionary<string, GraphBatchRequest>();
             var groupDriveResults = await _httpProvider.SendBatchAsync(groupDriveBatchRequests.Values, _accessTokenManager, true);
+            var isLastAttempt = (attempt + 1) >= _maxProvisioningAttempts;
             foreach (var result in groupDriveResults)
             {
                 if (!result.Value.IsSuccessStatusCode)
                 {
                     failedGroups.Add(result.Key, groupDriveBatchRequests[result.Key]);
-                    if (!isKnownError(GraphAPIKnownErrorMessages.GroupProvisionError, result.Value) && !isKnownError(GraphAPIKnownErrorMessages.GroupProvisionError1, result.Value) && !isKnownError(HttpStatusCode.NotFound, result.Value))
+                    // if it is last attempt we want the message
+                    if (!isLastAttempt && !isKnownError(GraphAPIKnownErrorMessages.GroupProvisionError, result.Value) && !isKnownError(GraphAPIKnownErrorMessages.GroupProvisionError1, result.Value) && !isKnownError(HttpStatusCode.NotFound, result.Value))
                     {
-                        _notifier.Error($"Failed to provision group: {result.Key}. {getErrorMessage(result.Value)}");
+                        _notifier.Error($"Failed to provision group: {result.Key}. {getErrorMessage(result.Value)}. Attempt: {attempt + 1}");
                     }
                 }
             }
