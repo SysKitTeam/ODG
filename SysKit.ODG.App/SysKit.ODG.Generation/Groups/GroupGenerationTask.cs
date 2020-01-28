@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Serilog;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
+using SysKit.ODG.Base.DTO.Generation.Results;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Base.Notifier;
@@ -23,7 +24,7 @@ namespace SysKit.ODG.Generation.Groups
             _graphApiClientFactory = graphApiClientFactory;
         }
 
-        public async Task Execute(GenerationOptions options, INotifier notifier)
+        public async Task<IGenerationTaskResult> Execute(GenerationOptions options, INotifier notifier)
         {
             var userGraphApiClient = _graphApiClientFactory.CreateUserGraphApiClient(options.UserAccessTokenManager, notifier);
             var groupGraphApiClient = _graphApiClientFactory.CreateGroupGraphApiClient(options.UserAccessTokenManager, notifier);
@@ -33,7 +34,7 @@ namespace SysKit.ODG.Generation.Groups
 
             if (groups.Any() == false)
             {
-                return;
+                return null;
             }
 
             var createdGroups = await groupGraphApiClient.CreateUnifiedGroups(groups, users);
@@ -51,6 +52,10 @@ namespace SysKit.ODG.Generation.Groups
             }
 
             notifier.Info($"Created Office365 groups: {createdGroups.CreatedGroups.Count}; Created Teams: {createdTeams.CreatedEntries.Count()}; Channels created ok: {channelsCreated}; Owners removed ok: {ownersRemovedOk}");
+
+            // lts say channel errors are ok for now
+            var hadErrors = createdGroups.HasErrors && createdTeams.HadErrors && !ownersRemovedOk;
+            return new GroupGenerationTaskResult(createdGroups.CreatedGroups, hadErrors);
         }
     }
 }
