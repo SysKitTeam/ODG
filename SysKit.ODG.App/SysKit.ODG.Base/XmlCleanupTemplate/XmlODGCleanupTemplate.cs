@@ -8,6 +8,9 @@ namespace SysKit.ODG.Base.XmlCleanupTemplate
     [XmlRoot("ODGCleanupTemplate")]
     public class XmlODGCleanupTemplate
     {
+        [XmlElement]
+        public DateTime TimeGenerated { get; set; }
+
         [XmlArray(IsNullable = true)]
         public XmlDirectoryElement[] DirectoryElements { get; set; }
     }

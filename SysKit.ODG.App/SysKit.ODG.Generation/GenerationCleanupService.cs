@@ -23,7 +23,11 @@ namespace SysKit.ODG.Generation
 
         public void SaveCleanupTemplate(GenerationResult result, string filePath)
         {
-            var xmlCleanupTemplate = new XmlODGCleanupTemplate();
+            var xmlCleanupTemplate = new XmlODGCleanupTemplate
+            {
+                TimeGenerated = DateTime.UtcNow
+            };
+
             var directoryElements = new List<XmlDirectoryElement>();
 
             foreach (var taskResult in result.TaskResults)
