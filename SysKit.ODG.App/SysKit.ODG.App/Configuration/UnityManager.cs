@@ -38,6 +38,7 @@ namespace SysKit.ODG.App.Configuration
             #region Generation services
             
             container.RegisterSingleton<IGenerationService, GenerationService>();
+            container.RegisterSingleton<IGenerationCleanupService, GenerationCleanupService>();
             container.RegisterType<IGenerationTask, UserGenerationTask>("userTask");
             container.RegisterType<IGenerationTask, GroupGenerationTask>("groupTask");
 

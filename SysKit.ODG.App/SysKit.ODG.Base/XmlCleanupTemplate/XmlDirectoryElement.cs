@@ -13,6 +13,9 @@ namespace SysKit.ODG.Base.XmlCleanupTemplate
         public string Id { get; set; }
 
         [XmlAttribute]
+        public string DisplayName { get; set; }
+
+        [XmlAttribute]
         public DirectoryElementTypeEnum Type { get; set; }
     }
 }

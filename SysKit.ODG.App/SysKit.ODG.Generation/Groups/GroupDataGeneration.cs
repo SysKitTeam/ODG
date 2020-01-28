@@ -11,6 +11,7 @@ using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.SampleData;
 using SysKit.ODG.Base.Office365;
 using SysKit.ODG.Base.Utils;
+using SysKit.ODG.Base.XmlCleanupTemplate;
 using SysKit.ODG.Base.XmlTemplate.Model;
 using SysKit.ODG.Base.XmlTemplate.Model.Groups;
 
@@ -40,6 +41,19 @@ namespace SysKit.ODG.Generation.Groups
             foreach (var group in createRandomUnifiedGroups(generationOptions, userEntryCollection))
             {
                 yield return group;
+            }
+        }
+
+        public IEnumerable<XmlDirectoryElement> CreateDirectoryElements(IEnumerable<GroupEntry> groups)
+        {
+            if (groups == null)
+            {
+                yield break;
+            }
+
+            foreach (var group in groups)
+            {
+                yield return _groupXmlMapper.MapToDirectoryElement(group);
             }
         }
 

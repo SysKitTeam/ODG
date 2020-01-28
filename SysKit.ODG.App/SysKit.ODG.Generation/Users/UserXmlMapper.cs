@@ -3,15 +3,17 @@ using System.Collections.Generic;
 using AutoMapper;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Exceptions;
+using SysKit.ODG.Base.XmlCleanupTemplate;
 using SysKit.ODG.Base.XmlTemplate.Model;
 
 namespace SysKit.ODG.Generation.Users
 {
     public class UserXmlMapper
     {
-        public UserXmlMapper()
+        private readonly IMapper _mapper;
+        public UserXmlMapper(IMapper mapper)
         {
-
+            _mapper = mapper;
         }
 
         public UserEntry MapToUserEntry(string tenantDomainName, XmlUser xmlUser)
@@ -28,6 +30,11 @@ namespace SysKit.ODG.Generation.Users
             userEntry.DisplayName = createDisplayName(mailNickname);
 
             return userEntry;
+        }
+
+        public XmlDirectoryElement MapToDirectoryElement(UserEntry userEntry)
+        {
+            return _mapper.Map<UserEntry, XmlDirectoryElement>(userEntry);
         }
 
         /// <summary>
