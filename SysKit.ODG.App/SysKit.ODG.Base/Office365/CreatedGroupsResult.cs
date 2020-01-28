@@ -72,6 +72,8 @@ namespace SysKit.ODG.Base.Office365
                 return result;
             }
         }
+
+        public bool HasErrors { get; set; }
             
     }
 }

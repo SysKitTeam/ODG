@@ -30,7 +30,7 @@ namespace SysKit.ODG.Generation.Users
             var users = _userDataGenerationService.CreateUsers(userGenerationOptions).ToList();
 
             var createdUsers = await userGraphApiClient.CreateTenantUsers(users);
-            notifier.Info($"Created Users: {createdUsers.Count}/{users.Count}");
+            notifier.Info($"Created Users: {createdUsers.CreatedEntries}/{users.Count}; HadErros: {createdUsers.HadErrors}");
 
             // TODO: assign licences
             // TODO: add external users

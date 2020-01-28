@@ -45,9 +45,10 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             var groupLookup = new Dictionary<string, UnifiedGroupEntry>();
             var batchEntries = new List<GraphBatchRequest>();
             var groupsWithTooManyMembers = new HashSet<UnifiedGroupEntry>();
+            var groupList = groups.ToList();
 
             int i = 0;
-            foreach (var group in groups)
+            foreach (var group in groupList)
             {
                 try
                 {
@@ -96,15 +97,17 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             //createdGroupsResult.RemoveGroupsByGroupId(failedGroups);
 
             createdGroupsResult.RemoveGroupsByGroupId(await addGroupMemberships(createdGroupsResult.FilterOnlyCreatedGroups(groupsWithTooManyMembers).Cast<GroupEntry>().ToList(), users));
+            createdGroupsResult.HasErrors = groupList.Count != createdGroupsResult.CreatedGroups.Count;
             return createdGroupsResult;
         }
 
         /// <inheritdoc />
-        public async Task<List<TeamEntry>> CreateTeamsFromGroups(IEnumerable<TeamEntry> teams, UserEntryCollection users)
+        public async Task<O365CreationResult<TeamEntry>> CreateTeamsFromGroups(IEnumerable<TeamEntry> teams, UserEntryCollection users)
         {
             using var progressUpdater = new ProgressUpdater("Create Teams", _notifier);
             var successfullyCreatedTeams = new ConcurrentBag<TeamEntry>();
             var failedTeams = new ConcurrentBag<TeamEntry>();
+            var teamList = teams.ToList();
 
             async Task executeCreateTeams(IEnumerable<TeamEntry> newTeams)
             {
@@ -134,7 +137,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     else
                     {
                         failedTeams.Add(teamLookup[key]);
-                        if (!isKnownError(HttpStatusCode.NotFound, value))
+                        if (!isKnownError(HttpStatusCode.NotFound, value) && !isKnownError(HttpStatusCode.BadGateway, value))
                         {
                             _notifier.Error($"Failed to create: {originalTeam.MailNickname} .{getErrorMessage(value)}");
                         }
@@ -142,11 +145,11 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 });
             }
 
-            await executeCreateTeams(teams);
+            await executeCreateTeams(teamList);
 
             int waitTime = 10;
             int attempts = 0;
-            while (failedTeams.Any() && attempts < 3)
+            while (failedTeams.Any() && attempts < 10)
             {
                 var toRepeat = failedTeams.ToList();
                 failedTeams = new ConcurrentBag<TeamEntry>();
@@ -162,15 +165,17 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             var failedProvisioning = await waitForTeamProvisioning(successfullyCreatedTeams.ToDictionary(g => g.GroupId, g => new GraphBatchRequest(g.GroupId, $"teams/{g.GroupId}", HttpMethod.Get)));
             _notifier.Info($"Team provisioning finished. Failed teams count: {failedProvisioning.Count}");
 
-            return successfullyCreatedTeams.Where(t => !failedProvisioning.Contains(t.GroupId)).ToList();
+            var createdTeams = successfullyCreatedTeams.Where(t => !failedProvisioning.Contains(t.GroupId)).ToList();
+            return new O365CreationResult<TeamEntry>(createdTeams, createdTeams.Count != teamList.Count);
         }
 
         /// <inheritdoc />
-        public async Task CreatePrivateTeamChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users)
+        public async Task<bool> CreatePrivateTeamChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users)
         {
             using var progressUpdater = new ProgressUpdater("Create Private Channels", _notifier);
             var batchEntries = new List<GraphBatchRequest>();
             var channelLookup = new Dictionary<string, TeamChannelEntry>();
+            var failedChannels = new ConcurrentBag<TeamChannelEntry>();
 
             var i = 0;
             foreach (var team in teams)
@@ -204,15 +209,19 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 if (!value.IsSuccessStatusCode)
                 {
                     _notifier.Error($"Failed to create {(channelEntry.IsPrivate ? "Private" : "Standard" )} Channel {channelEntry.DisplayName}(teamId: {teamId}). {getErrorMessage(value)}");
+                    failedChannels.Add(channelEntry);
                 }
             });
+
+            return !failedChannels.Any();
         }
 
         /// <inheritdoc />
-        public async Task RemoveGroupOwners(Dictionary<string, UnifiedGroupEntry> ownersMap)
+        public async Task<bool> RemoveGroupOwners(Dictionary<string, UnifiedGroupEntry> ownersMap)
         {
             using var progressUpdater = new ProgressUpdater("Remove Group Owner", _notifier);
             var batchEntries = new List<GraphBatchRequest>();
+            var hasError = false;
 
             var i = 0;
             foreach (var ownerMap in ownersMap)
@@ -225,8 +234,11 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 if (!value.IsSuccessStatusCode)
                 {
                     _notifier.Error($"Failed to remove group owner. {getErrorMessage(value)}");
+                    hasError = true;
                 }
             });
+
+            return !hasError;
         }
 
         #region Helpers
