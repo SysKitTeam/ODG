@@ -48,7 +48,7 @@ namespace SysKit.ODG.Generation
             }
 
             xmlCleanupTemplate.DirectoryElements = directoryElements.ToArray();
-            _specificationService.SerializeSpecification(xmlCleanupTemplate, $"{filePath.Replace(".xml", "")}_cleanup.xml");
+            _specificationService.SerializeSpecification(xmlCleanupTemplate, $"{filePath.Replace(".xml", "")}_{DateTime.Now:yyyy-dd-M--HH-mm}_cleanup.xml");
         }
     }
 }
