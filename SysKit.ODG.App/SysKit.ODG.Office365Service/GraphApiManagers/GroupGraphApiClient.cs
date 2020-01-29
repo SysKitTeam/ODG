@@ -346,7 +346,8 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 Visibility = @group.IsPrivate ? "Private" : "Public",
                 MailEnabled = true,
                 SecurityEnabled = false,
-                GroupTypes = new List<string> {"Unified"}
+                GroupTypes = new List<string> {"Unified"},
+                Description = "Sample group"
             };
 
             var groupMembership = getGroupMemberships(users, @group);
