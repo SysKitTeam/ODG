@@ -79,17 +79,11 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 }
                 else
                 {
-                    if (isKnownError(GraphAPIKnownErrorMessages.GroupAlreadyExists, value))
+                    if (isKnownError(GraphAPIKnownErrorMessages.GuestUserGroupOwnerError, value))
                     {
                         // this should not really happen
                         var owners = string.Join(",", originalGroup.Owners.Select(o => o.Name));
                         _notifier.Error($"Failed to create: {originalGroup.MailNickname}. Guest owner detected. Owners: {owners}");
-                    }
-                    else if (isKnownError(HttpStatusCode.Forbidden, value))
-                    {
-                        // this should not really happen
-                        var owners = string.Join(",", originalGroup.Owners.Select(o => o.Name));
-                        _notifier.Error($"Failed to create: {originalGroup.MailNickname}. Status code forbidden. Username: {_accessTokenManager.GetUsernameFromToken()}. Owners: {owners}");
                     }
                     else if (isKnownError(GraphAPIKnownErrorMessages.GroupAlreadyExists, value))
                     {
