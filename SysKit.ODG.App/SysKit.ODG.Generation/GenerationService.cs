@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Serilog;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
+using SysKit.ODG.Base.DTO.Generation.Results;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.Office365Service;
@@ -27,15 +28,18 @@ namespace SysKit.ODG.Generation
             _generationTasks.Add(taskKey, task);
         }
 
-        public async Task Start(GenerationOptions generationOptions, INotifier notifier)
+        public async Task<GenerationResult> Start(GenerationOptions generationOptions, INotifier notifier)
         {
+            var result = new Dictionary<string, IGenerationTaskResult>();
             foreach (var task in _generationTasks)
             {
                 using (new ProgressUpdater(task.Key, notifier))
                 {
-                    await task.Value.Execute(generationOptions, notifier);
+                    result.Add(task.Key, await task.Value.Execute(generationOptions, notifier));
                 }
             }
+
+            return new GenerationResult(result);
         }
     }
 }

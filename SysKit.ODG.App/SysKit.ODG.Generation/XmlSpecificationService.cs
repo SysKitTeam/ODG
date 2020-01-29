@@ -7,23 +7,23 @@ namespace SysKit.ODG.Generation
 {
     public class XmlSpecificationService
     {
-        public void SerializeSpecification(XmlODGTemplate specification, string specificationFile)
+        public void SerializeSpecification<T>(T specification, string specificationFile) where T : class
         {
-            var serializer = new XmlSerializer(typeof(XmlODGTemplate));
+            var serializer = new XmlSerializer(typeof(T));
             using (var writer = new FileStream(specificationFile, FileMode.Create))
             {
                 serializer.Serialize(writer, specification);
             }
         }
 
-        public XmlODGTemplate DeserializeSpecification(string specificationFile)
+        public T DeserializeSpecification<T>(string specificationFile) where T: class
         {
-            XmlODGTemplate specification;
-            var serializer = new XmlSerializer(typeof(XmlODGTemplate));
+            T specification;
+            var serializer = new XmlSerializer(typeof(T));
            
             using (var reader = XmlReader.Create(specificationFile))
             {
-                specification = serializer.Deserialize(reader) as XmlODGTemplate;
+                specification = serializer.Deserialize(reader) as T;
             }
 
             return specification;

@@ -5,6 +5,7 @@ using System.Text;
 using AutoMapper;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Exceptions;
+using SysKit.ODG.Base.XmlCleanupTemplate;
 using SysKit.ODG.Base.XmlTemplate.Model;
 using SysKit.ODG.Base.XmlTemplate.Model.Groups;
 
@@ -49,6 +50,11 @@ namespace SysKit.ODG.Generation.Groups
         {
             var groupEntry = new UnifiedGroupEntry();
             return populateGroupEntry(unifiedGroup, groupEntry);
+        }
+
+        public XmlDirectoryElement MapToDirectoryElement(GroupEntry groupEntry)
+        {
+            return _mapper.Map<GroupEntry, XmlDirectoryElement>(groupEntry);
         }
 
         private UnifiedGroupEntry populateGroupEntry(XmlUnifiedGroup unifiedGroup, UnifiedGroupEntry groupEntry)

@@ -21,21 +21,21 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         /// <param name="teams"></param>
         /// <param name="users"></param>
         /// <returns></returns>
-        Task<List<TeamEntry>> CreateTeamsFromGroups(IEnumerable<TeamEntry> teams, UserEntryCollection users);
+        Task<O365CreationResult<TeamEntry>> CreateTeamsFromGroups(IEnumerable<TeamEntry> teams, UserEntryCollection users);
 
         /// <summary>
         /// Creates private channels for existing groups
         /// </summary>
         /// <param name="teams"></param>
         /// <param name="users"></param>
-        /// <returns></returns>
-        Task CreatePrivateTeamChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users);
+        /// <returns>Returns true if all channels where created successfully</returns>
+        Task<bool> CreatePrivateTeamChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users);
 
         /// <summary>
         /// Removes group owners. Key =>userId, Value => group from which to remove owner
         /// </summary>
         /// <param name="ownersMap"></param>
-        /// <returns></returns>
-        Task RemoveGroupOwners(Dictionary<string, UnifiedGroupEntry> ownersMap);
+        /// <returns>Returns true if all owners where successfully removed</returns>
+        Task<bool> RemoveGroupOwners(Dictionary<string, UnifiedGroupEntry> ownersMap);
     }
 }

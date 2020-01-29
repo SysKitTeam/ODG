@@ -6,6 +6,7 @@ using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.SampleData;
+using SysKit.ODG.Base.XmlCleanupTemplate;
 using SysKit.ODG.Base.XmlTemplate.Model;
 
 namespace SysKit.ODG.Generation.Users
@@ -22,7 +23,7 @@ namespace SysKit.ODG.Generation.Users
         {
             _mapper = mapper;
             _sampleDataService = sampleDataService;
-            _userXmlMapper = new UserXmlMapper();
+            _userXmlMapper = new UserXmlMapper(mapper);
         }
 
         public IEnumerable<UserEntry> CreateUsers(UserGenerationOptions generationOptions)
@@ -35,6 +36,19 @@ namespace SysKit.ODG.Generation.Users
             foreach (var xmlUser in createRandomUsers(generationOptions))
             {
                 yield return xmlUser;
+            }
+        }
+
+        public IEnumerable<XmlDirectoryElement> CreateDirectoryElements(IEnumerable<UserEntry> users)
+        {
+            if (users == null)
+            {
+                yield break;
+            }
+
+            foreach (var user in users)
+            {
+                yield return _userXmlMapper.MapToDirectoryElement(user);
             }
         }
 

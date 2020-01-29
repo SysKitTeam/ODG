@@ -22,5 +22,8 @@ namespace SysKit.ODG.Office365Service
         public static string GroupProvisionError1 => "Unable to provision resource";
 
         public static string TeamProvisionError => "No team found with Group Id";
+
+        public static string GuestUserGroupOwnerError =>
+            "As per tenant wide policy guest users are not allowed to be owner of an unified group.";
     }
 }

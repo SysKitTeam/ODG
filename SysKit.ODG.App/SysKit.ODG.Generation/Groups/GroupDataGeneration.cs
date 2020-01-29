@@ -11,6 +11,7 @@ using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.SampleData;
 using SysKit.ODG.Base.Office365;
 using SysKit.ODG.Base.Utils;
+using SysKit.ODG.Base.XmlCleanupTemplate;
 using SysKit.ODG.Base.XmlTemplate.Model;
 using SysKit.ODG.Base.XmlTemplate.Model.Groups;
 
@@ -40,6 +41,19 @@ namespace SysKit.ODG.Generation.Groups
             foreach (var group in createRandomUnifiedGroups(generationOptions, userEntryCollection))
             {
                 yield return group;
+            }
+        }
+
+        public IEnumerable<XmlDirectoryElement> CreateDirectoryElements(IEnumerable<GroupEntry> groups)
+        {
+            if (groups == null)
+            {
+                yield break;
+            }
+
+            foreach (var group in groups)
+            {
+                yield return _groupXmlMapper.MapToDirectoryElement(group);
             }
         }
 
@@ -94,13 +108,39 @@ namespace SysKit.ODG.Generation.Groups
             var maxNumberOfPrivateChannels = 2;
             var numberOfPrivateChannels = 0;
             var currentTeamChannels = RandomThreadSafeGenerator.Next(maxChannels);
+            // there can be no duplicate channel names
+            var channelNames = new HashSet<string>();
 
             for (int i = 0; i < currentTeamChannels; i++)
             {
                 var isPrivateChannel = RandomThreadSafeGenerator.Next(0, 100) > 80 && numberOfPrivateChannels < maxNumberOfPrivateChannels;
-                var channelName = _sampleDataService.GetRandomValue(_sampleDataService.GroupNames);
-                var cleanChannelName = Regex.Replace(channelName, @"[^a-zA-Z0-9]", "");
-                var channelEntry = new TeamChannelEntry(cleanChannelName, isPrivateChannel);
+
+                var tries = 0;
+                string channelName = null;
+
+                while (tries < 100)
+                {
+                    // 50 is max
+                    var maxChannelName = 49;
+                    var cleanChannelName = Regex.Replace(_sampleDataService.GetRandomValue(_sampleDataService.GroupNames), @"[^a-zA-Z0-9]", "");
+                    cleanChannelName = cleanChannelName.Length <= maxChannelName ? cleanChannelName : cleanChannelName.Substring(0, maxChannelName);
+
+                    if (!channelNames.Contains(cleanChannelName))
+                    {
+                        channelNames.Add(cleanChannelName);
+                        channelName = cleanChannelName;
+                        break;
+                    }
+
+                    tries++;
+                }
+
+                if (channelName == null)
+                {
+                    throw new ArgumentException("Failed to create random channelName");
+                }
+
+                var channelEntry = new TeamChannelEntry(channelName, isPrivateChannel);
 
                 if (channelEntry.IsPrivate)
                 {

@@ -57,7 +57,7 @@ namespace SysKit.ODG.App
             var xmlService = new XmlSpecificationService();
 
             //xmlService.SerializeSpecification(testTemplate, @"C:\ProgramData\ODG\test.xml");
-            var template = xmlService.DeserializeSpecification(templateLocation);
+            var template = xmlService.DeserializeSpecification<XmlODGTemplate>(templateLocation);
 
             var unityContainer = UnityManager.CreateUnityContainer();
             var accessTokenFactory = unityContainer.Resolve<IAccessTokenManagerFactory>();
@@ -70,7 +70,10 @@ namespace SysKit.ODG.App
             var generationService = unityContainer.Resolve<IGenerationService>();
             generationService.AddGenerationTask("User Creation", unityContainer.Resolve<IGenerationTask>("userTask"));
             generationService.AddGenerationTask("Group Creation", unityContainer.Resolve<IGenerationTask>("groupTask"));
-            generationService.Start(generationOptions, notifier).GetAwaiter().GetResult();
+            var result = generationService.Start(generationOptions, notifier).GetAwaiter().GetResult();
+
+            var generationCleanupService = unityContainer.Resolve<IGenerationCleanupService>();
+            generationCleanupService.SaveCleanupTemplate(result, templateLocation);
         }
 
         private static string nonNullConsoleRead(string message)

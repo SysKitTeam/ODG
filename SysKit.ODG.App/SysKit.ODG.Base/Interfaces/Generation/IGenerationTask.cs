@@ -10,6 +10,6 @@ namespace SysKit.ODG.Base.Interfaces.Generation
 {
     public interface IGenerationTask
     {
-        Task Execute(GenerationOptions options, INotifier notifier);
+        Task<IGenerationTaskResult> Execute(GenerationOptions options, INotifier notifier);
     }
 }

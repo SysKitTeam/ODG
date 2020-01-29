@@ -49,12 +49,14 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         }
 
         /// <inheritdoc />
-        public async Task<List<UserEntry>> CreateTenantUsers(IEnumerable<UserEntry> users)
+        public async Task<O365CreationResult<UserEntry>> CreateTenantUsers(IEnumerable<UserEntry> users)
         {
             using var progressUpdater = new ProgressUpdater("Create Users", _notifier);
             var userLookup = new Dictionary<string, UserEntry>();
             var successfullyCreatedUsers = new ConcurrentBag<UserEntry>();
             var batchEntries = new List<GraphBatchRequest>();
+            var hadErrors = false;
+
             foreach (var user in users)
             {
                 if (userLookup.ContainsKey(user.UserPrincipalName))
@@ -96,11 +98,12 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     else
                     {
                         _notifier.Error($"Failed to create: {originalUser.UserPrincipalName}. {getErrorMessage(value)}");
+                        hadErrors = true;
                     }
                 }
             });
 
-            return successfullyCreatedUsers.ToList();
+            return new O365CreationResult<UserEntry>(successfullyCreatedUsers, hadErrors);
         }
 
     }

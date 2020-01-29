@@ -15,6 +15,6 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         /// </summary>
         /// <param name="users"></param>
         /// <returns></returns>
-        Task<List<UserEntry>> CreateTenantUsers(IEnumerable<UserEntry> users);
+        Task<O365CreationResult<UserEntry>> CreateTenantUsers(IEnumerable<UserEntry> users);
     }
 }
