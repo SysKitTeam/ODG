@@ -9,6 +9,7 @@ namespace SysKit.ODG.Base.Enums
         None,
         User,
         Group,
-        UnifiedGroup
+        UnifiedGroup,
+        Team
     }
 }

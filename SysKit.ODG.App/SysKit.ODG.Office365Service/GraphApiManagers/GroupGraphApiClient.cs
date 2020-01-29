@@ -81,6 +81,18 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 {
                     if (isKnownError(GraphAPIKnownErrorMessages.GroupAlreadyExists, value))
                     {
+                        // this should not really happen
+                        var owners = string.Join(",", originalGroup.Owners.Select(o => o.Name));
+                        _notifier.Error($"Failed to create: {originalGroup.MailNickname}. Guest owner detected. Owners: {owners}");
+                    }
+                    else if (isKnownError(HttpStatusCode.Forbidden, value))
+                    {
+                        // this should not really happen
+                        var owners = string.Join(",", originalGroup.Owners.Select(o => o.Name));
+                        _notifier.Error($"Failed to create: {originalGroup.MailNickname}. Status code forbidden. Username: {_accessTokenManager.GetUsernameFromToken()}. Owners: {owners}");
+                    }
+                    else if (isKnownError(GraphAPIKnownErrorMessages.GroupAlreadyExists, value))
+                    {
                         _notifier.Warning($"Failed to create: {originalGroup.MailNickname}. Group already exists");
                     }
                     else
@@ -211,7 +223,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     _notifier.Error($"Failed to create {(channelEntry.IsPrivate ? "Private" : "Standard" )} Channel {channelEntry.DisplayName}(teamId: {teamId}). {getErrorMessage(value)}");
                     failedChannels.Add(channelEntry);
                 }
-            });
+            }, 1);
 
             return !failedChannels.Any();
         }

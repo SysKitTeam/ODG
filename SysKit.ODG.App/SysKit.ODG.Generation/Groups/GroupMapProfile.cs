@@ -15,7 +15,10 @@ namespace SysKit.ODG.Generation.Groups
             CreateMap<GroupEntry, XmlDirectoryElement>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.GroupId))
                 .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.DisplayName))
-                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src is UnifiedGroupEntry ? DirectoryElementTypeEnum.UnifiedGroup : DirectoryElementTypeEnum.Group));
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src is TeamEntry
+                    ? DirectoryElementTypeEnum.Team
+                    : src is UnifiedGroupEntry ? DirectoryElementTypeEnum.UnifiedGroup 
+                        : DirectoryElementTypeEnum.Group));
         }
     }
 }
