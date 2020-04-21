@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Microsoft.Online.SharePoint.TenantAdministration;
 using Microsoft.SharePoint.Client;
 using OfficeDevPnP.Core;
 using OfficeDevPnP.Core.Sites;
 using SysKit.ODG.Base.DTO.Generation;
+using SysKit.ODG.Base.Exceptions;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 
@@ -18,9 +20,14 @@ namespace SysKit.ODG.Office365Service.SharePoint
 
         public async Task<bool> CreateSite(IAccessTokenManager accessTokenManager, SiteEntry site)
         {
-            try
+            using (var rootContext = await getClientContext(getTenantUrl(site.Url), accessTokenManager))
             {
-                var rootContext = await getClientContext(getTenantUrl(site.Url), accessTokenManager);
+                Tenant tenant = new Tenant(rootContext);
+
+                if (tenant.SiteExistsAnywhere(site.Url) == SiteExistence.Yes)
+                {
+                    throw new SiteAlreadyExists(site.Url);
+                }
 
                 var newSite = await SiteCollection.CreateAsync(rootContext, new CommunicationSiteCollectionCreationInformation
                 {
@@ -29,11 +36,8 @@ namespace SysKit.ODG.Office365Service.SharePoint
                     Owner = accessTokenManager.GetUsernameFromToken()
                 });
 
+
                 return true;
-            }
-            catch (Exception ex)
-            {
-                throw;
             }
         }
 

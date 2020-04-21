@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using SysKit.ODG.Base.Interfaces.Generation;
 
 namespace SysKit.ODG.Base.DTO.Generation.Results
 {
-    public class GroupGenerationTaskResult: IGenerationTaskResult
+    public class GroupGenerationTaskResult : IGenerationTaskResult
     {
         public bool HadErrors { get; }
         public IEnumerable<GroupEntry> CreatedGroups { get; }

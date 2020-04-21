@@ -1,4 +1,5 @@
 ﻿using System.Xml.Serialization;
+using SysKit.ODG.Base.XmlTemplate.Model.Content;
 
 namespace SysKit.ODG.Base.XmlTemplate.Model.Sites
 {
@@ -15,5 +16,8 @@ namespace SysKit.ODG.Base.XmlTemplate.Model.Sites
 
         [XmlAttribute]
         public string RelativeUrl { get; set; }
+
+        [XmlArray("SharePointContent")]
+        public XmlWeb[] SharePointContent { get; set; }
     }
 }

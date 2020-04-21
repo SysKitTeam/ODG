@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using SysKit.ODG.Base.DTO.Generation.Results;
 using SysKit.ODG.Base.Interfaces.Generation;
-using SysKit.ODG.Base.Notifier;
 using SysKit.ODG.Base.XmlCleanupTemplate;
 
 namespace SysKit.ODG.Generation
