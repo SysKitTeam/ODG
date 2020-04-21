@@ -12,17 +12,18 @@ namespace SysKit.ODG.Generation.Sites
     public class SiteGenerationTask : IGenerationTask
     {
         private readonly ISiteDataGeneration _siteDataGeneration;
-        private readonly ISharePointService _sharePointService;
+        private readonly ISharePointServiceFactory _sharePointServiceFactory;
 
-        public SiteGenerationTask(ISiteDataGeneration siteDataGeneration, ISharePointService sharePointService)
+        public SiteGenerationTask(ISiteDataGeneration siteDataGeneration, ISharePointServiceFactory sharePointServiceFactory)
         {
             _siteDataGeneration = siteDataGeneration;
-            _sharePointService = sharePointService;
+            _sharePointServiceFactory = sharePointServiceFactory;
         }
 
         public async Task<IGenerationTaskResult> Execute(GenerationOptions options, INotifier notifier)
         {
             var sites = _siteDataGeneration.CreateSites(options).ToList();
+            var sharePointService = _sharePointServiceFactory.Create(options.UserCredentials);
 
             if (sites.Any() == false)
             {
@@ -31,7 +32,16 @@ namespace SysKit.ODG.Generation.Sites
 
             foreach (var site in sites)
             {
-                await _sharePointService.CreateSite(options.UserAccessTokenManager, site);
+                try
+                {
+                    await sharePointService.CreateSite(site);
+                    //await sharePointService.CreateSharePointStructure(site.Url);
+                }
+                catch (Exception ex)
+                {
+                    notifier.Error($"Failed to create {site.Title}", ex);
+                }
+
             }
 
             // TODO: return created sites

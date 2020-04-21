@@ -1,4 +1,5 @@
-﻿using SysKit.ODG.Base.Interfaces.Authentication;
+﻿using SysKit.ODG.Base.Authentication;
+using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.XmlTemplate;
 
 namespace SysKit.ODG.Base.DTO.Generation.Options
@@ -9,14 +10,16 @@ namespace SysKit.ODG.Base.DTO.Generation.Options
         public string TenantDomain { get; }
         public string DefaultPassword { get; set; }
         public XmlODGTemplate Template { get; }
+        public SimpleUserCredentials UserCredentials { get; }
 
-        public GenerationOptions(IAccessTokenManager userAccessTokenManager, string tenantDomain, string defaultPassword,
+        public GenerationOptions(IAccessTokenManager userAccessTokenManager, SimpleUserCredentials userCredentials, string tenantDomain, string defaultPassword,
             XmlODGTemplate template)
         {
             UserAccessTokenManager = userAccessTokenManager;
             TenantDomain = tenantDomain;
             DefaultPassword = defaultPassword;
             Template = template;
+            UserCredentials = userCredentials;
         }
     }
 }

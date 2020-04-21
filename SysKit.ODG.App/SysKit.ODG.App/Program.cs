@@ -54,11 +54,11 @@ namespace SysKit.ODG.App
             var logger = unityContainer.Resolve<ILogger>();
             var notifier = new LoggNotifier(logger, new LoggOptions(LogLevelEnum.Debug));
 
-            var generationOptions = new GenerationOptions(accessTokenManager, tenantDomain, defaultPassword, template);
+            var generationOptions = new GenerationOptions(accessTokenManager, userCredentials, tenantDomain, defaultPassword, template);
 
             var generationService = unityContainer.Resolve<IGenerationService>();
-            generationService.AddGenerationTask("User Creation", unityContainer.Resolve<IGenerationTask>("userTask"));
-            generationService.AddGenerationTask("Group Creation", unityContainer.Resolve<IGenerationTask>("groupTask"));
+            //generationService.AddGenerationTask("User Creation", unityContainer.Resolve<IGenerationTask>("userTask"));
+            //generationService.AddGenerationTask("Group Creation", unityContainer.Resolve<IGenerationTask>("groupTask"));
             generationService.AddGenerationTask("Site Creation", unityContainer.Resolve<IGenerationTask>("siteTask"));
             var result = generationService.Start(generationOptions, notifier).GetAwaiter().GetResult();
 

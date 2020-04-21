@@ -4,53 +4,87 @@ using Microsoft.Online.SharePoint.TenantAdministration;
 using Microsoft.SharePoint.Client;
 using OfficeDevPnP.Core;
 using OfficeDevPnP.Core.Sites;
+using SysKit.ODG.Base.Authentication;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Exceptions;
-using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 
 namespace SysKit.ODG.Office365Service.SharePoint
 {
-    public class SharePointService : ISharePointService
+    internal class SharePointService : ISharePointService
     {
-        public SharePointService()
+        private readonly SimpleUserCredentials _userCredentials;
+        public SharePointService(SimpleUserCredentials userCredentials)
         {
-
+            _userCredentials = userCredentials;
         }
 
-        public async Task<bool> CreateSite(IAccessTokenManager accessTokenManager, SiteEntry site)
+        public async Task CreateSite(SiteEntry site)
         {
-            using (var rootContext = await getClientContext(getTenantUrl(site.Url), accessTokenManager))
+            using (var rootContext = getClientContext(getAdminUrl(site.Url)))
             {
                 Tenant tenant = new Tenant(rootContext);
-
-                if (tenant.SiteExistsAnywhere(site.Url) == SiteExistence.Yes)
+                if (tenant.SiteExistsAnywhere(site.Url) != SiteExistence.No)
                 {
                     throw new SiteAlreadyExists(site.Url);
                 }
 
-                var newSite = await SiteCollection.CreateAsync(rootContext, new CommunicationSiteCollectionCreationInformation
+                var siteInfo = new CommunicationSiteCollectionCreationInformation
                 {
                     Title = site.Title,
                     Url = site.Url,
-                    Owner = accessTokenManager.GetUsernameFromToken()
-                });
+                    Owner = getLoginNameFromEntry(site.Owner, site.Url)
+                };
 
-
-                return true;
+                await SiteCollection.CreateAsync(rootContext, siteInfo, 15);
             }
         }
 
-        protected async Task<ClientContext> getClientContext(string siteUrl, IAccessTokenManager accessTokenManager)
+        public async Task CreateSharePointStructure(string url)
+        {
+            using (var context = getClientContext(url))
+            {
+                var web = context.Web;
+                context.Load(web, w => w.CurrentUser.IsSiteAdmin);
+                //context.Load(web);
+                await context.ExecuteQueryRetryAsync();
+
+                var isUserAdmin = context.Web.CurrentUser.IsSiteAdmin;
+
+                var docLib = web.DefaultDocumentLibrary().RootFolder;
+                context.Load(docLib, l => l.ServerRelativeUrl);
+                await context.ExecuteQueryRetryAsync();
+                var newFolder = web.EnsureFolder(docLib, "TestFolder");
+            }
+        }
+
+        protected ClientContext getClientContext(string siteUrl)
         {
             var manager = new AuthenticationManager();
-            return manager.GetAzureADAccessTokenAuthenticatedContext(siteUrl, (await accessTokenManager.GetSharePointToken()).Token);
+            return manager.GetSharePointOnlineAuthenticatedContextTenant(siteUrl, _userCredentials.Username, _userCredentials.Password);
+        }
+
+        private string getLoginNameFromEntry(MemberEntry memberEntry, string siteUrl)
+        {
+            if (memberEntry.IsFQDN)
+            {
+                return memberEntry.Name;
+            }
+
+            var host = new Uri(siteUrl);
+            return $"{memberEntry.Name}@{host.Host.Replace(".sharepoint.com", ".onmicrosoft.com")}";
         }
 
         private string getTenantUrl(string siteUrl)
         {
             var host = new Uri(siteUrl);
             return $"{host.Scheme}://{host.Host}";
+        }
+
+        private string getAdminUrl(string siteUrl)
+        {
+            var host = new Uri(siteUrl);
+            return $"{host.Scheme}://{host.Host.Replace(".sharepoint.com", "-admin.sharepoint.com")}";
         }
     }
 }

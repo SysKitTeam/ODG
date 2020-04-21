@@ -265,6 +265,7 @@
     <Compile Include="GraphHttpProvider\GraphHttpProvider.cs" />
     <Compile Include="GraphHttpProvider\GraphHttpProviderFactory.cs" />
     <Compile Include="SharePoint\SharePointService.cs" />
+    <Compile Include="SharePoint\SharePointServiceFactory.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
