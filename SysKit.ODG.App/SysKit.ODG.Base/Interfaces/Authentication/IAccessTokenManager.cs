@@ -10,5 +10,6 @@ namespace SysKit.ODG.Base.Interfaces.Authentication
     {
         string GetUsernameFromToken();
         Task<AuthToken> GetGraphToken();
+        Task<AuthToken> GetSharePointToken();
     }
 }

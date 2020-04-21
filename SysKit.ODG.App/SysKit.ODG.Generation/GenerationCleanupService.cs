@@ -44,6 +44,11 @@ namespace SysKit.ODG.Generation
                     continue;
                 }
 
+                if (taskResult is SiteGenerationTaskResult)
+                {
+                    continue;
+                }
+
                 throw new ArgumentException("Task result is not supported for creating a cleanup template");
             }
 

@@ -1,16 +1,14 @@
-﻿using SysKit.ODG.Base.Interfaces;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Identity.Client;
 using SysKit.ODG.Base.Authentication;
+using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
 
 namespace SysKit.ODG.Authentication
 {
-    public class AccessTokenManager: IAccessTokenManager
+    public class AccessTokenManager : IAccessTokenManager
     {
         private readonly IAppConfigManager _appConfigManager;
         private readonly SimpleUserCredentials _userCredentials;
@@ -52,6 +50,31 @@ namespace SysKit.ODG.Authentication
             {
 
                 result = await _app.AcquireTokenByUsernamePassword(_appConfigManager.Scopes,
+                        _userCredentials.Username,
+                        _userCredentials.Password)
+                    .ExecuteAsync();
+                return new AuthToken { Token = result.AccessToken };
+            }
+            catch (MsalUiRequiredException)
+            {
+                // TODO: HALP
+                throw;
+            }
+            catch (Exception)
+            {
+                // TODO: Logg exception
+                throw;
+            }
+        }
+
+        public async Task<AuthToken> GetSharePointToken()
+        {
+            var tenantName = _userCredentials.Username.Split('@')[1].Replace(".onmicrosoft.com", "");
+            var sharePointScope = $"https://{tenantName}.sharepoint.com/AllSites.FullControl";
+
+            try
+            {
+                var result = await _app.AcquireTokenByUsernamePassword(new[] { sharePointScope },
                         _userCredentials.Username,
                         _userCredentials.Password)
                     .ExecuteAsync();

@@ -11,11 +11,13 @@ using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Base.Interfaces.SampleData;
 using SysKit.ODG.Generation;
 using SysKit.ODG.Generation.Groups;
+using SysKit.ODG.Generation.Sites;
 using SysKit.ODG.Generation.Users;
 using SysKit.ODG.Office365Service;
 using SysKit.ODG.Office365Service.GraphApiManagers;
 using SysKit.ODG.Office365Service.GraphHttpProvider;
 using SysKit.ODG.Office365Service.Polly;
+using SysKit.ODG.Office365Service.SharePoint;
 using SysKit.ODG.SampleData;
 using Unity;
 using Unity.Injection;
@@ -41,10 +43,12 @@ namespace SysKit.ODG.App.Configuration
             container.RegisterSingleton<IGenerationCleanupService, GenerationCleanupService>();
             container.RegisterType<IGenerationTask, UserGenerationTask>("userTask");
             container.RegisterType<IGenerationTask, GroupGenerationTask>("groupTask");
+            container.RegisterType<IGenerationTask, SiteGenerationTask>("siteTask");
 
             // DataGeneration
             container.RegisterType<IUserDataGeneration, UserDataGeneration>();
             container.RegisterType<IGroupDataGeneration, GroupDataGeneration>();
+            container.RegisterType<ISiteDataGeneration, SiteDataGeneration>();
 
             #endregion Generation services
 
@@ -55,6 +59,7 @@ namespace SysKit.ODG.App.Configuration
             container.RegisterType<IGraphHttpProviderFactory, GraphHttpProviderFactory>(new PerResolveLifetimeManager());
             container.RegisterSingleton<IGraphServiceFactory, GraphServiceFactory>();
             container.RegisterSingleton<IGraphApiClientFactory, GraphApiClientFactory>();
+            container.RegisterSingleton<ISharePointService, SharePointService>();
 
             #endregion Office365 services
 
