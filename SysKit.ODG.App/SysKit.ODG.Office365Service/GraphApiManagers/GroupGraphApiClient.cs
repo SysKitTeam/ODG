@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Graph;
 using Newtonsoft.Json;
+using OfficeDevPnP.Core.Framework.Graph;
 using Serilog;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Exceptions;
@@ -42,11 +43,11 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             using var progressUpdater = new ProgressUpdater("Create Unified Groups", _notifier);
             var createdGroupsResult = new CreatedGroupsResult();
             var groupLookup = new Dictionary<string, UnifiedGroupEntry>();
-            var batchEntries = new List<GraphBatchRequest>();
             var groupsWithTooManyMembers = new HashSet<UnifiedGroupEntry>();
             var groupList = groups.ToList();
 
             int i = 0;
+            progressUpdater.SetTotalCount(groupList.Count);
             foreach (var group in groupList)
             {
                 try
@@ -59,49 +60,49 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                         graphGroup.OwnersODataBind = null;
                     }
 
-                    batchEntries.Add(new GraphBatchRequest(group.MailNickname, "groups", HttpMethod.Post, graphGroup));
+                    var createdGroup = await _graphServiceClient.Groups.Request().AddAsync(graphGroup);
+                    group.GroupId = createdGroup.Id;
+
+                    createdGroupsResult.AddGroup(group);
+
+                    group.SiteUrl = await waitForGroupProvisioning(group.GroupId);
+                }
+                catch (ServiceException sex)
+                {
+                    var value = sex.Error;
+                    if (isKnownError(GraphAPIKnownErrorMessages.GuestUserGroupOwnerError, value))
+                    {
+                        // this should not really happen
+                        var owners = string.Join(",", group.Owners.Select(o => o.Name));
+                        _notifier.Error(
+                            $"Failed to create: {group.MailNickname}. Guest owner detected. Owners: {owners}");
+                    }
+                    else if (isKnownError(GraphAPIKnownErrorMessages.GroupAlreadyExists, value))
+                    {
+                        _notifier.Warning($"Failed to create: {group.MailNickname}. Group already exists");
+                    }
+                    else
+                    {
+                        _notifier.Error($"Failed to create: {group.MailNickname}. {value?.Message}");
+                    }
                 }
                 catch (Exception ex)
                 {
                     _notifier.Error(ex.Message);
                 }
+                finally
+                {
+                    progressUpdater.UpdateProgress(1);
+                }
             }
 
-            var maxConcurrentRequests = batchEntries.Count > 100 ? 1 : 6;
-            await executeActionWithProgress(progressUpdater, batchEntries, maxConcurrentRequests: maxConcurrentRequests, onResult: (key, value) =>
+            var groupsThatFailedToProvision = groupList.Count(g => g.ProvisionFailed);
+            if (groupsThatFailedToProvision > 0)
             {
-                var originalGroup = groupLookup[key];
-                if (value.IsSuccessStatusCode)
-                {
-                    var createdGroup = deserializeGraphObject<Group>(value.Content).GetAwaiter().GetResult();
-                    originalGroup.GroupId = createdGroup.Id;
-                    createdGroupsResult.AddGroup(originalGroup);
-                }
-                else
-                {
-                    if (isKnownError(GraphAPIKnownErrorMessages.GuestUserGroupOwnerError, value))
-                    {
-                        // this should not really happen
-                        var owners = string.Join(",", originalGroup.Owners.Select(o => o.Name));
-                        _notifier.Error($"Failed to create: {originalGroup.MailNickname}. Guest owner detected. Owners: {owners}");
-                    }
-                    else if (isKnownError(GraphAPIKnownErrorMessages.GroupAlreadyExists, value))
-                    {
-                        _notifier.Warning($"Failed to create: {originalGroup.MailNickname}. Group already exists");
-                    }
-                    else
-                    {
-                        _notifier.Error($"Failed to create: {originalGroup.MailNickname}. {getErrorMessage(value)}");
-                    }
-                }
-            });
+                _notifier.Warning($"Failed to provision {groupsThatFailedToProvision} groups.");
+            }
 
-            _notifier.Info($"Waiting for groups to provision");
-            var failedGroups = await waitForGroupProvisioning(createdGroupsResult.CreatedGroups.ToDictionary(g => g.GroupId, g => new GraphBatchRequest(g.GroupId, $"groups/{g.GroupId}/drive", HttpMethod.Get)));
-            _notifier.Info($"Group provisioning finished. Failed groups count: {failedGroups.Count}");
-            // provisioning step here is just to give SP time to do it's thing. Groups will be created but maybe SP is still not provisioned
-            //createdGroupsResult.RemoveGroupsByGroupId(failedGroups);
-
+            progressUpdater.Flush();
             createdGroupsResult.RemoveGroupsByGroupId(await addGroupMemberships(createdGroupsResult.FilterOnlyCreatedGroups(groupsWithTooManyMembers).Cast<GroupEntry>().ToList(), users));
             createdGroupsResult.HasErrors = groupList.Count != createdGroupsResult.CreatedGroups.Count;
             return createdGroupsResult;
@@ -250,6 +251,27 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         #region Helpers
 
         private int _maxProvisioningAttempts = 10;
+
+        /// <summary>
+        /// Waits for Group drive to be available. This is a sign that group was provisioned
+        /// </summary>
+        /// <param name="groupId"></param>
+        /// <returns>Returns group URL if provision succeeded or null if it failed</returns>
+        private async Task<string> waitForGroupProvisioning(string groupId)
+        {
+            try
+            {
+                return UnifiedGroupsUtility.GetUnifiedGroupSiteUrl(groupId,
+                    (await _accessTokenManager.GetGraphToken()).Token);
+            }
+            catch
+            {
+                // provisioning failed
+                return null;
+            }
+
+        }
+
         /// <summary>
         /// Waits for Group drive to be available. This is a sign that group was provisioned
         /// </summary>

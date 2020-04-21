@@ -96,6 +96,16 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             return responseMessage.StatusCode == statusCode;
         }
 
+        protected bool isKnownError(string expectedMessage, Error error)
+        {
+            if (error?.Message == null)
+            {
+                return expectedMessage == null;
+            }
+
+            return error.Message.Contains(expectedMessage);
+        }
+
         /// <summary>
         /// Executes request with progress update
         /// </summary>
