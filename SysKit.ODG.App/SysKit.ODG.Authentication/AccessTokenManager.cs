@@ -57,12 +57,12 @@ namespace SysKit.ODG.Authentication
                     .ExecuteAsync();
                 return new AuthToken { Token = result.AccessToken };
             }
-            catch (MsalUiRequiredException ex)
+            catch (MsalUiRequiredException)
             {
                 // TODO: HALP
                 throw;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // TODO: Logg exception
                 throw;

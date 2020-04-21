@@ -253,6 +253,7 @@
     <Compile Include="GraphHttpProvider\Handlers\LoggingHandler.cs" />
     <Compile Include="GraphHttpProvider\Handlers\CustomRetryHandler.cs" />
     <Compile Include="GraphHttpProvider\Handlers\UserAgentHandler.cs" />
+    <Compile Include="GraphHttpProvider\HttpUtils.cs" />
     <Compile Include="GraphHttpProvider\IGraphHttpProvider.cs" />
     <Compile Include="GraphHttpProvider\IGraphHttpProviderFactory.cs" />
     <Compile Include="GraphServiceFactory.cs" />
