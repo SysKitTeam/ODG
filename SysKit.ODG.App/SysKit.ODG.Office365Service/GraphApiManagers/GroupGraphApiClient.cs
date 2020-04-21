@@ -95,12 +95,6 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 }
             }
 
-            var groupsThatFailedToProvision = groupList.Count(g => g.ProvisionFailed);
-            if (groupsThatFailedToProvision > 0)
-            {
-                _notifier.Warning($"Failed to provision {groupsThatFailedToProvision} groups.");
-            }
-
             progressUpdater.Flush();
             createdGroupsResult.RemoveGroupsByGroupId(await addGroupMemberships(createdGroupsResult.FilterOnlyCreatedGroups(groupsWithTooManyMembers).Cast<GroupEntry>().ToList(), users));
             createdGroupsResult.HasErrors = groupList.Count != createdGroupsResult.CreatedGroups.Count;
@@ -256,8 +250,17 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         /// </summary>
         /// <param name="groupId"></param>
         /// <returns>Returns group URL if provision succeeded or null if it failed</returns>
-        private async Task<string> waitForGroupProvisioning(string groupId)
+        private async Task<string> waitForGroupProvisioning(string groupId, int retryAttempt = 0)
         {
+            var waitPeriod = 15;
+            if (retryAttempt > _maxProvisioningAttempts)
+            {
+                _notifier.Warning($"Failed to provision group: {groupId}");
+                return null;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(waitPeriod * retryAttempt));
+
             try
             {
                 return UnifiedGroupsUtility.GetUnifiedGroupSiteUrl(groupId,
@@ -266,9 +269,9 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             catch
             {
                 // provisioning failed
-                return null;
             }
 
+            return await waitForGroupProvisioning(groupId, retryAttempt + 1);
         }
 
         /// <summary>
