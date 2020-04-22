@@ -38,6 +38,7 @@ namespace SysKit.ODG.Generation.Sites
                     try
                     {
                         await sharePointService.CreateSite(site);
+                        await sharePointService.SetSiteOwner(site);
                         progress.UpdateProgress(1);
                         //await sharePointService.CreateSharePointStructure(site.Url);
                     }

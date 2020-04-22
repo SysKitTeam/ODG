@@ -35,7 +35,7 @@ namespace SysKit.ODG.Office365Service.SharePoint
                 {
                     Title = site.Title,
                     Url = site.Url,
-                    // so we can set other admins
+                    // so I can do all other actions, will remove at the end
                     Owner = _userCredentials.Username
                 };
 
@@ -45,17 +45,42 @@ namespace SysKit.ODG.Office365Service.SharePoint
                 {
                     newSite.Web.AddAdministrators(site.SiteAdmins.Select(admin => new UserEntity{ LoginName = getLoginNameFromEntry(admin, site.Url)} ).ToList());
                 }
+            }
+        }
 
-                if (site.Owner != null)
+        public async Task SetSiteOwner(SiteEntry site)
+        {
+            var realOwner = getLoginNameFromEntry(site.Owner, site.Url);
+
+            if (!_userCredentials.Username.Equals(realOwner, StringComparison.OrdinalIgnoreCase))
+            {
+                using (var context = getClientContext(site.Url))
                 {
-                    var ownerName = getLoginNameFromEntry(site.Owner, site.Url);
-                    if (!ownerName.Equals(_userCredentials.Username, StringComparison.OrdinalIgnoreCase))
-                    {
-                        // set real SC owner
-                        newSite.Web.EnsureUser(ownerName);
-
-                    }
+                    var realOwnerUser = context.Web.EnsureUser(realOwner);
+                    context.Site.Owner = realOwnerUser;
+                    context.Load(context.Site.Owner);
+                    await context.ExecuteQueryRetryAsync();
                 }
+            }
+
+            if (site.SiteAdmins?.Any() != true)
+            {
+                return;
+            }
+
+            // check if _userCredentials.Username is in site admins, because Owner change just removed him
+            if (site.SiteAdmins.All(admin =>
+                !_userCredentials.Username.Equals(getLoginNameFromEntry(admin, site.Url),
+                    StringComparison.OrdinalIgnoreCase)))
+            {
+                return;
+            }
+
+            using (var rootContext = getClientContext(getAdminUrl(site.Url)))
+            {
+                Tenant tenant = new Tenant(rootContext);
+                tenant.SetSiteAdmin(site.Url, _userCredentials.Username, true);
+                await tenant.Context.ExecuteQueryRetryAsync();
             }
         }
 
