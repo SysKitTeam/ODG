@@ -9,8 +9,6 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
 
         Task CreateSharePointStructure(string url);
 
-        Task SetSiteOwner(SiteEntry site);
-
         /// <summary>
         /// Sets membership for Owners, Visitors and Members group
         /// </summary>
