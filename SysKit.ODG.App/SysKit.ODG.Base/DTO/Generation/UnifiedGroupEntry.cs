@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SysKit.ODG.Base.DTO.Generation
+﻿namespace SysKit.ODG.Base.DTO.Generation
 {
-    public class UnifiedGroupEntry: GroupEntry
+    public class UnifiedGroupEntry : GroupEntry
     {
         public string MailNickname { get; set; }
         public string SiteUrl { get; set; }

@@ -2,6 +2,7 @@
 {
     public enum ContentTypeEnum
     {
+        None,
         Web,
         DocumentLibrary,
         List,

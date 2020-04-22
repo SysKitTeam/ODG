@@ -7,7 +7,12 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
     {
         Task CreateSite(SiteEntry site);
 
-        Task CreateSharePointStructure(string url);
+        /// <summary>
+        /// Creates SharePoint content and assignees permissions
+        /// </summary>
+        /// <param name="content"></param>
+        /// <returns></returns>
+        Task CreateSharePointStructure(ISharePointContent content);
 
         /// <summary>
         /// Sets membership for Owners, Visitors and Members group

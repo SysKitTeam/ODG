@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace SysKit.ODG.Base.DTO.Generation
 {
-    public class SiteEntry
+    public class SiteEntry: ISharePointContent
     {
         public string Title { get; set; }
         public string Url { get; set; }
@@ -19,5 +17,7 @@ namespace SysKit.ODG.Base.DTO.Generation
         public List<MemberEntry> SPVisitors { get; set; }
 
         #endregion Default SharePoint Groups
+
+        public ContentEntry Content { get; set; }
     }
 }

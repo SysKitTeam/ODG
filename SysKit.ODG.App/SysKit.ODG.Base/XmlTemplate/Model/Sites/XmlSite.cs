@@ -34,7 +34,7 @@ namespace SysKit.ODG.Base.XmlTemplate.Model.Sites
         [XmlAttribute]
         public string RelativeUrl { get; set; }
 
-        [XmlArray("SharePointContent")]
-        public XmlWeb[] SharePointContent { get; set; }
+        [XmlElement("SharePointContent")]
+        public XmlWeb SharePointContent { get; set; }
     }
 }

@@ -110,9 +110,9 @@ namespace SysKit.ODG.Office365Service.SharePoint
         }
 
 
-        public async Task CreateSharePointStructure(string url)
+        public async Task CreateSharePointStructure(ISharePointContent content)
         {
-            using (var context = SharePointUtils.CreateClientContext(url, _userCredentials))
+            using (var context = SharePointUtils.CreateClientContext(content.Url, _userCredentials))
             {
                 var web = context.Web;
                 context.Load(web, w => w.CurrentUser.IsSiteAdmin);
