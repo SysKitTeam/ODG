@@ -11,6 +11,23 @@ namespace SysKit.ODG.Base.XmlTemplate.Model.Sites
         [XmlArray("SiteAdmins")]
         public XmlMember[] SiteAdmins { get; set; }
 
+
+        /// <summary>
+        /// Members of SharePoint Owners Group
+        /// </summary>
+        [XmlArray("Owners")]
+        public XmlMember[] SPOwners { get; set; }
+        /// <summary>
+        /// Members of SharePoint Members Group
+        /// </summary>
+        [XmlArray("Members")]
+        public XmlMember[] SPMembers { get; set; }
+        /// <summary>
+        /// Members of SharePoint Visitors Group
+        /// </summary>
+        [XmlArray("Visitors")]
+        public XmlMember[] SPVisitors { get; set; }
+
         [XmlAttribute]
         public string Title { get; set; }
 

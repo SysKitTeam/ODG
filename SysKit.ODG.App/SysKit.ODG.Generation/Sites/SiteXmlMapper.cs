@@ -22,6 +22,10 @@ namespace SysKit.ODG.Generation.Sites
             siteEntry.Owner = new MemberEntry(site.PrimaryAdmin.Name);
             siteEntry.SiteAdmins = site.SiteAdmins?.Select(sa => new MemberEntry(sa.Name)).ToList() ?? new List<MemberEntry>();
 
+            siteEntry.SPOwners = site.SPOwners?.Select(sa => new MemberEntry(sa.Name)).ToList() ?? new List<MemberEntry>();
+            siteEntry.SPMembers = site.SPMembers?.Select(sa => new MemberEntry(sa.Name)).ToList() ?? new List<MemberEntry>();
+            siteEntry.SPVisitors = site.SPVisitors?.Select(sa => new MemberEntry(sa.Name)).ToList() ?? new List<MemberEntry>();
+
             return siteEntry;
         }
 

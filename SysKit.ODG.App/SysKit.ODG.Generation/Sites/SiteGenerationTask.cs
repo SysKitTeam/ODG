@@ -23,7 +23,7 @@ namespace SysKit.ODG.Generation.Sites
         public async Task<IGenerationTaskResult> Execute(GenerationOptions options, INotifier notifier)
         {
             var sites = _siteDataGeneration.CreateSites(options).ToList();
-            var sharePointService = _sharePointServiceFactory.Create(options.UserCredentials);
+            var sharePointService = _sharePointServiceFactory.Create(options.UserCredentials, notifier);
 
             if (sites.Any() == false)
             {
@@ -38,6 +38,7 @@ namespace SysKit.ODG.Generation.Sites
                     try
                     {
                         await sharePointService.CreateSite(site);
+                        await sharePointService.SetMembershipOfDefaultSharePointGroups(site);
                         await sharePointService.SetSiteOwner(site);
                         progress.UpdateProgress(1);
                         //await sharePointService.CreateSharePointStructure(site.Url);
