@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Online.SharePoint.TenantAdministration;
 using Microsoft.SharePoint.Client;
 using OfficeDevPnP.Core;
+using OfficeDevPnP.Core.Entities;
 using OfficeDevPnP.Core.Sites;
 using SysKit.ODG.Base.Authentication;
 using SysKit.ODG.Base.DTO.Generation;
@@ -33,10 +35,27 @@ namespace SysKit.ODG.Office365Service.SharePoint
                 {
                     Title = site.Title,
                     Url = site.Url,
-                    Owner = getLoginNameFromEntry(site.Owner, site.Url)
+                    // so we can set other admins
+                    Owner = _userCredentials.Username
                 };
 
-                await SiteCollection.CreateAsync(rootContext, siteInfo, 15);
+                var newSite = await SiteCollection.CreateAsync(rootContext, siteInfo, 15);
+
+                if (site.SiteAdmins?.Any() == true)
+                {
+                    newSite.Web.AddAdministrators(site.SiteAdmins.Select(admin => new UserEntity{ LoginName = getLoginNameFromEntry(admin, site.Url)} ).ToList());
+                }
+
+                if (site.Owner != null)
+                {
+                    var ownerName = getLoginNameFromEntry(site.Owner, site.Url);
+                    if (!ownerName.Equals(_userCredentials.Username, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // set real SC owner
+                        newSite.Web.EnsureUser(ownerName);
+
+                    }
+                }
             }
         }
 

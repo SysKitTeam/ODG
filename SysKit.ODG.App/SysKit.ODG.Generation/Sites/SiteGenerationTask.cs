@@ -30,19 +30,25 @@ namespace SysKit.ODG.Generation.Sites
                 return null;
             }
 
-            foreach (var site in sites)
+            using (var progress = new ProgressUpdater("Create Sites", notifier))
             {
-                try
+                progress.SetTotalCount(sites.Count);
+                foreach (var site in sites)
                 {
-                    await sharePointService.CreateSite(site);
-                    //await sharePointService.CreateSharePointStructure(site.Url);
-                }
-                catch (Exception ex)
-                {
-                    notifier.Error($"Failed to create {site.Title}", ex);
-                }
+                    try
+                    {
+                        await sharePointService.CreateSite(site);
+                        progress.UpdateProgress(1);
+                        //await sharePointService.CreateSharePointStructure(site.Url);
+                    }
+                    catch (Exception ex)
+                    {
+                        notifier.Error($"Failed to create {site.Title}", ex);
+                    }
 
+                }
             }
+            
 
             // TODO: return created sites
             return new SiteGenerationTaskResult();

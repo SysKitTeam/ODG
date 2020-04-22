@@ -46,7 +46,7 @@ namespace SysKit.ODG.Generation.Groups
             var ownersRemovedOk = true;
             if (groupsToRemoveOwners.Any())
             {
-                // just in case, if there is some provisioning (public channels believed strangely(don't get created))
+                // just in case, if there is some provisioning (public channels behaved strangely(don't get created))
                 await Task.Delay(TimeSpan.FromSeconds(10));
                 ownersRemovedOk = await groupGraphApiClient.RemoveGroupOwners(createdGroups.GroupsWithAddedOwners);
             }
