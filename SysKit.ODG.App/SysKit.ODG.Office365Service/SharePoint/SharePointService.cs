@@ -6,8 +6,10 @@ using Microsoft.Online.SharePoint.TenantAdministration;
 using Microsoft.SharePoint.Client;
 using OfficeDevPnP.Core.Entities;
 using OfficeDevPnP.Core.Sites;
+using OfficeDevPnP.Core.Utilities;
 using SysKit.ODG.Base.Authentication;
 using SysKit.ODG.Base.DTO.Generation;
+using SysKit.ODG.Base.Enums;
 using SysKit.ODG.Base.Exceptions;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Base.Notifier;
@@ -109,23 +111,111 @@ namespace SysKit.ODG.Office365Service.SharePoint
             }
         }
 
+        #region SharePoint Structure and Permissions
 
-        public async Task CreateSharePointStructure(ISharePointContent content)
+        public async Task CreateSharePointStructure(ISharePointContent sharePointContent)
         {
-            using (var context = SharePointUtils.CreateClientContext(content.Url, _userCredentials))
+            if (sharePointContent?.Content == null)
             {
-                var web = context.Web;
-                context.Load(web, w => w.CurrentUser.IsSiteAdmin);
-                //context.Load(web);
-                await context.ExecuteQueryRetryAsync();
+                return;
+            }
 
-                var isUserAdmin = context.Web.CurrentUser.IsSiteAdmin;
+            using (var context = SharePointUtils.CreateClientContext(sharePointContent.Url, _userCredentials))
+            {
+                var rootWeb = context.Site.RootWeb;
 
-                var docLib = web.DefaultDocumentLibrary().RootFolder;
-                context.Load(docLib, l => l.ServerRelativeUrl);
-                await context.ExecuteQueryRetryAsync();
-                var newFolder = web.EnsureFolder(docLib, "TestFolder");
+                // handle permissions for root web
+
+                foreach (var content in sharePointContent.Content.Children)
+                {
+                    switch (content.Type)
+                    {
+                        case ContentTypeEnum.Web:
+                            createSubsite(rootWeb, content, context);
+                            break;
+                        case ContentTypeEnum.DocumentLibrary:
+                            createDocumentLibrary(rootWeb, content, context);
+                            break;
+                    }
+                }
             }
         }
+
+        private void createSubsite(Web parentWeb, ContentEntry webContent, ClientContext context)
+        {
+            // web exists
+            // get web on Web object
+            Web web = parentWeb.CreateWeb(new SiteEntity
+            {
+                Title = webContent.Name,
+                Url = UrlUtility.StripInvalidUrlChars(webContent.Name)
+            });
+
+            // handle web permissions
+
+            foreach (var content in webContent.Children)
+            {
+                switch (content.Type)
+                {
+                    case ContentTypeEnum.Web:
+                        createSubsite(web, content, context);
+                        break;
+                    case ContentTypeEnum.DocumentLibrary:
+                        createDocumentLibrary(web, content, context);
+                        break;
+                }
+            }
+        }
+
+        private void createDocumentLibrary(Web parentWeb, ContentEntry listContent, ClientContext context)
+        {
+           var list = parentWeb.CreateDocumentLibrary(listContent.Name);
+
+            // handle list permissions
+
+            foreach (var content in listContent.Children)
+            {
+                switch (content.Type)
+                {
+                    case ContentTypeEnum.Folder:
+                        createFolder(parentWeb, list.RootFolder, content, context);
+                        break;
+                    case ContentTypeEnum.File:
+                        createFile(parentWeb, list.RootFolder, content, context);
+                        break;
+                }
+            }
+        }
+
+        private void createFolder(Web parentWeb, Folder parentFolder, ContentEntry folderContent, ClientContext context)
+        {
+            // check if folder exists and create it if not
+            var folder = parentFolder.EnsureFolder(folderContent.Name);
+
+            // handle folder permissions
+
+            foreach (var content in folderContent.Children)
+            {
+                switch (content.Type)
+                {
+                    case ContentTypeEnum.Folder:
+                        createFolder(parentWeb, folder, content, context);
+                        break;
+                    case ContentTypeEnum.File:
+                        createFile(parentWeb, folder, content, context);
+                        break;
+                }
+            }
+        }
+
+        private void createFile(Web parentWeb, Folder parentFolder, ContentEntry fileContent, ClientContext context)
+        {
+            // create file
+            //throw new NotImplementedException();
+            return;
+        }
+
+        #endregion
+
     }
 }

@@ -37,12 +37,12 @@ namespace SysKit.ODG.Generation.Sites
                 {
                     try
                     {
-                        await sharePointService.CreateSite(site);
+                        //await sharePointService.CreateSite(site);
 
                         using (_sharePointServiceFactory.CreateElevatedScope(options.UserCredentials, site))
                         {
                             await sharePointService.SetMembershipOfDefaultSharePointGroups(site);
-                            //await sharePointService.SetSiteOwner(site);
+                            await sharePointService.CreateSharePointStructure(site);
                         }
 
                         progress.UpdateProgress(1);
