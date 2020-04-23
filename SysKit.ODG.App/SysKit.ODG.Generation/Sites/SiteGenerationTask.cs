@@ -24,6 +24,7 @@ namespace SysKit.ODG.Generation.Sites
 
         public async Task<IGenerationTaskResult> Execute(GenerationOptions options, INotifier notifier)
         {
+            var hadErrors = false;
             var createdSites = new List<SiteEntry>();
             var sites = _siteDataGeneration.CreateSites(options).ToList();
             var sharePointService = _sharePointServiceFactory.Create(options.UserCredentials, notifier);
@@ -41,6 +42,7 @@ namespace SysKit.ODG.Generation.Sites
                     try
                     {
                         await sharePointService.CreateSite(site);
+                        createdSites.Add(site);
 
                         using (_sharePointServiceFactory.CreateElevatedScope(options.UserCredentials, site))
                         {
@@ -48,10 +50,10 @@ namespace SysKit.ODG.Generation.Sites
                             await sharePointService.CreateSharePointStructure(site);
                         }
 
-                        createdSites.Add(site);
                     }
                     catch (Exception ex)
                     {
+                        hadErrors = true;
                         notifier.Error($"Failed to create {site.Title}", ex);
                     }
                     finally
@@ -62,7 +64,7 @@ namespace SysKit.ODG.Generation.Sites
             }
             
 
-            return new SiteGenerationTaskResult(createdSites, createdSites.Count != sites.Count);
+            return new SiteGenerationTaskResult(createdSites, hadErrors);
         }
     }
 }
