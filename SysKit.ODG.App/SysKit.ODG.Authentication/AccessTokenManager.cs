@@ -67,30 +67,30 @@ namespace SysKit.ODG.Authentication
             }
         }
 
-        public async Task<AuthToken> GetSharePointToken()
-        {
-            var tenantName = _userCredentials.Username.Split('@')[1].Replace(".onmicrosoft.com", "");
-            var sharePointScope = $"https://{tenantName}.sharepoint.com/AllSites.FullControl";
+        //public async Task<AuthToken> GetSharePointToken()
+        //{
+        //    var tenantName = _userCredentials.Username.Split('@')[1].Replace(".onmicrosoft.com", "");
+        //    var sharePointScope = $"https://{tenantName}.sharepoint.com/AllSites.FullControl";
 
-            try
-            {
-                var result = await _app.AcquireTokenByUsernamePassword(new[] { sharePointScope },
-                        _userCredentials.Username,
-                        _userCredentials.Password)
-                    .ExecuteAsync();
-                return new AuthToken { Token = result.AccessToken };
-            }
-            catch (MsalUiRequiredException)
-            {
-                // TODO: HALP
-                throw;
-            }
-            catch (Exception)
-            {
-                // TODO: Logg exception
-                throw;
-            }
-        }
+        //    try
+        //    {
+        //        var result = await _app.AcquireTokenByUsernamePassword(new[] { sharePointScope },
+        //                _userCredentials.Username,
+        //                _userCredentials.Password)
+        //            .ExecuteAsync();
+        //        return new AuthToken { Token = result.AccessToken };
+        //    }
+        //    catch (MsalUiRequiredException)
+        //    {
+        //        // TODO: HALP
+        //        throw;
+        //    }
+        //    catch (Exception)
+        //    {
+        //        // TODO: Logg exception
+        //        throw;
+        //    }
+        //}
 
         public string GetUsernameFromToken()
         {

@@ -17,10 +17,42 @@ namespace SysKit.ODG.Generation.Sites
             }
 
             validateContent(xmlContent, isRootWeb);
-            return new ContentEntry(xmlContent.Name, xmlContent.Type)
+            var contentEntry = new ContentEntry(xmlContent.Name, xmlContent.Type)
             {
+                CopyFromParent = xmlContent.CopyFromParent,
+                HasUniqueRoleAssignments = xmlContent.IsUniqueRa,
                 Children = xmlContent.Children?.Select(x => MapToContentEntry(x)).ToList() ?? new List<ContentEntry>()
             };
+
+            if (xmlContent.RoleAssignments?.Any() != true)
+            {
+                return contentEntry;
+            }
+
+            foreach (var roleAss in xmlContent.RoleAssignments)
+            {
+                if (!contentEntry.Assignments.ContainsKey(roleAss.Role))
+                {
+                    contentEntry.Assignments[roleAss.Role] = new HashSet<MemberEntry>();
+                }
+
+                if (roleAss.Members?.Any() != true)
+                {
+                    continue;
+                }
+
+                foreach (var member in roleAss.Members)
+                {
+                    if (string.IsNullOrEmpty(member.Name))
+                    {
+                        throw new XmlValidationException($"Member entry {member.Name} cannot be null.");
+                    }
+
+                    contentEntry.Assignments[roleAss.Role].Add(new MemberEntry(member.Name));
+                }
+            }
+
+            return contentEntry;
         }
 
         private void validateContent(XmlContent xmlContent, bool isRootWeb)

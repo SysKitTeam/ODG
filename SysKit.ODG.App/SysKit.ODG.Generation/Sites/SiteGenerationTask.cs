@@ -37,7 +37,7 @@ namespace SysKit.ODG.Generation.Sites
                 {
                     try
                     {
-                        //await sharePointService.CreateSite(site);
+                        await sharePointService.CreateSite(site);
 
                         using (_sharePointServiceFactory.CreateElevatedScope(options.UserCredentials, site))
                         {
@@ -46,7 +46,6 @@ namespace SysKit.ODG.Generation.Sites
                         }
 
                         progress.UpdateProgress(1);
-                        //await sharePointService.CreateSharePointStructure(site.Url);
                     }
                     catch (Exception ex)
                     {

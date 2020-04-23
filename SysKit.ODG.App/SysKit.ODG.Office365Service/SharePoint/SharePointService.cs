@@ -125,6 +125,7 @@ namespace SysKit.ODG.Office365Service.SharePoint
                 var rootWeb = context.Site.RootWeb;
 
                 // handle permissions for root web
+                assignPermissions(rootWeb, sharePointContent.Content, true);
 
                 foreach (var content in sharePointContent.Content.Children)
                 {
@@ -152,6 +153,7 @@ namespace SysKit.ODG.Office365Service.SharePoint
             });
 
             // handle web permissions
+            assignPermissions(web, webContent);
 
             foreach (var content in webContent.Children)
             {
@@ -170,8 +172,9 @@ namespace SysKit.ODG.Office365Service.SharePoint
         private void createDocumentLibrary(Web parentWeb, ContentEntry listContent, ClientContext context)
         {
            var list = parentWeb.CreateDocumentLibrary(listContent.Name);
-
+           
             // handle list permissions
+            assignPermissions(list, listContent);
 
             foreach (var content in listContent.Children)
             {
@@ -189,10 +192,10 @@ namespace SysKit.ODG.Office365Service.SharePoint
 
         private void createFolder(Web parentWeb, Folder parentFolder, ContentEntry folderContent, ClientContext context)
         {
-            // check if folder exists and create it if not
-            var folder = parentFolder.EnsureFolder(folderContent.Name);
+            var folder = parentFolder.CreateFolder(folderContent.Name);
+            var test = folder.UniqueId;
 
-            // handle folder permissions
+            assignPermissions(folder.ListItemAllFields, folderContent);
 
             foreach (var content in folderContent.Children)
             {
@@ -215,7 +218,45 @@ namespace SysKit.ODG.Office365Service.SharePoint
             return;
         }
 
-        #endregion
+        private void assignPermissions(SecurableObject secObject, IRoleAssignments secInfo, bool isRootWeb = false)
+        {
+            if (!isRootWeb && !secInfo.HasUniqueRoleAssignments)
+            {
+                return;
+            }
+
+            if (!isRootWeb)
+            {
+                secObject.BreakRoleInheritance(secInfo.CopyFromParent, false);
+                secObject.Context.ExecuteQueryRetry();
+            }
+
+            foreach (var roleAssignment in secInfo.Assignments)
+            {
+                var role = getRoleType(roleAssignment.Key);
+                foreach (var userAss in roleAssignment.Value)
+                {
+                    secObject.AddPermissionLevelToUser(SharePointUtils.GetLoginNameFromEntry(userAss, secObject.Context.Url), role);
+                }
+            }
+        }
+
+        private RoleType getRoleType(RoleTypeEnum odgRole)
+        {
+            switch (odgRole)
+            {
+                case RoleTypeEnum.FullControl:
+                    return RoleType.Administrator;
+                case RoleTypeEnum.Read:
+                    return RoleType.Reader;
+                case RoleTypeEnum.Contributor:
+                    return RoleType.Contributor;
+                default:
+                    return RoleType.None;
+            }
+        }
+
+        #endregion SharePoint Structure and Permissions
 
     }
 }

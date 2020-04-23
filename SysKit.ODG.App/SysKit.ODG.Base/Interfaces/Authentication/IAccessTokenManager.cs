@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using SysKit.ODG.Base.Authentication;
 
 namespace SysKit.ODG.Base.Interfaces.Authentication
@@ -10,6 +7,5 @@ namespace SysKit.ODG.Base.Interfaces.Authentication
     {
         string GetUsernameFromToken();
         Task<AuthToken> GetGraphToken();
-        Task<AuthToken> GetSharePointToken();
     }
 }
