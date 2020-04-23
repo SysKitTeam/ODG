@@ -352,7 +352,7 @@ namespace SysKit.ODG.Office365Service.SharePoint
                         var siteDeleted = tenant.DeleteSiteCollection(siteUrl, false);
                         if (!siteDeleted)
                         {
-                            return deleteSite(attempt - 1);
+                            return deleteSite(attempt + 1);
                         }
 
                         return true;
@@ -360,7 +360,7 @@ namespace SysKit.ODG.Office365Service.SharePoint
                     catch (Exception e)
                     {
                         _notifier.Error($"Error while deleting site: {siteUrl}", e);
-                        return deleteSite(attempt - 1);
+                        return deleteSite(attempt + 1);
                     }
                 }
 

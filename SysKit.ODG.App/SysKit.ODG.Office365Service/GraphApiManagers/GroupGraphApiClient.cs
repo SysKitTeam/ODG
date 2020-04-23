@@ -243,6 +243,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         /// <inheritdoc />
         public Task<bool> DeleteUnifiedGroup(string groupId)
         {
+            bool softDeleted = false;
             async Task<bool> deleteGroup(int attempt = 1)
             {
                 if (attempt >= 5)
@@ -257,14 +258,19 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
                 try
                 {
-                    UnifiedGroupsUtility.DeleteUnifiedGroup(groupId, (await _accessTokenManager.GetGraphToken()).Token);
+                    if (softDeleted == false)
+                    {
+                        UnifiedGroupsUtility.DeleteUnifiedGroup(groupId, (await _accessTokenManager.GetGraphToken()).Token);
+                        softDeleted = true;
+                    }
+
                     UnifiedGroupsUtility.PermanentlyDeleteUnifiedGroup(groupId, (await _accessTokenManager.GetGraphToken()).Token);
                     return true;
                 }
                 catch (Exception ex)
                 {
                     _notifier.Error($"Error while deleting group: {groupId}", ex);
-                    return await deleteGroup(attempt - 1);
+                    return await deleteGroup(attempt + 1);
                 }
             }
 

@@ -46,6 +46,7 @@ namespace SysKit.ODG.App
             var odgGenerator = new ODGGenerator(LogLevelEnum.Debug);
             var result = odgGenerator.GenerateContent(userCredentials, clientId, tenantDomain, templateLocation).GetAwaiter().GetResult();
             odgGenerator.SaveCleanupTemplate(result, templateLocation);
+            odgGenerator.ExecuteCleanup(userCredentials, result, clientId).GetAwaiter().GetResult();
         }
 
         private static string nonNullConsoleRead(string message)

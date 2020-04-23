@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.DTO.Generation.Results;
 using SysKit.ODG.Base.Interfaces.Generation;
@@ -22,6 +24,7 @@ namespace SysKit.ODG.Generation.Sites
 
         public async Task<IGenerationTaskResult> Execute(GenerationOptions options, INotifier notifier)
         {
+            var createdSites = new List<SiteEntry>();
             var sites = _siteDataGeneration.CreateSites(options).ToList();
             var sharePointService = _sharePointServiceFactory.Create(options.UserCredentials, notifier);
 
@@ -44,6 +47,8 @@ namespace SysKit.ODG.Generation.Sites
                             await sharePointService.SetMembershipOfDefaultSharePointGroups(site);
                             await sharePointService.CreateSharePointStructure(site);
                         }
+
+                        createdSites.Add(site);
                     }
                     catch (Exception ex)
                     {
@@ -57,8 +62,7 @@ namespace SysKit.ODG.Generation.Sites
             }
             
 
-            // TODO: return created sites
-            return new SiteGenerationTaskResult();
+            return new SiteGenerationTaskResult(createdSites, createdSites.Count != sites.Count);
         }
     }
 }

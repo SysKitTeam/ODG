@@ -2,6 +2,7 @@
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Interfaces.Generation;
+using SysKit.ODG.Base.XmlCleanupTemplate;
 
 namespace SysKit.ODG.Generation.Sites
 {
@@ -18,6 +19,19 @@ namespace SysKit.ODG.Generation.Sites
             foreach (var siteEntry in createXmlSites(generationOptions))
             {
                 yield return siteEntry;
+            }
+        }
+
+        public IEnumerable<XmlDirectoryElement> CreateDirectoryElements(IEnumerable<SiteEntry> sites)
+        {
+            if (sites == null)
+            {
+                yield break;
+            }
+
+            foreach (var site in sites)
+            {
+                yield return _siteXmlMapper.MapToDirectoryElement(site);
             }
         }
 

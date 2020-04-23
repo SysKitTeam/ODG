@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using SysKit.ODG.Base.DTO.Generation;
+using SysKit.ODG.Base.Enums;
 using SysKit.ODG.Base.Exceptions;
+using SysKit.ODG.Base.XmlCleanupTemplate;
 using SysKit.ODG.Base.XmlTemplate.Model.Sites;
 
 namespace SysKit.ODG.Generation.Sites
@@ -35,6 +37,16 @@ namespace SysKit.ODG.Generation.Sites
             siteEntry.Content = _sharePointContentXmlMapper.MapToContentEntry(site.SharePointContent, true);
 
             return siteEntry;
+        }
+
+        public XmlDirectoryElement MapToDirectoryElement(SiteEntry siteEntry)
+        {
+            return new XmlDirectoryElement
+            {
+                Type = DirectoryElementTypeEnum.Site,
+                Url = siteEntry.Url,
+                DisplayName = siteEntry.Title
+            };
         }
 
         private void validateSite(XmlSite site)

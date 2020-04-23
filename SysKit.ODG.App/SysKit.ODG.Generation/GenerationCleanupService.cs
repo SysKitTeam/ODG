@@ -18,18 +18,21 @@ namespace SysKit.ODG.Generation
         private readonly XmlSpecificationService _specificationService;
         private readonly IUserDataGeneration _userDataGeneration;
         private readonly IGroupDataGeneration _groupDataGeneration;
+        private readonly ISiteDataGeneration _siteDataGeneration;
         private readonly IGraphApiClientFactory _groupGraphApiClientFactory;
         private readonly ISharePointServiceFactory _sharePointServiceFactory;
 
         public GenerationCleanupService(XmlSpecificationService specificationService, 
             IUserDataGeneration userDataGeneration, 
             IGroupDataGeneration groupDataGeneration,
+            ISiteDataGeneration siteDataGeneration,
             IGraphApiClientFactory groupGraphApiClientFactory, 
             ISharePointServiceFactory sharePointServiceFactory)
         {
             _specificationService = specificationService;
             _userDataGeneration = userDataGeneration;
             _groupDataGeneration = groupDataGeneration;
+            _siteDataGeneration = siteDataGeneration;
             _groupGraphApiClientFactory = groupGraphApiClientFactory;
             _sharePointServiceFactory = sharePointServiceFactory;
         }
@@ -70,17 +73,17 @@ namespace SysKit.ODG.Generation
                 {
                     case DirectoryElementTypeEnum.Team:
                     case DirectoryElementTypeEnum.UnifiedGroup:
-                        hadErrors = hadErrors || (await deleteUnifiedGroup(credentials, element, notifier, tokenManager));
+                        hadErrors = (await deleteUnifiedGroup(credentials, element, notifier, tokenManager)) || hadErrors;
                         break;
                     case DirectoryElementTypeEnum.Site:
-                        hadErrors = hadErrors || deleteSite(credentials, element, notifier);
+                        hadErrors = deleteSite(credentials, element, notifier) || hadErrors;
                         break;
                     default:
                         break;
                 }
             }
 
-            return hadErrors;
+            return !hadErrors;
         }
 
         protected async Task<bool> deleteUnifiedGroup(SimpleUserCredentials credentials, XmlDirectoryElement groupElement, INotifier notifier, IAccessTokenManager tokenManager)
@@ -123,8 +126,9 @@ namespace SysKit.ODG.Generation
                     continue;
                 }
 
-                if (taskResult is SiteGenerationTaskResult)
+                if (taskResult is SiteGenerationTaskResult siteGenerationTask)
                 {
+                    directoryElements.AddRange(_siteDataGeneration.CreateDirectoryElements(siteGenerationTask.CreatedSites));
                     continue;
                 }
 
