@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Online.SharePoint.TenantAdministration;
 using Microsoft.Online.SharePoint.TenantManagement;
@@ -30,6 +31,7 @@ namespace SysKit.ODG.Office365Service.SharePoint
             _notifier = notifier;
         }
 
+        /// <inheritdoc />
         public async Task CreateSite(SiteEntry site)
         {
             using (var rootContext = SharePointUtils.CreateAdminContext(_userCredentials))
@@ -49,18 +51,21 @@ namespace SysKit.ODG.Office365Service.SharePoint
 
 
                 var newSite = await SiteCollection.CreateAsync(rootContext, siteInfo, 15);
-                tenant.SetSiteProperties(siteInfo.Url, sharingCapability: SharingCapabilities.ExternalUserAndGuestSharing);
+                tenant.SetSiteProperties(siteInfo.Url,
+                    sharingCapability: SharingCapabilities.ExternalUserAndGuestSharing);
 
                 using (new ElevatedSharePointScope(site, _userCredentials))
                 {
                     if (site.SiteAdmins?.Any() == true)
                     {
-                        newSite.Web.AddAdministrators(site.SiteAdmins.Select(admin => new UserEntity { LoginName = SharePointUtils.GetLoginNameFromEntry(admin, site.Url) }).ToList());
+                        newSite.Web.AddAdministrators(site.SiteAdmins.Select(admin => new UserEntity
+                            {LoginName = SharePointUtils.GetLoginNameFromEntry(admin, site.Url)}).ToList());
                     }
                 }
             }
         }
 
+        /// <inheritdoc />
         public async Task SetMembershipOfDefaultSharePointGroups(SiteEntry site)
         {
             using (var context = SharePointUtils.CreateClientContext(site.Url, _userCredentials))
@@ -73,6 +78,7 @@ namespace SysKit.ODG.Office365Service.SharePoint
                         var user = group.Users[0];
                         group.Users.Remove(user);
                     }
+
                     group.Update();
                     return group.Context.ExecuteQueryRetryAsync();
                 }
@@ -118,6 +124,7 @@ namespace SysKit.ODG.Office365Service.SharePoint
 
         #region SharePoint Structure and Permissions
 
+        /// <inheritdoc />
         public async Task EnableAnonymousSharing(string url)
         {
             using (var rootContext = SharePointUtils.CreateAdminContext(_userCredentials))
@@ -127,6 +134,7 @@ namespace SysKit.ODG.Office365Service.SharePoint
             }
         }
 
+        /// <inheritdoc />
         public async Task CreateSharePointStructure(ISharePointContent sharePointContent)
         {
             if (sharePointContent?.Content == null)
@@ -204,7 +212,8 @@ namespace SysKit.ODG.Office365Service.SharePoint
             }
         }
 
-        private void createFolder(Web parentWeb, List parentList, Folder parentFolder, ContentEntry folderContent, ClientContext context)
+        private void createFolder(Web parentWeb, List parentList, Folder parentFolder, ContentEntry folderContent,
+            ClientContext context)
         {
             var folder = parentFolder.CreateFolder(folderContent.Name);
 
@@ -225,7 +234,8 @@ namespace SysKit.ODG.Office365Service.SharePoint
             }
         }
 
-        private void createFile(Web parentWeb, List parentList, Folder parentFolder, ContentEntry fileContent, ClientContext context)
+        private void createFile(Web parentWeb, List parentList, Folder parentFolder, ContentEntry fileContent,
+            ClientContext context)
         {
             Microsoft.SharePoint.Client.File newFile;
             UnicodeEncoding uniEncoding = new UnicodeEncoding();
@@ -237,7 +247,7 @@ namespace SysKit.ODG.Office365Service.SharePoint
                 try
                 {
                     sw.Write(message);
-                    sw.Flush();//otherwise you are risking empty stream
+                    sw.Flush(); //otherwise you are risking empty stream
                     ms.Seek(0, SeekOrigin.Begin);
 
                     newFile = parentFolder.UploadFile(fileContent.Name, ms, false);
@@ -268,7 +278,8 @@ namespace SysKit.ODG.Office365Service.SharePoint
             // for some reason owner of the document is automatically added if we don't copy permissions from parent
             if (!isRootWeb && !secInfo.CopyFromParent)
             {
-                secObject.RemovePermissionLevelFromUser(_userCredentials.Username, getRoleType(RoleTypeEnum.FullControl), true);
+                secObject.RemovePermissionLevelFromUser(_userCredentials.Username,
+                    getRoleType(RoleTypeEnum.FullControl), true);
             }
 
             foreach (var roleAssignment in secInfo.Assignments)
@@ -276,7 +287,8 @@ namespace SysKit.ODG.Office365Service.SharePoint
                 var role = getRoleType(roleAssignment.Key);
                 foreach (var userAss in roleAssignment.Value)
                 {
-                    secObject.AddPermissionLevelToUser(SharePointUtils.GetLoginNameFromEntry(userAss, secObject.Context.Url), role);
+                    secObject.AddPermissionLevelToUser(
+                        SharePointUtils.GetLoginNameFromEntry(userAss, secObject.Context.Url), role);
                 }
             }
         }
@@ -292,7 +304,8 @@ namespace SysKit.ODG.Office365Service.SharePoint
             var fullItemUrl = $"https://{siteUri.Host}{itemServerRelativeUrl}";
             foreach (var sharingLink in secInfo.SharingLinks)
             {
-                parentWeb.CreateAnonymousLinkForDocument(fullItemUrl, sharingLink.IsEdit ? ExternalSharingDocumentOption.Edit : ExternalSharingDocumentOption.View);
+                parentWeb.CreateAnonymousLinkForDocument(fullItemUrl,
+                    sharingLink.IsEdit ? ExternalSharingDocumentOption.Edit : ExternalSharingDocumentOption.View);
                 // you need to click on this link to be visible so for now we don't try to create them
                 // parentWeb.ShareDocument(fullItemUrl, _userCredentials.Username, ExternalSharingDocumentOption.View);
             }
@@ -315,5 +328,44 @@ namespace SysKit.ODG.Office365Service.SharePoint
 
         #endregion SharePoint Structure and Permissions
 
+        /// <inheritdoc />
+        public bool DeleteSiteCollection(string siteUrl)
+        {
+            using (var rootContext = SharePointUtils.CreateAdminContext(_userCredentials))
+            {
+                Tenant tenant = new Tenant(rootContext);
+
+                bool deleteSite(int attempt = 1)
+                {
+                    if (attempt >= 5)
+                    {
+                        return false;
+                    }
+
+                    if (attempt > 1)
+                    {
+                        Thread.Sleep(TimeSpan.FromSeconds(attempt * 10));
+                    }
+
+                    try
+                    {
+                        var siteDeleted = tenant.DeleteSiteCollection(siteUrl, false);
+                        if (!siteDeleted)
+                        {
+                            return deleteSite(attempt - 1);
+                        }
+
+                        return true;
+                    }
+                    catch (Exception e)
+                    {
+                        _notifier.Error($"Error while deleting site: {siteUrl}", e);
+                        return deleteSite(attempt - 1);
+                    }
+                }
+
+                return deleteSite();
+            }
+        }
     }
 }

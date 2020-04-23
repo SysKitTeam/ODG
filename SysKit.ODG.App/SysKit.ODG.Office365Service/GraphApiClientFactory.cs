@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Serilog;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Base.Notifier;

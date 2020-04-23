@@ -30,7 +30,7 @@ namespace SysKit.ODG.App
 
             try
             {
-                run(new SimpleUserCredentials("admin@M365B981535.onmicrosoft.com", "1q32UmQx8Q"), "abbda4ef-f83a-4e20-a758-7b3f43d6d55f", "M365B981535.onmicrosoft.com", "1q32UmQx8Q", @"C:\ProgramData\ODG\ManualGenerationTemplate.xml");
+                run(new SimpleUserCredentials("admin@M365B981535.onmicrosoft.com", "1q32UmQx8Q"), "abbda4ef-f83a-4e20-a758-7b3f43d6d55f", "M365B981535.onmicrosoft.com",  @"C:\ProgramData\ODG\ManualGenerationTemplate.xml");
             }
             catch (Exception ex)
             {
@@ -41,29 +41,11 @@ namespace SysKit.ODG.App
             Console.ReadLine();
         }
 
-        private static void run(SimpleUserCredentials userCredentials, string clientId, string tenantDomain, string defaultPassword, string templateLocation)
+        private static void run(SimpleUserCredentials userCredentials, string clientId, string tenantDomain, string templateLocation)
         {
-            var xmlService = new XmlSpecificationService();
-
-            //xmlService.SerializeSpecification(testTemplate, @"C:\ProgramData\ODG\test.xml");
-            var template = xmlService.DeserializeSpecification<XmlODGTemplate>(templateLocation);
-
-            var unityContainer = UnityManager.CreateUnityContainer();
-            var accessTokenFactory = unityContainer.Resolve<IAccessTokenManagerFactory>();
-            var accessTokenManager = accessTokenFactory.CreateAccessTokenManager(userCredentials, clientId);
-            var logger = unityContainer.Resolve<ILogger>();
-            var notifier = new LoggNotifier(logger, new LoggOptions(LogLevelEnum.Debug));
-
-            var generationOptions = new GenerationOptions(accessTokenManager, userCredentials, tenantDomain, defaultPassword, template);
-
-            var generationService = unityContainer.Resolve<IGenerationService>();
-            generationService.AddGenerationTask("User Creation", unityContainer.Resolve<IGenerationTask>("userTask"));
-            generationService.AddGenerationTask("Group Creation", unityContainer.Resolve<IGenerationTask>("groupTask"));
-            generationService.AddGenerationTask("Site Creation", unityContainer.Resolve<IGenerationTask>("siteTask"));
-            var result = generationService.Start(generationOptions, notifier).GetAwaiter().GetResult();
-
-            var generationCleanupService = unityContainer.Resolve<IGenerationCleanupService>();
-            generationCleanupService.SaveCleanupTemplate(result, templateLocation);
+            var odgGenerator = new ODGGenerator(LogLevelEnum.Debug);
+            var result = odgGenerator.GenerateContent(userCredentials, clientId, tenantDomain, templateLocation).GetAwaiter().GetResult();
+            odgGenerator.SaveCleanupTemplate(result, templateLocation);
         }
 
         private static string nonNullConsoleRead(string message)

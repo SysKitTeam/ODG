@@ -37,5 +37,12 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         /// <param name="ownersMap"></param>
         /// <returns>Returns true if all owners where successfully removed</returns>
         Task<bool> RemoveGroupOwners(Dictionary<string, UnifiedGroupEntry> ownersMap);
+
+        /// <summary>
+        /// Tries to PERMANENTLY remove unified group. This will only remove the group, for site you need to call delete site
+        /// </summary>
+        /// <param name="groupId"></param>
+        /// <returns>True if unified group was deleted</returns>
+        Task<bool> DeleteUnifiedGroup(string groupId);
     }
 }

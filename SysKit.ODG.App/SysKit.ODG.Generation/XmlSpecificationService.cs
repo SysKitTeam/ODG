@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
-using SysKit.ODG.Base.XmlTemplate;
 
 namespace SysKit.ODG.Generation
 {
@@ -16,11 +15,11 @@ namespace SysKit.ODG.Generation
             }
         }
 
-        public T DeserializeSpecification<T>(string specificationFile) where T: class
+        public T DeserializeSpecification<T>(string specificationFile) where T : class
         {
             T specification;
             var serializer = new XmlSerializer(typeof(T));
-           
+
             using (var reader = XmlReader.Create(specificationFile))
             {
                 specification = serializer.Deserialize(reader) as T;

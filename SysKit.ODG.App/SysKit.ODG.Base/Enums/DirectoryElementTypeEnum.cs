@@ -10,6 +10,7 @@ namespace SysKit.ODG.Base.Enums
         User,
         Group,
         UnifiedGroup,
-        Team
+        Team,
+        Site
     }
 }

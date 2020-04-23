@@ -5,6 +5,11 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
 {
     public interface ISharePointService
     {
+        /// <summary>
+        /// Creates new site or throws an error if it already exists
+        /// </summary>
+        /// <param name="site"></param>
+        /// <returns></returns>
         Task CreateSite(SiteEntry site);
 
         /// <summary>
@@ -27,5 +32,12 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         /// <param name="url"></param>
         /// <returns></returns>
         Task EnableAnonymousSharing(string url);
+
+        /// <summary>
+        /// Completely deletes site
+        /// </summary>
+        /// <param name="siteUrl"></param>
+        /// <returns></returns>
+        bool DeleteSiteCollection(string siteUrl);
     }
 }

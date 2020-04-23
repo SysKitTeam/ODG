@@ -99,6 +99,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             return createdGroupsResult;
         }
 
+        /// <inheritdoc />
         public async Task<O365CreationResult<TeamEntry>> CreateTeamsFromGroups(IEnumerable<TeamEntry> teams,
             UserEntryCollection users)
         {
@@ -237,6 +238,37 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             });
 
             return !hasError;
+        }
+
+        /// <inheritdoc />
+        public Task<bool> DeleteUnifiedGroup(string groupId)
+        {
+            async Task<bool> deleteGroup(int attempt = 1)
+            {
+                if (attempt >= 5)
+                {
+                    return false;
+                }
+
+                if (attempt > 1)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(attempt * 10));
+                }
+
+                try
+                {
+                    UnifiedGroupsUtility.DeleteUnifiedGroup(groupId, (await _accessTokenManager.GetGraphToken()).Token);
+                    UnifiedGroupsUtility.PermanentlyDeleteUnifiedGroup(groupId, (await _accessTokenManager.GetGraphToken()).Token);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    _notifier.Error($"Error while deleting group: {groupId}", ex);
+                    return await deleteGroup(attempt - 1);
+                }
+            }
+
+            return deleteGroup();
         }
 
         #region Helpers
