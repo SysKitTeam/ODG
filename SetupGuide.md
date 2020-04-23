@@ -15,6 +15,7 @@ To be able to run ODG you will need:
 6. Assign:
    1. Graph API -> Delegated -> User.ReadWrite.All
    2. Graph API -> Delegated -> Group.ReadWrite.All
+   3. Graph API -> Delegated -> Directory.AccessAsUser.All
 7. After all permissions are granted give admin consent (this may take a while to prepare)
 8. Go to Manifest and change "allowPublicClient" from null to true
 9. Use the Application (client) ID from the overview page
