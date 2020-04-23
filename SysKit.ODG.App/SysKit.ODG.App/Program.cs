@@ -1,14 +1,7 @@
 ﻿using System;
-using Serilog;
-using SysKit.ODG.App.Configuration;
+using System.Linq;
 using SysKit.ODG.Base.Authentication;
-using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Enums;
-using SysKit.ODG.Base.Interfaces.Authentication;
-using SysKit.ODG.Base.Interfaces.Generation;
-using SysKit.ODG.Base.XmlTemplate;
-using SysKit.ODG.Generation;
-using Unity;
 
 namespace SysKit.ODG.App
 {
@@ -16,21 +9,29 @@ namespace SysKit.ODG.App
     {
         static void Main(string[] args)
         {
-            //var userName = nonNullConsoleRead("Enter Global Admin username:");
-            //var tenantDomain = userName.Split('@')[1];
+            var userName = nonNullConsoleRead("Enter Global Admin username:");
+            var tenantDomain = userName.Split('@')[1];
 
-            //Console.WriteLine("Enter Global Admin password:");
-            //var password = consolePassword();
+            Console.WriteLine("Enter Global Admin password:");
+            var password = consolePassword();
 
-            //var clientId = nonNullConsoleRead("Enter client id:");
+            var clientId = nonNullConsoleRead("Enter client id:");
 
-            //var templateLocation = nonNullConsoleRead("ODG template location:");
+            var templateLocation = nonNullConsoleRead("ODG template location:");
 
-            //var userCredentials = new SimpleUserCredentials(userName, password);
+            var userCredentials = new SimpleUserCredentials(userName, password);
+            var isCleanup = args?.Any() == true && args[0] == "clean";
 
             try
             {
-                run(new SimpleUserCredentials("admin@M365B981535.onmicrosoft.com", "1q32UmQx8Q"), "abbda4ef-f83a-4e20-a758-7b3f43d6d55f", "M365B981535.onmicrosoft.com",  @"C:\ProgramData\ODG\ManualGenerationTemplate.xml");
+                if (isCleanup)
+                {
+                    cleanup(userCredentials, clientId, templateLocation);
+                }
+                else
+                {
+                    generate(userCredentials, clientId, tenantDomain, templateLocation);
+                }
             }
             catch (Exception ex)
             {
@@ -41,12 +42,18 @@ namespace SysKit.ODG.App
             Console.ReadLine();
         }
 
-        private static void run(SimpleUserCredentials userCredentials, string clientId, string tenantDomain, string templateLocation)
+        private static void generate(SimpleUserCredentials userCredentials, string clientId, string tenantDomain, string templateLocation)
         {
             var odgGenerator = new ODGGenerator(LogLevelEnum.Debug);
             var result = odgGenerator.GenerateContent(userCredentials, clientId, tenantDomain, templateLocation).GetAwaiter().GetResult();
             odgGenerator.SaveCleanupTemplate(result, templateLocation);
-            odgGenerator.ExecuteCleanup(userCredentials, result, clientId).GetAwaiter().GetResult();
+        }
+
+        private static void cleanup(SimpleUserCredentials userCredentials, string clientId, string templateLocation)
+        {
+            var odgGenerator = new ODGGenerator(LogLevelEnum.Debug);
+            var result = odgGenerator.ExecuteCleanup(userCredentials, templateLocation, clientId).GetAwaiter().GetResult();
+            Console.WriteLine($"Clean had errors: {result}");
         }
 
         private static string nonNullConsoleRead(string message)
