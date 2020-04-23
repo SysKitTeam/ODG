@@ -79,7 +79,7 @@ namespace SysKit.ODG.Office365Service.SharePoint
                         return;
                     }
 
-                    await clearExistingUsers(group);
+                    //await clearExistingUsers(group);
 
                     if (members?.Any() != true)
                     {
@@ -181,19 +181,18 @@ namespace SysKit.ODG.Office365Service.SharePoint
                 switch (content.Type)
                 {
                     case ContentTypeEnum.Folder:
-                        createFolder(parentWeb, list.RootFolder, content, context);
+                        createFolder(parentWeb, list, list.RootFolder, content, context);
                         break;
                     case ContentTypeEnum.File:
-                        createFile(parentWeb, list.RootFolder, content, context);
+                        createFile(parentWeb, list, list.RootFolder, content, context);
                         break;
                 }
             }
         }
 
-        private void createFolder(Web parentWeb, Folder parentFolder, ContentEntry folderContent, ClientContext context)
+        private void createFolder(Web parentWeb, List parentList, Folder parentFolder, ContentEntry folderContent, ClientContext context)
         {
             var folder = parentFolder.CreateFolder(folderContent.Name);
-            var test = folder.UniqueId;
 
             assignPermissions(folder.ListItemAllFields, folderContent);
 
@@ -202,16 +201,16 @@ namespace SysKit.ODG.Office365Service.SharePoint
                 switch (content.Type)
                 {
                     case ContentTypeEnum.Folder:
-                        createFolder(parentWeb, folder, content, context);
+                        createFolder(parentWeb, parentList, folder, content, context);
                         break;
                     case ContentTypeEnum.File:
-                        createFile(parentWeb, folder, content, context);
+                        createFile(parentWeb, parentList, folder, content, context);
                         break;
                 }
             }
         }
 
-        private void createFile(Web parentWeb, Folder parentFolder, ContentEntry fileContent, ClientContext context)
+        private void createFile(Web parentWeb, List parentList, Folder parentFolder, ContentEntry fileContent, ClientContext context)
         {
             // create file
             //throw new NotImplementedException();
@@ -229,6 +228,12 @@ namespace SysKit.ODG.Office365Service.SharePoint
             {
                 secObject.BreakRoleInheritance(secInfo.CopyFromParent, false);
                 secObject.Context.ExecuteQueryRetry();
+            }
+
+            // for some reason owner of the document is automatically added if we don't copy permissions from parent
+            if (!isRootWeb && !secInfo.CopyFromParent)
+            {
+                secObject.RemovePermissionLevelFromUser(_userCredentials.Username, getRoleType(RoleTypeEnum.FullControl), true);
             }
 
             foreach (var roleAssignment in secInfo.Assignments)
