@@ -16,7 +16,6 @@ using SysKit.ODG.Base.Enums;
 using SysKit.ODG.Base.Exceptions;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Base.Notifier;
-using File = System.IO.File;
 
 namespace SysKit.ODG.Office365Service.SharePoint
 {
@@ -48,7 +47,7 @@ namespace SysKit.ODG.Office365Service.SharePoint
                     Owner = SharePointUtils.GetLoginNameFromEntry(site.Owner, site.Url)
                 };
 
-               
+
                 var newSite = await SiteCollection.CreateAsync(rootContext, siteInfo, 15);
                 tenant.SetSiteProperties(siteInfo.Url, sharingCapability: SharingCapabilities.ExternalUserAndGuestSharing);
 
@@ -119,6 +118,15 @@ namespace SysKit.ODG.Office365Service.SharePoint
 
         #region SharePoint Structure and Permissions
 
+        public async Task EnableAnonymousSharing(string url)
+        {
+            using (var rootContext = SharePointUtils.CreateAdminContext(_userCredentials))
+            {
+                Tenant tenant = new Tenant(rootContext);
+                tenant.SetSiteProperties(url, sharingCapability: SharingCapabilities.ExternalUserAndGuestSharing);
+            }
+        }
+
         public async Task CreateSharePointStructure(ISharePointContent sharePointContent)
         {
             if (sharePointContent?.Content == null)
@@ -177,8 +185,8 @@ namespace SysKit.ODG.Office365Service.SharePoint
 
         private void createDocumentLibrary(Web parentWeb, ContentEntry listContent, ClientContext context)
         {
-           var list = parentWeb.CreateDocumentLibrary(listContent.Name);
-           
+            var list = parentWeb.CreateDocumentLibrary(listContent.Name);
+
             // handle list permissions
             assignPermissions(list, listContent);
 

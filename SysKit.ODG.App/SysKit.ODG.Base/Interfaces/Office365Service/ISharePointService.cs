@@ -20,5 +20,12 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         /// <param name="site"></param>
         /// <returns></returns>
         Task SetMembershipOfDefaultSharePointGroups(SiteEntry site);
+
+        /// <summary>
+        /// Enable anonymous sharing so we can create sharing links
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        Task EnableAnonymousSharing(string url);
     }
 }

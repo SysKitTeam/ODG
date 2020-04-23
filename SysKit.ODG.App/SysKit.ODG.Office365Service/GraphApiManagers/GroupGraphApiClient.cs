@@ -6,13 +6,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Graph;
 using Newtonsoft.Json;
 using OfficeDevPnP.Core.Framework.Graph;
-using Serilog;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Exceptions;
 using SysKit.ODG.Base.Interfaces.Authentication;
@@ -25,7 +23,7 @@ using Beta = BetaLib.Microsoft.Graph;
 
 namespace SysKit.ODG.Office365Service.GraphApiManagers
 {
-    public class GroupGraphApiClient: BaseGraphApiClient, IGroupGraphApiClient
+    public class GroupGraphApiClient : BaseGraphApiClient, IGroupGraphApiClient
     {
         private readonly INotifier _notifier;
         public GroupGraphApiClient(IAccessTokenManager accessTokenManager,
@@ -208,7 +206,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 var teamId = key.Split('/')[1];
                 if (!value.IsSuccessStatusCode)
                 {
-                    _notifier.Error($"Failed to create {(channelEntry.IsPrivate ? "Private" : "Standard" )} Channel {channelEntry.DisplayName}(teamId: {teamId}). {getErrorMessage(value)}");
+                    _notifier.Error($"Failed to create {(channelEntry.IsPrivate ? "Private" : "Standard")} Channel {channelEntry.DisplayName}(teamId: {teamId}). {getErrorMessage(value)}");
                     failedChannels.Add(channelEntry);
                 }
             }, 1);
@@ -327,7 +325,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             if (groupDriveBatchRequests.Count < 20)
             {
                 // we need to wait less time if we didn't try to create too much groups
-                 delayTime = TimeSpan.FromSeconds(attempt * 2 * 10);
+                delayTime = TimeSpan.FromSeconds(attempt * 2 * 10);
             }
             else
             {
@@ -394,7 +392,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         {
             if (groupLookup.ContainsKey(@group.MailNickname))
             {
-                throw  new ArgumentException($"Trying to create 2 groups with same mail nickname ({@group.MailNickname}). Only the first will be created.");
+                throw new ArgumentException($"Trying to create 2 groups with same mail nickname ({@group.MailNickname}). Only the first will be created.");
             }
 
             groupLookup.Add(@group.MailNickname, @group);
@@ -405,7 +403,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 Visibility = @group.IsPrivate ? "Private" : "Public",
                 MailEnabled = true,
                 SecurityEnabled = false,
-                GroupTypes = new List<string> {"Unified"},
+                GroupTypes = new List<string> { "Unified" },
                 Description = "Sample group"
             };
 
@@ -609,7 +607,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             }
         }
 
-        class TeamExtended: Beta.Team
+        class TeamExtended : Beta.Team
         {
             [JsonProperty("group@odata.bind", NullValueHandling = NullValueHandling.Ignore)]
             public string GroupBind { get; }

@@ -44,14 +44,15 @@ namespace SysKit.ODG.Generation.Sites
                             await sharePointService.SetMembershipOfDefaultSharePointGroups(site);
                             await sharePointService.CreateSharePointStructure(site);
                         }
-
-                        progress.UpdateProgress(1);
                     }
                     catch (Exception ex)
                     {
                         notifier.Error($"Failed to create {site.Title}", ex);
                     }
-
+                    finally
+                    {
+                        progress.UpdateProgress(1);
+                    }
                 }
             }
             

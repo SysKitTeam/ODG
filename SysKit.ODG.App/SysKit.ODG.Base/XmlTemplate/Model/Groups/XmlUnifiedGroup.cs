@@ -9,7 +9,7 @@ namespace SysKit.ODG.Base.XmlTemplate.Model.Groups
         [XmlAttribute]
         public bool IsPrivate { get; set; }
 
-        [XmlArray(IsNullable = true)]
-        public XmlWeb[] SharePointContent { get; set; }
+        [XmlElement("SharePointContent")]
+        public XmlWeb SharePointContent { get; set; }
     }
 }
