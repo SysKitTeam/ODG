@@ -24,6 +24,11 @@ namespace SysKit.ODG.Generation.Sites
                 Children = xmlContent.Children?.Select(x => MapToContentEntry(x)).ToList() ?? new List<ContentEntry>()
             };
 
+            if (xmlContent is XmlListItemContent xmlListItemContent)
+            {
+                contentEntry.SharingLinks = xmlListItemContent.SharingLinks?.Select(link => new SharingLinkEntry { IsEdit = link.IsEdit }).ToList() ?? new List<SharingLinkEntry>();
+            }
+
             if (xmlContent.RoleAssignments?.Any() != true)
             {
                 return contentEntry;

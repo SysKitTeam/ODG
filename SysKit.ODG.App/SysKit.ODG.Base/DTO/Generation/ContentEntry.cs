@@ -14,6 +14,7 @@ namespace SysKit.ODG.Base.DTO.Generation
         public bool HasUniqueRoleAssignments { get; set; }
         public bool CopyFromParent { get; set; }
         public Dictionary<RoleTypeEnum, HashSet<MemberEntry>> Assignments { get; set; }
+        public List<SharingLinkEntry> SharingLinks { get; set; }
 
         #endregion IRoleAssignements
 
@@ -23,6 +24,7 @@ namespace SysKit.ODG.Base.DTO.Generation
             Type = type;
             Children = new List<ContentEntry>();
             Assignments = new Dictionary<RoleTypeEnum, HashSet<MemberEntry>>();
+            SharingLinks = new List<SharingLinkEntry>();
         }
     }
 }

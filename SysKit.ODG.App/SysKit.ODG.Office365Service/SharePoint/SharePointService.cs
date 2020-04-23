@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Online.SharePoint.TenantAdministration;
+using Microsoft.Online.SharePoint.TenantManagement;
 using Microsoft.SharePoint.Client;
 using OfficeDevPnP.Core.Entities;
 using OfficeDevPnP.Core.Sites;
@@ -47,7 +48,9 @@ namespace SysKit.ODG.Office365Service.SharePoint
                     Owner = SharePointUtils.GetLoginNameFromEntry(site.Owner, site.Url)
                 };
 
+               
                 var newSite = await SiteCollection.CreateAsync(rootContext, siteInfo, 15);
+                tenant.SetSiteProperties(siteInfo.Url, sharingCapability: SharingCapabilities.ExternalUserAndGuestSharing);
 
                 using (new ElevatedSharePointScope(site, _userCredentials))
                 {
@@ -198,6 +201,7 @@ namespace SysKit.ODG.Office365Service.SharePoint
             var folder = parentFolder.CreateFolder(folderContent.Name);
 
             assignPermissions(folder.ListItemAllFields, folderContent);
+            assignSharingLinks(parentWeb, folder.ServerRelativeUrl, folderContent);
 
             foreach (var content in folderContent.Children)
             {
@@ -237,6 +241,7 @@ namespace SysKit.ODG.Office365Service.SharePoint
             }
 
             assignPermissions(newFile.ListItemAllFields, fileContent);
+            assignSharingLinks(parentWeb, newFile.ServerRelativeUrl, fileContent);
         }
 
         private void assignPermissions(SecurableObject secObject, IRoleAssignments secInfo, bool isRootWeb = false)
@@ -265,6 +270,23 @@ namespace SysKit.ODG.Office365Service.SharePoint
                 {
                     secObject.AddPermissionLevelToUser(SharePointUtils.GetLoginNameFromEntry(userAss, secObject.Context.Url), role);
                 }
+            }
+        }
+
+        private void assignSharingLinks(Web parentWeb, string itemServerRelativeUrl, IRoleAssignments secInfo)
+        {
+            if (!secInfo.HasUniqueRoleAssignments)
+            {
+                return;
+            }
+
+            var siteUri = new Uri(parentWeb.Context.Url);
+            var fullItemUrl = $"https://{siteUri.Host}{itemServerRelativeUrl}";
+            foreach (var sharingLink in secInfo.SharingLinks)
+            {
+                parentWeb.CreateAnonymousLinkForDocument(fullItemUrl, sharingLink.IsEdit ? ExternalSharingDocumentOption.Edit : ExternalSharingDocumentOption.View);
+                // you need to click on this link to be visible so for now we don't try to create them
+                // parentWeb.ShareDocument(fullItemUrl, _userCredentials.Username, ExternalSharingDocumentOption.View);
             }
         }
 
