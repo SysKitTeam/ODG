@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Online.SharePoint.TenantAdministration;
 using Microsoft.SharePoint.Client;
@@ -13,6 +15,7 @@ using SysKit.ODG.Base.Enums;
 using SysKit.ODG.Base.Exceptions;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Base.Notifier;
+using File = System.IO.File;
 
 namespace SysKit.ODG.Office365Service.SharePoint
 {
@@ -212,9 +215,28 @@ namespace SysKit.ODG.Office365Service.SharePoint
 
         private void createFile(Web parentWeb, List parentList, Folder parentFolder, ContentEntry fileContent, ClientContext context)
         {
-            // create file
-            //throw new NotImplementedException();
-            return;
+            Microsoft.SharePoint.Client.File newFile;
+            UnicodeEncoding uniEncoding = new UnicodeEncoding();
+            String message = "Random file message";
+
+            using (MemoryStream ms = new MemoryStream())
+            {
+                var sw = new StreamWriter(ms, uniEncoding);
+                try
+                {
+                    sw.Write(message);
+                    sw.Flush();//otherwise you are risking empty stream
+                    ms.Seek(0, SeekOrigin.Begin);
+
+                    newFile = parentFolder.UploadFile(fileContent.Name, ms, false);
+                }
+                finally
+                {
+                    sw.Dispose();
+                }
+            }
+
+            assignPermissions(newFile.ListItemAllFields, fileContent);
         }
 
         private void assignPermissions(SecurableObject secObject, IRoleAssignments secInfo, bool isRootWeb = false)
