@@ -131,8 +131,6 @@ namespace SysKit.ODG.Generation
                     directoryElements.AddRange(_siteDataGeneration.CreateDirectoryElements(siteGenerationTask.CreatedSites));
                     continue;
                 }
-
-                throw new ArgumentException("Task result is not supported for creating a cleanup template");
             }
 
             return directoryElements;
