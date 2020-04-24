@@ -2,7 +2,7 @@
 
 namespace SysKit.ODG.Base.DTO.Generation
 {
-    public class SiteEntry: ISharePointContent
+    public class SiteEntry: ISharePointContent, IAssociatedSPGroups
     {
         public string Title { get; set; }
         public string Url { get; set; }
@@ -10,13 +10,13 @@ namespace SysKit.ODG.Base.DTO.Generation
         public MemberEntry Owner { get; set; }
         public List<MemberEntry> SiteAdmins { get; set; }
 
-        #region Default SharePoint Groups
+        #region Associated SharePoint Groups
 
         public List<MemberEntry> SPOwners { get; set; }
         public List<MemberEntry> SPMembers { get; set; }
         public List<MemberEntry> SPVisitors { get; set; }
 
-        #endregion Default SharePoint Groups
+        #endregion Associated SharePoint Groups
 
         public ContentEntry Content { get; set; }
     }

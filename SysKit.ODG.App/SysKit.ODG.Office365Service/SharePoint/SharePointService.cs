@@ -66,8 +66,13 @@ namespace SysKit.ODG.Office365Service.SharePoint
         }
 
         /// <inheritdoc />
-        public async Task SetMembershipOfDefaultSharePointGroups(SiteEntry site)
+        public async Task SetMembershipOfDefaultSharePointGroups(IAssociatedSPGroups site)
         {
+            if (site.SPMembers?.Any() == false && site.SPOwners?.Any() == false && site.SPVisitors?.Any() == false)
+            {
+                return;
+            }
+
             using (var context = SharePointUtils.CreateClientContext(site.Url, _userCredentials))
             {
                 Task clearExistingUsers(Group group)

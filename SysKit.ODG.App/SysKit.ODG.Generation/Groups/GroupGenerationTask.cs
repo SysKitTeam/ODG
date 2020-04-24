@@ -54,6 +54,7 @@ namespace SysKit.ODG.Generation.Groups
                         }
 
                         await sharePointService.EnableAnonymousSharing(group.Url);
+                        await sharePointService.SetMembershipOfDefaultSharePointGroups(group);
                         await sharePointService.CreateSharePointStructure(group);
                     }
                     catch (Exception ex)

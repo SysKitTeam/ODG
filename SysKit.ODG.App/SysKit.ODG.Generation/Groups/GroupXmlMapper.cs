@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using AutoMapper;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Exceptions;
@@ -64,6 +65,10 @@ namespace SysKit.ODG.Generation.Groups
 
             groupEntry.Members = unifiedGroup.Members?.Select(m => new MemberEntry(m.Name)).ToList();
             groupEntry.Owners = unifiedGroup.Owners?.Select(m => new MemberEntry(m.Name)).ToList();
+
+            groupEntry.SPOwners = unifiedGroup.SPOwners?.Select(sa => new MemberEntry(sa.Name)).ToList() ?? new List<MemberEntry>();
+            groupEntry.SPMembers = unifiedGroup.SPMembers?.Select(sa => new MemberEntry(sa.Name)).ToList() ?? new List<MemberEntry>();
+            groupEntry.SPVisitors = unifiedGroup.SPVisitors?.Select(sa => new MemberEntry(sa.Name)).ToList() ?? new List<MemberEntry>();
 
             groupEntry.Content = _sharePointContentXmlMapper.MapToContentEntry(unifiedGroup.SharePointContent, true);
 

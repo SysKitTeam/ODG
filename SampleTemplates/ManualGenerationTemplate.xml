@@ -18,6 +18,9 @@
 				<Member Name="saul.warner" />
 				<Member Name="pablo.escobar" />
 			</Members>
+			<SPOwners>
+				<Member Name="malik.hunter" />
+			</SPOwners>
 		</Group>
 		<Group xsi:type="UnifiedGroup" Name="odg.test.group1" DisplayName="ODG Generated Test Group" IsPrivate="true" >
 			<Members>
@@ -107,9 +110,9 @@
 			<SiteAdmins>
 				<Member Name="brady.gaines" />
 			</SiteAdmins>
-			<Visitors>
+			<SPVisitors>
 				<Member Name="malik.hunter" />
-			</Visitors>
+			</SPVisitors>
 			<SharePointContent>
 				<Children>
 					<Web Name="ODGWeb" />

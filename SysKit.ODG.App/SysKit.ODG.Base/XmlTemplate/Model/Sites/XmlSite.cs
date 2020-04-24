@@ -15,17 +15,17 @@ namespace SysKit.ODG.Base.XmlTemplate.Model.Sites
         /// <summary>
         /// Members of SharePoint Owners Group
         /// </summary>
-        [XmlArray("Owners")]
+        [XmlArray("SPOwners")]
         public XmlMember[] SPOwners { get; set; }
         /// <summary>
         /// Members of SharePoint Members Group
         /// </summary>
-        [XmlArray("Members")]
+        [XmlArray("SPMembers")]
         public XmlMember[] SPMembers { get; set; }
         /// <summary>
         /// Members of SharePoint Visitors Group
         /// </summary>
-        [XmlArray("Visitors")]
+        [XmlArray("SPVisitors")]
         public XmlMember[] SPVisitors { get; set; }
 
         [XmlAttribute]
