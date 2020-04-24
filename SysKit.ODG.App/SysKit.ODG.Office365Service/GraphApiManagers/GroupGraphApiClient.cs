@@ -6,12 +6,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Graph;
 using Newtonsoft.Json;
-using Serilog;
+using OfficeDevPnP.Core.Framework.Graph;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Exceptions;
 using SysKit.ODG.Base.Interfaces.Authentication;
@@ -24,7 +23,7 @@ using Beta = BetaLib.Microsoft.Graph;
 
 namespace SysKit.ODG.Office365Service.GraphApiManagers
 {
-    public class GroupGraphApiClient: BaseGraphApiClient, IGroupGraphApiClient
+    public class GroupGraphApiClient : BaseGraphApiClient, IGroupGraphApiClient
     {
         private readonly INotifier _notifier;
         public GroupGraphApiClient(IAccessTokenManager accessTokenManager,
@@ -42,11 +41,10 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             using var progressUpdater = new ProgressUpdater("Create Unified Groups", _notifier);
             var createdGroupsResult = new CreatedGroupsResult();
             var groupLookup = new Dictionary<string, UnifiedGroupEntry>();
-            var batchEntries = new List<GraphBatchRequest>();
             var groupsWithTooManyMembers = new HashSet<UnifiedGroupEntry>();
             var groupList = groups.ToList();
 
-            int i = 0;
+            progressUpdater.SetTotalCount(groupList.Count);
             foreach (var group in groupList)
             {
                 try
@@ -59,120 +57,115 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                         graphGroup.OwnersODataBind = null;
                     }
 
-                    batchEntries.Add(new GraphBatchRequest(group.MailNickname, "groups", HttpMethod.Post, graphGroup));
+                    var createdGroup = await _graphServiceClient.Groups.Request().AddAsync(graphGroup);
+                    group.GroupId = createdGroup.Id;
+
+                    createdGroupsResult.AddGroup(group);
+
+                    group.SiteUrl = await waitForGroupProvisioning(group.GroupId);
+                }
+                catch (ServiceException sex)
+                {
+                    var value = sex.Error;
+                    if (isKnownError(GraphAPIKnownErrorMessages.GuestUserGroupOwnerError, value))
+                    {
+                        // this should not really happen
+                        var owners = string.Join(",", group.Owners.Select(o => o.Name));
+                        _notifier.Error(
+                            $"Failed to create: {group.MailNickname}. Guest owner detected. Owners: {owners}");
+                    }
+                    else if (isKnownError(GraphAPIKnownErrorMessages.GroupAlreadyExists, value))
+                    {
+                        _notifier.Warning($"Failed to create: {group.MailNickname}. Group already exists");
+                    }
+                    else
+                    {
+                        _notifier.Error($"Failed to create: {group.MailNickname}. {value?.Message}");
+                    }
                 }
                 catch (Exception ex)
                 {
                     _notifier.Error(ex.Message);
                 }
+                finally
+                {
+                    progressUpdater.UpdateProgress(1);
+                }
             }
 
-            var maxConcurrentRequests = batchEntries.Count > 100 ? 1 : 6;
-            await executeActionWithProgress(progressUpdater, batchEntries, maxConcurrentRequests: maxConcurrentRequests, onResult: (key, value) =>
-            {
-                var originalGroup = groupLookup[key];
-                if (value.IsSuccessStatusCode)
-                {
-                    var createdGroup = deserializeGraphObject<Group>(value.Content).GetAwaiter().GetResult();
-                    originalGroup.GroupId = createdGroup.Id;
-                    createdGroupsResult.AddGroup(originalGroup);
-                }
-                else
-                {
-                    if (isKnownError(GraphAPIKnownErrorMessages.GuestUserGroupOwnerError, value))
-                    {
-                        // this should not really happen
-                        var owners = string.Join(",", originalGroup.Owners.Select(o => o.Name));
-                        _notifier.Error($"Failed to create: {originalGroup.MailNickname}. Guest owner detected. Owners: {owners}");
-                    }
-                    else if (isKnownError(GraphAPIKnownErrorMessages.GroupAlreadyExists, value))
-                    {
-                        _notifier.Warning($"Failed to create: {originalGroup.MailNickname}. Group already exists");
-                    }
-                    else
-                    {
-                        _notifier.Error($"Failed to create: {originalGroup.MailNickname}. {getErrorMessage(value)}");
-                    }
-                }
-            });
-
-            _notifier.Info($"Waiting for groups to provision");
-            var failedGroups = await waitForGroupProvisioning(createdGroupsResult.CreatedGroups.ToDictionary(g => g.GroupId, g => new GraphBatchRequest(g.GroupId, $"groups/{g.GroupId}/drive", HttpMethod.Get)));
-            _notifier.Info($"Group provisioning finished. Failed groups count: {failedGroups.Count}");
-            // provisioning step here is just to give SP time to do it's thing. Groups will be created but maybe SP is still not provisioned
-            //createdGroupsResult.RemoveGroupsByGroupId(failedGroups);
-
+            progressUpdater.Flush();
             createdGroupsResult.RemoveGroupsByGroupId(await addGroupMemberships(createdGroupsResult.FilterOnlyCreatedGroups(groupsWithTooManyMembers).Cast<GroupEntry>().ToList(), users));
             createdGroupsResult.HasErrors = groupList.Count != createdGroupsResult.CreatedGroups.Count;
             return createdGroupsResult;
         }
 
         /// <inheritdoc />
-        public async Task<O365CreationResult<TeamEntry>> CreateTeamsFromGroups(IEnumerable<TeamEntry> teams, UserEntryCollection users)
+        public async Task<O365CreationResult<TeamEntry>> CreateTeamsFromGroups(IEnumerable<TeamEntry> teams,
+            UserEntryCollection users)
         {
             using var progressUpdater = new ProgressUpdater("Create Teams", _notifier);
-            var successfullyCreatedTeams = new ConcurrentBag<TeamEntry>();
-            var failedTeams = new ConcurrentBag<TeamEntry>();
+            var successfullyCreatedTeams = new List<TeamEntry>();
+            var failedTeams = new List<TeamEntry>();
+            var teamLookup = new Dictionary<string, TeamEntry>();
             var teamList = teams.ToList();
 
-            async Task executeCreateTeams(IEnumerable<TeamEntry> newTeams)
+            var maxRetryAttempt = 5;
+            var waitPeriod = 15;
+
+            async Task<bool> tryCreateTeam(TeamEntry newTeam, int retryAttempt = 0)
             {
-                var teamLookup = new Dictionary<string, TeamEntry>();
-                var batchEntries = new List<GraphBatchRequest>();
-                foreach (var team in newTeams)
+                // failed every time
+                if (retryAttempt > maxRetryAttempt)
                 {
-                    try
-                    {
-                        var graphTeam = createGraphTeam(users, teamLookup, team);
-                        batchEntries.Add(new GraphBatchRequest(team.MailNickname, "teams", HttpMethod.Post, graphTeam));
-                    }
-                    catch (Exception ex)
-                    {
-                        _notifier.Error(ex.Message);
-                    }
+                    _notifier.Error($"Failed to create: {newTeam.MailNickname}");
+                    return false;
                 }
 
-                var maxConcurrentRequests = batchEntries.Count > 100 ? 1 : 6;
-                await executeActionWithProgress(progressUpdater, batchEntries, true, maxConcurrentRequests: maxConcurrentRequests, onResult: (key, value) =>
+                await Task.Delay(TimeSpan.FromSeconds(waitPeriod * retryAttempt));
+
+                try
                 {
-                    var originalTeam = teamLookup[key];
-                    if (value.IsSuccessStatusCode)
+                    var graphTeam = createGraphTeam(users, teamLookup, newTeam);
+                    var requestUrl = HttpUtils.CreateGraphUrl("teams", true);
+                    var createdTeam = await _httpProvider.SendAsync(await HttpUtils.CreateRequest(requestUrl, HttpMethod.Post, _accessTokenManager, graphTeam));
+
+                    if (createdTeam.IsSuccessStatusCode)
                     {
-                        successfullyCreatedTeams.Add(originalTeam);
+                        // wait for team to provision
+                        return await waitForTeamProvisioning(newTeam.GroupId);
                     }
-                    else
+
+                    if (!isKnownError(HttpStatusCode.NotFound, createdTeam) && !isKnownError(HttpStatusCode.BadGateway, createdTeam))
                     {
-                        failedTeams.Add(teamLookup[key]);
-                        if (!isKnownError(HttpStatusCode.NotFound, value) && !isKnownError(HttpStatusCode.BadGateway, value))
-                        {
-                            _notifier.Error($"Failed to create: {originalTeam.MailNickname} .{getErrorMessage(value)}");
-                        }
+                        _notifier.Error($"Failed to create: {newTeam.MailNickname} .{getErrorMessage(createdTeam)}. Attempt: {retryAttempt}");
                     }
-                });
+                }
+                catch (Exception ex)
+                {
+                    _notifier.Error(ex.Message);
+                }
+
+                return await tryCreateTeam(newTeam, retryAttempt + 1);
             }
 
-            await executeCreateTeams(teamList);
-
-            int waitTime = 10;
-            int attempts = 0;
-            while (failedTeams.Any() && attempts < 10)
+            progressUpdater.SetTotalCount(teamList.Count);
+            foreach (var team in teamList)
             {
-                var toRepeat = failedTeams.ToList();
-                failedTeams = new ConcurrentBag<TeamEntry>();
-                // group provisioning was not finished, so lts wait and try again
-                _notifier.Warning($"Retry team creation for {toRepeat.Count}, time: {waitTime}");
-                await Task.Delay(TimeSpan.FromSeconds(waitTime));
-                await executeCreateTeams(toRepeat);
-                waitTime += 15;
-                attempts++;
+                var teamCreated = await tryCreateTeam(team);
+                progressUpdater.UpdateProgress(1);
+
+                if (teamCreated)
+                {
+                    successfullyCreatedTeams.Add(team);
+                }
+                else
+                {
+                    failedTeams.Add(team);
+                }
             }
 
-            _notifier.Info($"Waiting for teams to provision");
-            var failedProvisioning = await waitForTeamProvisioning(successfullyCreatedTeams.ToDictionary(g => g.GroupId, g => new GraphBatchRequest(g.GroupId, $"teams/{g.GroupId}", HttpMethod.Get)));
-            _notifier.Info($"Team provisioning finished. Failed teams count: {failedProvisioning.Count}");
-
-            var createdTeams = successfullyCreatedTeams.Where(t => !failedProvisioning.Contains(t.GroupId)).ToList();
-            return new O365CreationResult<TeamEntry>(createdTeams, createdTeams.Count != teamList.Count);
+            progressUpdater.Flush();
+            return new O365CreationResult<TeamEntry>(successfullyCreatedTeams, successfullyCreatedTeams.Count != teamList.Count);
         }
 
         /// <inheritdoc />
@@ -214,7 +207,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 var teamId = key.Split('/')[1];
                 if (!value.IsSuccessStatusCode)
                 {
-                    _notifier.Error($"Failed to create {(channelEntry.IsPrivate ? "Private" : "Standard" )} Channel {channelEntry.DisplayName}(teamId: {teamId}). {getErrorMessage(value)}");
+                    _notifier.Error($"Failed to create {(channelEntry.IsPrivate ? "Private" : "Standard")} Channel {channelEntry.DisplayName}(teamId: {teamId}). {getErrorMessage(value)}");
                     failedChannels.Add(channelEntry);
                 }
             }, 1);
@@ -247,9 +240,111 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             return !hasError;
         }
 
+        /// <inheritdoc />
+        public Task<bool> DeleteUnifiedGroup(string groupId)
+        {
+            bool softDeleted = false;
+            async Task<bool> deleteGroup(int attempt = 1)
+            {
+                if (attempt >= 5)
+                {
+                    return false;
+                }
+
+                if (attempt > 1)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(attempt * 10));
+                }
+
+                try
+                {
+                    if (softDeleted == false)
+                    {
+                        UnifiedGroupsUtility.DeleteUnifiedGroup(groupId, (await _accessTokenManager.GetGraphToken()).Token);
+                        softDeleted = true;
+                    }
+
+                    UnifiedGroupsUtility.PermanentlyDeleteUnifiedGroup(groupId, (await _accessTokenManager.GetGraphToken()).Token);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    _notifier.Error($"Error while deleting group: {groupId}", ex);
+                    return await deleteGroup(attempt + 1);
+                }
+            }
+
+            return deleteGroup();
+        }
+
         #region Helpers
 
-        private int _maxProvisioningAttempts = 10;
+        private int _maxProvisioningAttempts = 5;
+
+        /// <summary>
+        /// Waits for Group drive to be available. This is a sign that group was provisioned
+        /// </summary>
+        /// <param name="groupId"></param>
+        /// <returns>Returns group URL if provision succeeded or null if it failed</returns>
+        private async Task<string> waitForGroupProvisioning(string groupId, int retryAttempt = 0)
+        {
+            var waitPeriod = 15;
+            if (retryAttempt > _maxProvisioningAttempts)
+            {
+                _notifier.Warning($"Failed to provision group: {groupId}");
+                return null;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(waitPeriod * retryAttempt));
+
+            try
+            {
+                return UnifiedGroupsUtility.GetUnifiedGroupSiteUrl(groupId,
+                    (await _accessTokenManager.GetGraphToken()).Token);
+            }
+            catch
+            {
+                // provisioning failed
+            }
+
+            return await waitForGroupProvisioning(groupId, retryAttempt + 1);
+        }
+
+        /// <summary>
+        ///  Checks if team was provisioned
+        /// </summary>
+        /// <param name="groupId"></param>
+        /// <param name="retryAttempt"></param>
+        /// <returns></returns>
+        private async Task<bool> waitForTeamProvisioning(string groupId, int retryAttempt = 0)
+        {
+            var waitPeriod = 15;
+            if (retryAttempt > _maxProvisioningAttempts)
+            {
+                _notifier.Warning($"Failed to provision team fro group: {groupId}");
+                return false;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(waitPeriod * retryAttempt));
+
+            try
+            {
+                var requestUrl = HttpUtils.CreateGraphUrl($"teams/{groupId}", true);
+                var teamProvisioned = await _httpProvider.SendAsync(await HttpUtils.CreateRequest(requestUrl, HttpMethod.Get, _accessTokenManager));
+
+                if (teamProvisioned.IsSuccessStatusCode)
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+                // do nothing
+            }
+
+            return await waitForTeamProvisioning(groupId, retryAttempt + 1);
+        }
+
         /// <summary>
         /// Waits for Group drive to be available. This is a sign that group was provisioned
         /// </summary>
@@ -268,7 +363,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             if (groupDriveBatchRequests.Count < 20)
             {
                 // we need to wait less time if we didn't try to create too much groups
-                 delayTime = TimeSpan.FromSeconds(attempt * 2 * 10);
+                delayTime = TimeSpan.FromSeconds(attempt * 2 * 10);
             }
             else
             {
@@ -335,7 +430,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         {
             if (groupLookup.ContainsKey(@group.MailNickname))
             {
-                throw  new ArgumentException($"Trying to create 2 groups with same mail nickname ({@group.MailNickname}). Only the first will be created.");
+                throw new ArgumentException($"Trying to create 2 groups with same mail nickname ({@group.MailNickname}). Only the first will be created.");
             }
 
             groupLookup.Add(@group.MailNickname, @group);
@@ -346,7 +441,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 Visibility = @group.IsPrivate ? "Private" : "Public",
                 MailEnabled = true,
                 SecurityEnabled = false,
-                GroupTypes = new List<string> {"Unified"},
+                GroupTypes = new List<string> { "Unified" },
                 Description = "Sample group"
             };
 
@@ -550,7 +645,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             }
         }
 
-        class TeamExtended: Beta.Team
+        class TeamExtended : Beta.Team
         {
             [JsonProperty("group@odata.bind", NullValueHandling = NullValueHandling.Ignore)]
             public string GroupBind { get; }

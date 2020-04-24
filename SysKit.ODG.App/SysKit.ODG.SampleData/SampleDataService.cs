@@ -1,10 +1,9 @@
-﻿using SysKit.ODG.Base.Interfaces.SampleData;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Reflection;
-using System.Text;
+using SysKit.ODG.Base.Interfaces.SampleData;
 
 namespace SysKit.ODG.SampleData
 {

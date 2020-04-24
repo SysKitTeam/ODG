@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 using System.Threading.Tasks;
-using Serilog;
-using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.DTO.Generation.Results;
 using SysKit.ODG.Base.Interfaces.Generation;
@@ -13,7 +8,7 @@ using SysKit.ODG.Base.Notifier;
 
 namespace SysKit.ODG.Generation.Users
 {
-    public class UserGenerationTask: IGenerationTask
+    public class UserGenerationTask : IGenerationTask
     {
         private readonly IUserDataGeneration _userDataGenerationService;
         private readonly IGraphApiClientFactory _graphApiClientFactory;

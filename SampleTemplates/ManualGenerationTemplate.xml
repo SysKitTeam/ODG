@@ -1,13 +1,14 @@
 <?xml version="1.0"?>
 <ODGTemplate xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <Users>
+	<Users>
 		<User Name="brady.gaines" />
 		<User Name="malik.hunter" />
 		<User Name="carley.coombes" AccountDisabled="true" />
 		<User Name="saul.warner" />
 		<User Name="pablo.escobar" />
-  </Users>
-  <Groups>
+		<User Name="tiger.king" />
+	</Users>
+	<Groups>
 		<Group xsi:type="UnifiedGroup" Name="odg.test.group" DisplayName="ODG Generated Test Group" >
 			<Owners>
 				<Member Name="admin" />
@@ -17,6 +18,9 @@
 				<Member Name="saul.warner" />
 				<Member Name="pablo.escobar" />
 			</Members>
+			<SPOwners>
+				<Member Name="malik.hunter" />
+			</SPOwners>
 		</Group>
 		<Group xsi:type="UnifiedGroup" Name="odg.test.group1" DisplayName="ODG Generated Test Group" IsPrivate="true" >
 			<Members>
@@ -45,6 +49,105 @@
 					</Members>
 				</Channel>
 			</Channels>
+			<SharePointContent>
+				<Children>
+					<DocumentLibrary Name="OdgLib" IsUniqueRa="true" CopyFromParent="false">
+						<RoleAssignments>
+							<RoleAssignment Role="Contributor">
+								<Members>
+									<Member Name="malik.hunter" />
+									<Member Name="pablo.escobar" />
+								</Members>
+							</RoleAssignment>
+							<RoleAssignment Role="FullControl">
+								<Members>
+									<Member Name="tiger.king" />
+								</Members>
+							</RoleAssignment>
+						</RoleAssignments>
+						<Children>
+							<File Name="orderedlist.txt" />
+							<Folder Name="Invoices" IsUniqueRa="true" CopyFromParent="false" >
+								<SharingLinks>
+									<SharingLink />
+									<SharingLink IsEdit="true" />
+								</SharingLinks>
+								<RoleAssignments>
+									<RoleAssignment Role="FullControl">
+										<Members>
+											<Member Name="admin" />
+										</Members>
+									</RoleAssignment>
+								</RoleAssignments>
+							</Folder>
+							<Folder Name="Mailing">
+								<Children>
+									<File Name="secret.txt" IsUniqueRa="true">
+										<SharingLinks>
+											<SharingLink />
+										</SharingLinks>
+									</File>
+									<File Name="another_secret.txt" IsUniqueRa="true">									
+										<RoleAssignments>
+											<RoleAssignment Role="Read">
+												<Members>
+													<Member Name="brady.gaines" />
+												</Members>
+											</RoleAssignment>
+										</RoleAssignments>
+									</File>
+								</Children>
+							</Folder>
+						</Children>
+					</DocumentLibrary>
+				</Children>
+			</SharePointContent>
 		</Group>
-  </Groups>
+	</Groups>
+	<Sites>
+		<Site Title="ODG Test Site" RelativeUrl="odg.site">
+			<PrimaryAdmin Name="saul.warner"  />
+			<SiteAdmins>
+				<Member Name="brady.gaines" />
+			</SiteAdmins>
+			<SPVisitors>
+				<Member Name="malik.hunter" />
+			</SPVisitors>
+			<SharePointContent>
+				<Children>
+					<Web Name="ODGWeb" />
+					<DocumentLibrary Name="Lib" IsUniqueRa="true" CopyFromParent="false">
+						<RoleAssignments>
+							<RoleAssignment Role="Contributor">
+								<Members>
+									<Member Name="malik.hunter" />
+									<Member Name="pablo.escobar" />
+								</Members>
+							</RoleAssignment>
+						</RoleAssignments>
+						<Children>
+							<Folder Name="Mailing">
+								<Children>
+									<File Name="secret.txt" IsUniqueRa="true">
+										<SharingLinks>
+											<SharingLink />
+										</SharingLinks>
+									</File>
+									<File Name="another_secret.txt" IsUniqueRa="true">									
+										<RoleAssignments>
+											<RoleAssignment Role="Read">
+												<Members>
+													<Member Name="brady.gaines" />
+												</Members>
+											</RoleAssignment>
+										</RoleAssignments>
+									</File>
+								</Children>
+							</Folder>
+						</Children>
+					</DocumentLibrary>
+				</Children>
+			</SharePointContent>
+		</Site>
+	</Sites>
 </ODGTemplate>

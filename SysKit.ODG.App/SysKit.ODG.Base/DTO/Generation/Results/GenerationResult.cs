@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using SysKit.ODG.Base.Interfaces.Generation;
 
 namespace SysKit.ODG.Base.DTO.Generation.Results

@@ -1,23 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using AutoMapper;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Exceptions;
 using SysKit.ODG.Base.XmlCleanupTemplate;
-using SysKit.ODG.Base.XmlTemplate.Model;
 using SysKit.ODG.Base.XmlTemplate.Model.Groups;
+using SysKit.ODG.Generation.Sites;
 
 namespace SysKit.ODG.Generation.Groups
 {
     public class GroupXmlMapper
     {
         private readonly IMapper _mapper;
-
+        private readonly SharePointContentXmlMapper _sharePointContentXmlMapper;
         public GroupXmlMapper(IMapper mapper)
         {
             _mapper = mapper;
+            _sharePointContentXmlMapper = new SharePointContentXmlMapper();
         }
 
         public TeamEntry MapToTeamEntry(XmlTeam team)
@@ -66,6 +65,12 @@ namespace SysKit.ODG.Generation.Groups
 
             groupEntry.Members = unifiedGroup.Members?.Select(m => new MemberEntry(m.Name)).ToList();
             groupEntry.Owners = unifiedGroup.Owners?.Select(m => new MemberEntry(m.Name)).ToList();
+
+            groupEntry.SPOwners = unifiedGroup.SPOwners?.Select(sa => new MemberEntry(sa.Name)).ToList() ?? new List<MemberEntry>();
+            groupEntry.SPMembers = unifiedGroup.SPMembers?.Select(sa => new MemberEntry(sa.Name)).ToList() ?? new List<MemberEntry>();
+            groupEntry.SPVisitors = unifiedGroup.SPVisitors?.Select(sa => new MemberEntry(sa.Name)).ToList() ?? new List<MemberEntry>();
+
+            groupEntry.Content = _sharePointContentXmlMapper.MapToContentEntry(unifiedGroup.SharePointContent, true);
 
             return groupEntry;
         }

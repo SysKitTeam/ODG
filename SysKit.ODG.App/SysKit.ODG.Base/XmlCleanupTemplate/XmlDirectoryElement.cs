@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Xml.Serialization;
+﻿using System.Xml.Serialization;
 using SysKit.ODG.Base.Enums;
 
 namespace SysKit.ODG.Base.XmlCleanupTemplate
@@ -11,6 +8,9 @@ namespace SysKit.ODG.Base.XmlCleanupTemplate
     {
         [XmlAttribute]
         public string Id { get; set; }
+
+        [XmlAttribute]
+        public string Url { get; set; }
 
         [XmlAttribute]
         public string DisplayName { get; set; }

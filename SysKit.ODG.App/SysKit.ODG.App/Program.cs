@@ -1,25 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Serilog;
-using SysKit.ODG.App.Configuration;
-using SysKit.ODG.Authentication;
 using SysKit.ODG.Base.Authentication;
-using SysKit.ODG.Base.DTO;
-using SysKit.ODG.Base.DTO.Generation;
-using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Enums;
-using SysKit.ODG.Base.Interfaces;
-using SysKit.ODG.Base.Interfaces.Authentication;
-using SysKit.ODG.Base.Interfaces.Generation;
-using SysKit.ODG.Base.XmlTemplate;
-using SysKit.ODG.Base.XmlTemplate.Model;
-using SysKit.ODG.Base.XmlTemplate.Model.Groups;
-using SysKit.ODG.Generation;
-using Unity;
-using Unity.Lifetime;
 
 namespace SysKit.ODG.App
 {
@@ -38,10 +20,18 @@ namespace SysKit.ODG.App
             var templateLocation = nonNullConsoleRead("ODG template location:");
 
             var userCredentials = new SimpleUserCredentials(userName, password);
+            var isCleanup = args?.Any() == true && args[0] == "clean";
 
             try
             {
-                run(userCredentials, clientId, tenantDomain, password, templateLocation);
+                if (isCleanup)
+                {
+                    cleanup(userCredentials, clientId, templateLocation);
+                }
+                else
+                {
+                    generate(userCredentials, clientId, tenantDomain, templateLocation);
+                }
             }
             catch (Exception ex)
             {
@@ -52,28 +42,18 @@ namespace SysKit.ODG.App
             Console.ReadLine();
         }
 
-        private static void run(SimpleUserCredentials userCredentials, string clientId, string tenantDomain, string defaultPassword, string templateLocation)
+        private static void generate(SimpleUserCredentials userCredentials, string clientId, string tenantDomain, string templateLocation)
         {
-            var xmlService = new XmlSpecificationService();
+            var odgGenerator = new ODGGenerator(LogLevelEnum.Debug);
+            var result = odgGenerator.GenerateContent(userCredentials, clientId, tenantDomain, templateLocation).GetAwaiter().GetResult();
+            odgGenerator.SaveCleanupTemplate(result, templateLocation);
+        }
 
-            //xmlService.SerializeSpecification(testTemplate, @"C:\ProgramData\ODG\test.xml");
-            var template = xmlService.DeserializeSpecification<XmlODGTemplate>(templateLocation);
-
-            var unityContainer = UnityManager.CreateUnityContainer();
-            var accessTokenFactory = unityContainer.Resolve<IAccessTokenManagerFactory>();
-            var accessTokenManager = accessTokenFactory.CreateAccessTokenManager(userCredentials, clientId);
-            var logger = unityContainer.Resolve<ILogger>();
-            var notifier = new LoggNotifier(logger, new LoggOptions(LogLevelEnum.Debug));
-
-            var generationOptions = new GenerationOptions(accessTokenManager, tenantDomain, defaultPassword, template);
-
-            var generationService = unityContainer.Resolve<IGenerationService>();
-            generationService.AddGenerationTask("User Creation", unityContainer.Resolve<IGenerationTask>("userTask"));
-            generationService.AddGenerationTask("Group Creation", unityContainer.Resolve<IGenerationTask>("groupTask"));
-            var result = generationService.Start(generationOptions, notifier).GetAwaiter().GetResult();
-
-            var generationCleanupService = unityContainer.Resolve<IGenerationCleanupService>();
-            generationCleanupService.SaveCleanupTemplate(result, templateLocation);
+        private static void cleanup(SimpleUserCredentials userCredentials, string clientId, string templateLocation)
+        {
+            var odgGenerator = new ODGGenerator(LogLevelEnum.Debug);
+            var result = odgGenerator.ExecuteCleanup(userCredentials, templateLocation, clientId).GetAwaiter().GetResult();
+            Console.WriteLine($"Clean had errors: {result}");
         }
 
         private static string nonNullConsoleRead(string message)

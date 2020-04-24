@@ -253,6 +253,7 @@
     <Compile Include="GraphHttpProvider\Handlers\LoggingHandler.cs" />
     <Compile Include="GraphHttpProvider\Handlers\CustomRetryHandler.cs" />
     <Compile Include="GraphHttpProvider\Handlers\UserAgentHandler.cs" />
+    <Compile Include="GraphHttpProvider\HttpUtils.cs" />
     <Compile Include="GraphHttpProvider\IGraphHttpProvider.cs" />
     <Compile Include="GraphHttpProvider\IGraphHttpProviderFactory.cs" />
     <Compile Include="GraphServiceFactory.cs" />
@@ -263,6 +264,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="GraphHttpProvider\GraphHttpProvider.cs" />
     <Compile Include="GraphHttpProvider\GraphHttpProviderFactory.cs" />
+    <Compile Include="SharePoint\ElevatedSharePointScope.cs" />
+    <Compile Include="SharePoint\SharePointService.cs" />
+    <Compile Include="SharePoint\SharePointServiceFactory.cs" />
+    <Compile Include="SharePoint\SharePointUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

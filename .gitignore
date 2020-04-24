@@ -341,3 +341,4 @@ healthchecksdb
 
 !releases
 !Releases
+!nugets/*.nupkg

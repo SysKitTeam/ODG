@@ -3,12 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Graph;
-using SysKit.ODG.Base.Interfaces;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Base.Notifier;
@@ -34,7 +31,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
 
         protected BaseGraphApiClient(IAccessTokenManager accessTokenManager,
             IGraphHttpProviderFactory graphHttpProviderFactory,
-            IGraphServiceFactory graphServiceFactory, 
+            IGraphServiceFactory graphServiceFactory,
             IMapper autoMapper)
         {
             _graphServiceClient = graphServiceFactory.CreateGraphServiceClient(accessTokenManager, false);
@@ -94,6 +91,16 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         protected bool isKnownError(HttpStatusCode statusCode, HttpResponseMessage responseMessage)
         {
             return responseMessage.StatusCode == statusCode;
+        }
+
+        protected bool isKnownError(string expectedMessage, Error error)
+        {
+            if (error?.Message == null)
+            {
+                return expectedMessage == null;
+            }
+
+            return error.Message.Contains(expectedMessage);
         }
 
         /// <summary>

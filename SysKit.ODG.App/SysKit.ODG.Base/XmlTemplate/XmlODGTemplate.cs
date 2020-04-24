@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Xml.Serialization;
+﻿using System.Xml.Serialization;
 using SysKit.ODG.Base.XmlTemplate.Model;
 using SysKit.ODG.Base.XmlTemplate.Model.Groups;
+using SysKit.ODG.Base.XmlTemplate.Model.Sites;
 
 namespace SysKit.ODG.Base.XmlTemplate
 {
@@ -18,5 +16,8 @@ namespace SysKit.ODG.Base.XmlTemplate
 
         [XmlArray(IsNullable = true)]
         public XmlGroup[] Groups { get; set; }
+
+        [XmlArray(IsNullable = true)]
+        public XmlSite[] Sites { get; set; }
     }
 }

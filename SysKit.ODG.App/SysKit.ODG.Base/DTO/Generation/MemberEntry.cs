@@ -13,6 +13,11 @@ namespace SysKit.ODG.Base.DTO.Generation
             Name = name;
         }
 
+        /// <summary>
+        /// Checks if NAME is full LoginName (with tenant)
+        /// </summary>
+        public bool IsFQDN => Name.Contains("@");
+
         public bool Equals(MemberEntry other)
         {
             if (ReferenceEquals(null, other)) return false;
