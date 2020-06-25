@@ -19,6 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{884E91F4
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SysKit.ODG.Office365Service.Tests", "SysKit.ODG.Office365Service.Tests\SysKit.ODG.Office365Service.Tests.csproj", "{491AAACB-C8B1-4659-B67F-8A25248FACAD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SysKit.ODG.Host", "SysKit.ODG.Host\SysKit.ODG.Host.csproj", "{1CF425D7-E391-40FA-AF29-C1F2F50ACCEC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -52,6 +54,10 @@ Global
 		{491AAACB-C8B1-4659-B67F-8A25248FACAD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{491AAACB-C8B1-4659-B67F-8A25248FACAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{491AAACB-C8B1-4659-B67F-8A25248FACAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1CF425D7-E391-40FA-AF29-C1F2F50ACCEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1CF425D7-E391-40FA-AF29-C1F2F50ACCEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1CF425D7-E391-40FA-AF29-C1F2F50ACCEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1CF425D7-E391-40FA-AF29-C1F2F50ACCEC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
