@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>SysKit.ODG.App</id>
+    <title>SysKit.ODG.App</title>
+    <version>1.0.0</version>
+    <authors>SysKit Ltd.</authors>
+    <owners>SysKit Ltd.</owners>
+    <licenseUrl>https://www.syskit.com</licenseUrl>
+    <projectUrl>https://www.syskit.com</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>SysKit.ODG.App nuget for site provisioning</description>
+    <releaseNotes></releaseNotes>
+  </metadata>
+</package>
