@@ -1,0 +1,149 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{4409BE17-4C1C-4C23-8BFD-B19F7A2BECD3}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>SysKit.ODG.Common</RootNamespace>
+    <AssemblyName>SysKit.ODG.Common</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.Graph, Version=1.21.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Graph.1.21.0\lib\net45\Microsoft.Graph.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Graph.Core, Version=1.19.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Graph.Core.1.19.0\lib\net45\Microsoft.Graph.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.6.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.4.0\lib\netstandard1.1\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Core" />
+    <Reference Include="System.Diagnostics.DiagnosticSource, Version=4.0.4.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Diagnostics.DiagnosticSource.4.6.0\lib\net45\System.Diagnostics.DiagnosticSource.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.3\lib\netstandard1.1\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.4.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.5.2\lib\netstandard1.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Authentication\AuthToken.cs" />
+    <Compile Include="Authentication\SimpleUserCredentials.cs" />
+    <Compile Include="DTO\Generation\ContentEntry.cs" />
+    <Compile Include="DTO\Generation\GroupEntry.cs" />
+    <Compile Include="DTO\Generation\IAssociatedSPGroups.cs" />
+    <Compile Include="DTO\Generation\IRoleAssignments.cs" />
+    <Compile Include="DTO\Generation\ISharePointContent.cs" />
+    <Compile Include="DTO\Generation\MemberEntry.cs" />
+    <Compile Include="DTO\Generation\Options\GenerationOptions.cs" />
+    <Compile Include="DTO\Generation\Options\UserGenerationOptions.cs" />
+    <Compile Include="DTO\Generation\Results\GenerationResult.cs" />
+    <Compile Include="DTO\Generation\Results\GroupGenerationTaskResult.cs" />
+    <Compile Include="DTO\Generation\Results\SiteGenerationTaskResult.cs" />
+    <Compile Include="DTO\Generation\Results\UserGenerationTaskResult.cs" />
+    <Compile Include="DTO\Generation\SharingLinkEntry.cs" />
+    <Compile Include="DTO\Generation\SiteEntry.cs" />
+    <Compile Include="DTO\Generation\TeamChannelEntry.cs" />
+    <Compile Include="DTO\Generation\TeamEntry.cs" />
+    <Compile Include="DTO\Generation\UnifiedGroupEntry.cs" />
+    <Compile Include="DTO\Generation\UserEntry.cs" />
+    <Compile Include="Enums\ContentTypeEnum.cs" />
+    <Compile Include="Enums\DirectoryElementTypeEnum.cs" />
+    <Compile Include="Enums\LogLevelEnum.cs" />
+    <Compile Include="Enums\MemberTypeEnum.cs" />
+    <Compile Include="Enums\RoleTypeEnum.cs" />
+    <Compile Include="Exceptions\MemberNotFoundException.cs" />
+    <Compile Include="Exceptions\SiteAlreadyExists.cs" />
+    <Compile Include="Exceptions\ThrottleException.cs" />
+    <Compile Include="Exceptions\XmlTemplateException.cs" />
+    <Compile Include="Exceptions\XmlValidationException.cs" />
+    <Compile Include="Extensions.cs" />
+    <Compile Include="Interfaces\Authentication\IAccessTokenManager.cs" />
+    <Compile Include="Interfaces\Authentication\IAccessTokenManagerFactory.cs" />
+    <Compile Include="Interfaces\Generation\IGenerationCleanupService.cs" />
+    <Compile Include="Interfaces\Generation\IGenerationService.cs" />
+    <Compile Include="Interfaces\Generation\IGenerationTask.cs" />
+    <Compile Include="Interfaces\Generation\IGenerationTaskResult.cs" />
+    <Compile Include="Interfaces\Generation\IGroupDataGeneration.cs" />
+    <Compile Include="Interfaces\Generation\ISiteDataGeneration.cs" />
+    <Compile Include="Interfaces\Generation\IUserDataGeneration.cs" />
+    <Compile Include="Interfaces\IAppConfigManager.cs" />
+    <Compile Include="Interfaces\Office365Service\IGraphApiClientFactory.cs" />
+    <Compile Include="Interfaces\Office365Service\IGraphServiceFactory.cs" />
+    <Compile Include="Interfaces\Office365Service\IGroupGraphApiClient.cs" />
+    <Compile Include="Interfaces\Office365Service\ISharePointService.cs" />
+    <Compile Include="Interfaces\Office365Service\ISharePointServiceFactory.cs" />
+    <Compile Include="Interfaces\Office365Service\IUserGraphApiClient.cs" />
+    <Compile Include="Interfaces\SampleData\ISampleDataService.cs" />
+    <Compile Include="Notifier\INotifier.cs" />
+    <Compile Include="Notifier\ProgressUpdater.cs" />
+    <Compile Include="Office365\CreatedGroupsResult.cs" />
+    <Compile Include="Office365\IUserEntryCollection.cs" />
+    <Compile Include="Office365\O365CreationResult.cs" />
+    <Compile Include="Office365\UserEntryCollection.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utils\RandomThreadSafeGenerator.cs" />
+    <Compile Include="XmlCleanupTemplate\XmlDirectoryElement.cs" />
+    <Compile Include="XmlCleanupTemplate\XmlODGCleanupTemplate.cs" />
+    <Compile Include="XmlTemplate\Model\Content\XmlContent.cs" />
+    <Compile Include="XmlTemplate\Model\Content\XmlDocumentLibrary.cs" />
+    <Compile Include="XmlTemplate\Model\Content\XmlFile.cs" />
+    <Compile Include="XmlTemplate\Model\Content\XmlFolder.cs" />
+    <Compile Include="XmlTemplate\Model\Content\XmlListItemContent.cs" />
+    <Compile Include="XmlTemplate\Model\Content\XmlRoleAssignment.cs" />
+    <Compile Include="XmlTemplate\Model\Content\XmlSharingLink.cs" />
+    <Compile Include="XmlTemplate\Model\Content\XmlWeb.cs" />
+    <Compile Include="XmlTemplate\Model\Groups\XmlGroup.cs" />
+    <Compile Include="XmlTemplate\Model\Groups\XmlTeam.cs" />
+    <Compile Include="XmlTemplate\Model\Groups\XmlTeamChannel.cs" />
+    <Compile Include="XmlTemplate\Model\Groups\XmlUnifiedGroup.cs" />
+    <Compile Include="XmlTemplate\Model\Sites\XmlSite.cs" />
+    <Compile Include="XmlTemplate\Model\XmlMember.cs" />
+    <Compile Include="XmlTemplate\Model\XmlRandomOptions.cs" />
+    <Compile Include="XmlTemplate\Model\XmlUser.cs" />
+    <Compile Include="XmlTemplate\XmlODGTemplate.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

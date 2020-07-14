@@ -594,7 +594,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 }
             });
 
-            return failedGroupIds.ToHashSet();
+            return new HashSet<string>(failedGroupIds.ToArray());
         }
 
         /// <summary>
