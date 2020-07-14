@@ -73,7 +73,7 @@ namespace SysKit.ODG.SampleData
         {
             List<string> listA = new List<string>();
             var assembly = Assembly.GetExecutingAssembly();
-            var resourceName = $"SysKit.ODG.SampleData.Samples.{csvFileName}";
+            var resourceName = $"SysKit.ODG.Samples.Samples.{csvFileName}";
 
             using (Stream stream = assembly.GetManifestResourceStream(resourceName))
             using (StreamReader reader = new StreamReader(stream))
