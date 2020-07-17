@@ -47,7 +47,7 @@ namespace SysKit.ODG.Office365Service.GraphHttpProvider
         private IGraphHttpProvider createGraphHttpProvider(HttpMessageHandler finalHandler)
         {
             var retryPolicy = _customRetryPolicyFactory.CreateRetryPolicy();
-            var userAgentHandler = new UserAgentHandler(_configManager.UserAgent);
+            var userAgentHandler = new UserAgentHandler("ODG/0.1");
             var compressionHandler = new CompressionHandler();
             var loggingHandler = new LoggingHandler(_logger);
             var retryHandler = new CustomRetryHandler(retryPolicy);

@@ -37,19 +37,19 @@ namespace SysKit.ODG.Authentication
         public async Task<AuthToken> GetGraphToken()
         {
             var accounts = await _app.GetAccountsAsync();
+            var scopes = new[] {"User.ReadWrite.All", "Group.ReadWrite.All"};
 
             AuthenticationResult result;
             if (accounts.Any())
             {
                 // TODO: what if more than one user is present???
-                result = await _app.AcquireTokenSilent(_appConfigManager.Scopes, accounts.FirstOrDefault()).ExecuteAsync();
+                result = await _app.AcquireTokenSilent(scopes, accounts.FirstOrDefault()).ExecuteAsync();
                 return new AuthToken { Token = result.AccessToken };
             }
 
             try
             {
-
-                result = await _app.AcquireTokenByUsernamePassword(_appConfigManager.Scopes,
+                result = await _app.AcquireTokenByUsernamePassword(scopes,
                         _userCredentials.Username,
                         _userCredentials.Password)
                     .ExecuteAsync();
