@@ -42,7 +42,7 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         bool DeleteSiteCollection(string siteUrl);
 
         /// <summary>
-        /// Returns SharePoint Id fro site url
+        /// Returns SharePoint Id for site url
         /// </summary>
         /// <param name="siteUrl"></param>
         /// <returns></returns>
