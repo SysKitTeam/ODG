@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace SysKit.ODG.Base.DTO.Generation
 {
@@ -21,5 +22,6 @@ namespace SysKit.ODG.Base.DTO.Generation
 
         public string Url => SiteUrl;
         public ContentEntry Content { get; set; }
+        public Guid? SiteGuid { get; set; }
     }
 }

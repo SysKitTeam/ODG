@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace SysKit.ODG.Base.DTO.Generation
 {
@@ -19,5 +20,6 @@ namespace SysKit.ODG.Base.DTO.Generation
         #endregion Associated SharePoint Groups
 
         public ContentEntry Content { get; set; }
+        public Guid? SiteGuid { get; set; }
     }
 }
