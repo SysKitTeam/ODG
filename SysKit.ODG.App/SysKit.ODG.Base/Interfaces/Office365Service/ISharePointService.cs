@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using SysKit.ODG.Base.DTO.Generation;
 
 namespace SysKit.ODG.Base.Interfaces.Office365Service
@@ -39,5 +40,12 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         /// <param name="siteUrl"></param>
         /// <returns></returns>
         bool DeleteSiteCollection(string siteUrl);
+
+        /// <summary>
+        /// Returns SharePoint Id fro site url
+        /// </summary>
+        /// <param name="siteUrl"></param>
+        /// <returns></returns>
+        Task<Guid> GetSiteCollectionGuid(string siteUrl);
     }
 }

@@ -53,6 +53,7 @@ namespace SysKit.ODG.Generation.Groups
                             continue;
                         }
 
+                        group.SiteGuid = await sharePointService.GetSiteCollectionGuid(group.SiteUrl);
                         await sharePointService.EnableAnonymousSharing(group.Url);
                         await sharePointService.SetMembershipOfDefaultSharePointGroups(group);
                         await sharePointService.CreateSharePointStructure(group);

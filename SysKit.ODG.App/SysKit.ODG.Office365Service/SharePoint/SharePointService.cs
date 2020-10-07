@@ -56,6 +56,9 @@ namespace SysKit.ODG.Office365Service.SharePoint
 
                 using (new ElevatedSharePointScope(site, _userCredentials))
                 {
+                    newSite.Load(newSite.Site, s => s.Id);
+                    await newSite.ExecuteQueryAsync();
+                    site.SiteGuid = newSite.Site.Id;
                     if (site.SiteAdmins?.Any() == true)
                     {
                         newSite.Web.AddAdministrators(site.SiteAdmins.Select(admin => new UserEntity
@@ -370,6 +373,19 @@ namespace SysKit.ODG.Office365Service.SharePoint
                 }
 
                 return deleteSite();
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<Guid> GetSiteCollectionGuid(string siteUrl)
+        {
+            using (var rootContext = SharePointUtils.CreateAdminContext(_userCredentials))
+            {
+                Tenant tenant = new Tenant(rootContext);
+                var site = tenant.GetSiteByUrl(siteUrl);
+                rootContext.Load(site, s => s.Id);
+                await rootContext.ExecuteQueryAsync();
+                return site.Id;
             }
         }
     }
