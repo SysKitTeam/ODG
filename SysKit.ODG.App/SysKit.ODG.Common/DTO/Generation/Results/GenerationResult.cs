@@ -13,7 +13,7 @@ namespace SysKit.ODG.Base.DTO.Generation.Results
             GenerationTaskResults = generationTaskResult;
         }
 
-        public bool HasErrors => GenerationTaskResults.Values.Any(v => v.HadErrors);
+        public bool HasErrors => GenerationTaskResults.Values.Any(v => v?.HadErrors ?? false);
 
         public IEnumerable<IGenerationTaskResult> TaskResults => GenerationTaskResults.Values;
     }
