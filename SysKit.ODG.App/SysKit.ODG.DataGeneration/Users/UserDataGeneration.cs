@@ -85,13 +85,16 @@ namespace SysKit.ODG.Generation.Users
         private UserEntry createSampleUserEntry(UserGenerationOptions generationOptions)
         {
             string fakeDisplayName;
+            RandomValueWithComponents fakeName;
+
             // just so we dont deadlock
             int count = 0;
 
             do
             {
-                fakeDisplayName =
-                    _sampleDataService.GetRandomValue(_sampleDataService.FirstNames, _sampleDataService.LastNames);
+                fakeName = _sampleDataService.GetRandomValueWithComponents(_sampleDataService.FirstNames,
+                    _sampleDataService.LastNames);
+                fakeDisplayName = fakeName.RandomValue;
                 count++;
             } while (_sampleUserUPNs.Contains(fakeDisplayName) || count > 100);
 
@@ -100,14 +103,22 @@ namespace SysKit.ODG.Generation.Users
                 throw new ArgumentNullException("Unable to generate sample display name.");
             }
 
+            var city = _sampleDataService.GetRandomValue(_sampleDataService.CityNames);
+
             _sampleUserUPNs.Add(fakeDisplayName);
             return new UserEntry
             {
                 DisplayName = fakeDisplayName,
+                GivenName = fakeName.Components[0],
+                Surname = fakeName.Components[1],
                 MailNickname = createMailNickName(fakeDisplayName),
                 Password = generationOptions.DefaultPassword,
                 UserPrincipalName = $"{createMailNickName(fakeDisplayName)}@{generationOptions.TenantDomain}",
-                AccountEnabled = DateTime.Now.Ticks % 7 != 0
+                AccountEnabled = DateTime.Now.Ticks % 7 != 0,
+                Department = _sampleDataService.GetRandomValue(_sampleDataService.DepartmentNames),
+                Country = _sampleDataService.GetRandomValue(_sampleDataService.CountryNames),
+                City = city,
+                OfficeLocation = city
             };
         }
 

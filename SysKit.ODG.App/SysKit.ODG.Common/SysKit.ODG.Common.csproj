@@ -75,6 +75,7 @@
     <Compile Include="DTO\Generation\MemberEntry.cs" />
     <Compile Include="DTO\Generation\Options\GenerationOptions.cs" />
     <Compile Include="DTO\Generation\Options\UserGenerationOptions.cs" />
+    <Compile Include="DTO\Generation\RandomValueWithComponents.cs" />
     <Compile Include="DTO\Generation\Results\GenerationResult.cs" />
     <Compile Include="DTO\Generation\Results\GroupGenerationTaskResult.cs" />
     <Compile Include="DTO\Generation\Results\SiteGenerationTaskResult.cs" />
