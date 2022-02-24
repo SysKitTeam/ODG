@@ -16,6 +16,7 @@ namespace SysKit.ODG.SampleData
         public ReadOnlyCollection<string> DepartmentNames { get; }
         public ReadOnlyCollection<string> CountryNames { get; }
         public ReadOnlyCollection<string> CityNames { get; }
+        public ReadOnlyCollection<string> CompanyNames { get; }
 
         private readonly Random _randomGen = new Random();
 
@@ -27,6 +28,7 @@ namespace SysKit.ODG.SampleData
             DepartmentNames = createSampleCollection("departmentName.csv");
             CountryNames = createSampleCollection("countryName.csv");
             CityNames = createSampleCollection("cityName.csv");
+            CompanyNames = createSampleCollection("companyName.csv");
         }
 
         public string GetRandomValue(IList<string> sampleCollection)

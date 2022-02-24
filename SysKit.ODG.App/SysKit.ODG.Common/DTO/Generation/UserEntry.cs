@@ -17,8 +17,11 @@
         public string Country { get; set; }
         public string City { get; set; }
         public string OfficeLocation { get; set; }
+        public string CompanyName { get; set; }
+        public string JobTitle { get; set; }
 
         public bool? SetUserPhoto { get; set; }
+        public int HierarchyLevel { get; set; }
 
     }
 }

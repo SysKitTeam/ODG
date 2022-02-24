@@ -8,6 +8,7 @@ using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Base.Interfaces.SampleData;
+using SysKit.ODG.Common.Interfaces.SampleData;
 using SysKit.ODG.Generation;
 using SysKit.ODG.Generation.Groups;
 using SysKit.ODG.Generation.Sites;
@@ -33,9 +34,10 @@ namespace SysKit.ODG.App.Configuration
             container.RegisterSingleton<IAppConfigManager, AppConfigManager>();
             container.RegisterSingleton<IAccessTokenManagerFactory, AccessTokenManagerFactory>();
             container.RegisterSingleton<ISampleDataService, SampleDataService>();
+            container.RegisterSingleton<IJobHierarchyService, JobHierarchyService>();
 
             #region Generation services
-            
+
             container.RegisterType<IGenerationService, GenerationService>();
             container.RegisterType<IGenerationCleanupService, GenerationCleanupService>();
             container.RegisterType<IGenerationTask, UserGenerationTask>("userTask");

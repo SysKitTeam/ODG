@@ -6,6 +6,7 @@ using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.SampleData;
 using SysKit.ODG.Base.XmlCleanupTemplate;
+using SysKit.ODG.Common.Interfaces.SampleData;
 
 namespace SysKit.ODG.Generation.Users
 {
@@ -14,13 +15,15 @@ namespace SysKit.ODG.Generation.Users
         private readonly IMapper _mapper;
         private readonly ISampleDataService _sampleDataService;
         private readonly UserXmlMapper _userXmlMapper;
+        private readonly IJobHierarchyService _jobHierarchyService;
 
         private readonly HashSet<string> _sampleUserUPNs = new HashSet<string>();
 
-        public UserDataGeneration(IMapper mapper, ISampleDataService sampleDataService)
+        public UserDataGeneration(IMapper mapper, ISampleDataService sampleDataService, IJobHierarchyService jobHierarchyService)
         {
             _mapper = mapper;
             _sampleDataService = sampleDataService;
+            _jobHierarchyService = jobHierarchyService;
             _userXmlMapper = new UserXmlMapper(mapper);
         }
 
@@ -104,6 +107,10 @@ namespace SysKit.ODG.Generation.Users
             }
 
             var city = _sampleDataService.GetRandomValue(_sampleDataService.CityNames);
+            var company = _sampleDataService.GetRandomValue(_sampleDataService.CompanyNames);
+            var department = _sampleDataService.GetRandomValue(_sampleDataService.DepartmentNames);
+            var (hierarchyLevel, jobTitle) = _jobHierarchyService.GetHierarchyLevelAndJobTitle(company, department);
+
 
             _sampleUserUPNs.Add(fakeDisplayName);
             return new UserEntry
@@ -115,10 +122,13 @@ namespace SysKit.ODG.Generation.Users
                 Password = generationOptions.DefaultPassword,
                 UserPrincipalName = $"{createMailNickName(fakeDisplayName)}@{generationOptions.TenantDomain}",
                 AccountEnabled = DateTime.Now.Ticks % 7 != 0,
-                Department = _sampleDataService.GetRandomValue(_sampleDataService.DepartmentNames),
+                Department = department,
                 Country = _sampleDataService.GetRandomValue(_sampleDataService.CountryNames),
+                CompanyName = company,
                 City = city,
-                OfficeLocation = city
+                OfficeLocation = city,
+                JobTitle = jobTitle,
+                HierarchyLevel = hierarchyLevel
             };
         }
 

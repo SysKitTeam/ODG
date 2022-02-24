@@ -12,6 +12,7 @@ namespace SysKit.ODG.Base.Interfaces.SampleData
         ReadOnlyCollection<string> DepartmentNames { get; }
         ReadOnlyCollection<string> CountryNames { get; }
         ReadOnlyCollection<string> CityNames { get; }
+        ReadOnlyCollection<string> CompanyNames { get; }
 
         string GetRandomValue(IList<string> sampleCollection);
         string GetRandomValue(IList<string> primaryCollection, IList<string> secondaryCollection);
