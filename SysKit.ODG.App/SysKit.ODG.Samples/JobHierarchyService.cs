@@ -55,8 +55,10 @@ namespace SysKit.ODG.SampleData
 
         private void IncreaseLevel(string company, string department)
         {
-            _hierarchyLookup[company][department].Level++;
-            _hierarchyLookup[company][department].RemainingPositionsOnLevel = _random.Next(5, 10);
+            var level = ++_hierarchyLookup[company][department].Level;
+            var workersOnLevelMin = Convert.ToInt32(Math.Pow(3, level - 1));
+            var workersOnLevelMax = Convert.ToInt32(Math.Pow(8, level - 1));
+            _hierarchyLookup[company][department].RemainingPositionsOnLevel = _random.Next(workersOnLevelMin, workersOnLevelMax);
         }
 
         private void DecreaseNumberOfPositionsOnCurrentLevel(string company, string department)
