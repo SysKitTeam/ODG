@@ -5,6 +5,7 @@ using SysKit.ODG.Base.DTO.Generation.Results;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Base.Notifier;
+using SysKit.ODG.Common.Interfaces.SampleData;
 
 namespace SysKit.ODG.Generation.Users
 {
@@ -12,6 +13,7 @@ namespace SysKit.ODG.Generation.Users
     {
         private readonly IUserDataGeneration _userDataGenerationService;
         private readonly IGraphApiClientFactory _graphApiClientFactory;
+        private readonly IManagerGenerationService _managerGenerationService;
 
         public UserGenerationTask(IUserDataGeneration userDataGenerationService, IGraphApiClientFactory graphApiClientFactory)
         {
@@ -27,6 +29,8 @@ namespace SysKit.ODG.Generation.Users
 
             var createdUsers = await userGraphApiClient.CreateTenantUsers(users);
             notifier.Info($"Created Users: {createdUsers.CreatedEntries.Count()}/{users.Count}; Had Erros: {createdUsers.HadErrors}");
+
+            var managers = _managerGenerationService.GenerateManagerSubordinatePairs(createdUsers.CreatedEntries);
 
             // TODO: assign licences
             // TODO: add external users

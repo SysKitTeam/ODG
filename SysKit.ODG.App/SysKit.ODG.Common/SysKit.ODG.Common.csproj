@@ -72,6 +72,7 @@
     <Compile Include="DTO\Generation\IAssociatedSPGroups.cs" />
     <Compile Include="DTO\Generation\IRoleAssignments.cs" />
     <Compile Include="DTO\Generation\ISharePointContent.cs" />
+    <Compile Include="DTO\Generation\ManagerSubordinatePair.cs" />
     <Compile Include="DTO\Generation\MemberEntry.cs" />
     <Compile Include="DTO\Generation\Options\GenerationOptions.cs" />
     <Compile Include="DTO\Generation\Options\UserGenerationOptions.cs" />
@@ -114,6 +115,7 @@
     <Compile Include="Interfaces\Office365Service\ISharePointServiceFactory.cs" />
     <Compile Include="Interfaces\Office365Service\IUserGraphApiClient.cs" />
     <Compile Include="Interfaces\SampleData\IJobHierarchyService.cs" />
+    <Compile Include="Interfaces\SampleData\IManagerGenerationService.cs" />
     <Compile Include="Interfaces\SampleData\ISampleDataService.cs" />
     <Compile Include="Notifier\INotifier.cs" />
     <Compile Include="Notifier\ProgressUpdater.cs" />

@@ -35,6 +35,7 @@ namespace SysKit.ODG.App.Configuration
             container.RegisterSingleton<IAccessTokenManagerFactory, AccessTokenManagerFactory>();
             container.RegisterSingleton<ISampleDataService, SampleDataService>();
             container.RegisterSingleton<IJobHierarchyService, JobHierarchyService>();
+            container.RegisterSingleton<IManagerGenerationService, ManagerGenerationService>();
 
             #region Generation services
 
