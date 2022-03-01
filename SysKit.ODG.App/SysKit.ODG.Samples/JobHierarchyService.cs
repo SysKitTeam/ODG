@@ -25,7 +25,6 @@ namespace SysKit.ODG.SampleData
             if (state.RemainingPositionsOnLevel > 0)
             {
                 level = state.Level;
-                DecreaseNumberOfPositionsOnCurrentLevel(company, department);
             }
             else
             {
@@ -33,8 +32,9 @@ namespace SysKit.ODG.SampleData
                 level = GetHierarchyState(company, department).Level;
             }
 
-            var jobTitle = getJobTitleFromLevel(level, department);
+            DecreaseNumberOfPositionsOnCurrentLevel(company, department);
 
+            var jobTitle = getJobTitleFromLevel(level, department);
             return (level, jobTitle);
         }
 
@@ -56,9 +56,8 @@ namespace SysKit.ODG.SampleData
         private void IncreaseLevel(string company, string department)
         {
             var level = ++_hierarchyLookup[company][department].Level;
-            var workersOnLevelMin = Convert.ToInt32(Math.Pow(3, level - 1));
-            var workersOnLevelMax = Convert.ToInt32(Math.Pow(8, level - 1));
-            _hierarchyLookup[company][department].RemainingPositionsOnLevel = _random.Next(workersOnLevelMin, workersOnLevelMax);
+            var workersOnLevel = Convert.ToInt32(Math.Pow(5, level - 1));
+            _hierarchyLookup[company][department].RemainingPositionsOnLevel = workersOnLevel;
         }
 
         private void DecreaseNumberOfPositionsOnCurrentLevel(string company, string department)

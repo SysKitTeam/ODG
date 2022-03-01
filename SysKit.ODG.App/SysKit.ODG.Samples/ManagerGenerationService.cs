@@ -38,8 +38,22 @@ namespace SysKit.ODG.SampleData
                 var currentLevel = hierarchyLookup[hierarchyLevel];
                 var pastLevel = hierarchyLookup[hierarchyLevel - 1].ToArray();
                 var pastLevelLength = pastLevel.Length;
+                var roundRobinIndex = 0;
 
-                managerPairs.AddRange(currentLevel.Select(userEntry => new ManagerSubordinatePair() { SubordinateGuid = userEntry.Id, ManagerGuid = pastLevel[random.Next(pastLevelLength)].Id, }));
+                managerPairs.AddRange(currentLevel.Select(userEntry =>
+                {
+                    var managerIndex = roundRobinIndex < 3 * pastLevelLength
+                        ? roundRobinIndex % pastLevelLength
+                        : random.Next(pastLevelLength);
+                    roundRobinIndex++;
+
+                    return new ManagerSubordinatePair()
+                    {
+                        SubordinateGuid = userEntry.Id,
+                        ManagerGuid = pastLevel[managerIndex].Id,
+
+                    };
+                }));
 
                 hierarchyLevel++;
             }
