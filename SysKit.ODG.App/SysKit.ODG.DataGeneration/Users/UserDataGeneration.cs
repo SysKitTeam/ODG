@@ -106,11 +106,10 @@ namespace SysKit.ODG.Generation.Users
                 throw new ArgumentNullException("Unable to generate sample display name.");
             }
 
-            var city = _sampleDataService.GetRandomValue(_sampleDataService.CityNames);
             var company = _sampleDataService.GetRandomValue(_sampleDataService.CompanyNames);
             var department = _sampleDataService.GetRandomValue(_sampleDataService.DepartmentNames);
             var (hierarchyLevel, jobTitle) = _jobHierarchyService.GetHierarchyLevelAndJobTitle(company, department);
-
+            var address = _sampleDataService.GetRandomAddress(_sampleDataService.StreetAddresses);
 
             _sampleUserUPNs.Add(fakeDisplayName);
             return new UserEntry
@@ -123,12 +122,15 @@ namespace SysKit.ODG.Generation.Users
                 UserPrincipalName = $"{createMailNickName(fakeDisplayName)}@{generationOptions.TenantDomain}",
                 AccountEnabled = DateTime.Now.Ticks % 7 != 0,
                 Department = department,
-                Country = _sampleDataService.GetRandomValue(_sampleDataService.CountryNames),
                 CompanyName = company,
-                City = city,
-                OfficeLocation = city,
+                OfficeLocation = $"{address.City} Office",
                 JobTitle = jobTitle,
-                HierarchyLevel = hierarchyLevel
+                HierarchyLevel = hierarchyLevel,
+                StreetAddress = address.StreetAddress,
+                City = address.City,
+                PostalCode = address.PostalCode,
+                State = address.State,
+                Country = address.Country
             };
         }
 

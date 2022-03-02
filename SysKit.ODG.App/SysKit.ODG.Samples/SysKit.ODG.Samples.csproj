@@ -68,10 +68,9 @@
   <ItemGroup>
     <None Include="app.config" />
     <EmbeddedResource Include="Samples\departmentName.csv" />
-    <EmbeddedResource Include="Samples\countryName.csv" />
-    <EmbeddedResource Include="Samples\cityName.csv" />
     <EmbeddedResource Include="Samples\companyName.csv" />
     <None Include="packages.config" />
+    <EmbeddedResource Include="Samples\addresses.csv" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

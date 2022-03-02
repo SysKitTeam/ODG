@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Interfaces.SampleData;
+using SysKit.ODG.Common.DTO.Generation;
 
 namespace SysKit.ODG.SampleData
 {
@@ -14,9 +16,8 @@ namespace SysKit.ODG.SampleData
         public ReadOnlyCollection<string> LastNames { get; }
         public ReadOnlyCollection<string> GroupNames { get; }
         public ReadOnlyCollection<string> DepartmentNames { get; }
-        public ReadOnlyCollection<string> CountryNames { get; }
-        public ReadOnlyCollection<string> CityNames { get; }
         public ReadOnlyCollection<string> CompanyNames { get; }
+        public ReadOnlyCollection<Address> StreetAddresses { get; }
 
         private readonly Random _randomGen = new Random();
 
@@ -26,12 +27,11 @@ namespace SysKit.ODG.SampleData
             LastNames = createSampleCollection("lastName.csv");
             GroupNames = createSampleCollection("groupName.csv");
             DepartmentNames = createSampleCollection("departmentName.csv");
-            CountryNames = createSampleCollection("countryName.csv");
-            CityNames = createSampleCollection("cityName.csv");
             CompanyNames = createSampleCollection("companyName.csv");
+            StreetAddresses = createAddressCollection("addresses.csv");
         }
 
-        public string GetRandomValue(IList<string> sampleCollection)
+        public T GetRandomValue<T>(IList<T> sampleCollection)
         {
             return sampleCollection[_randomGen.Next(sampleCollection.Count)];
         }
@@ -74,6 +74,11 @@ namespace SysKit.ODG.SampleData
             };
         }
 
+        public Address GetRandomAddress(IList<Address> addresses)
+        {
+            return GetRandomValue(addresses);
+        }
+
 
         #region Helpers
 
@@ -109,6 +114,22 @@ namespace SysKit.ODG.SampleData
             }
 
             return new ReadOnlyCollection<string>(listA);
+        }
+
+        private static ReadOnlyCollection<Address> createAddressCollection(string csvFileName)
+        {
+            var lines = createSampleCollection(csvFileName);
+            var addresses = lines.Select(line => line.Split(','))
+                .Select(addressParts => new Address()
+                {
+                    StreetAddress = addressParts[0],
+                    PostalCode = addressParts[2], // we skip the 1
+                    City = addressParts[3],
+                    State = addressParts[4],
+                    Country = addressParts[5]
+                }).ToList();
+
+            return new ReadOnlyCollection<Address>(addresses);
         }
 
         #endregion

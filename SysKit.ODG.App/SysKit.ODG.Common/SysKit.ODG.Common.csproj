@@ -67,6 +67,7 @@
   <ItemGroup>
     <Compile Include="Authentication\AuthToken.cs" />
     <Compile Include="Authentication\SimpleUserCredentials.cs" />
+    <Compile Include="DTO\Generation\Address.cs" />
     <Compile Include="DTO\Generation\ContentEntry.cs" />
     <Compile Include="DTO\Generation\GroupEntry.cs" />
     <Compile Include="DTO\Generation\IAssociatedSPGroups.cs" />
