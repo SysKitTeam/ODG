@@ -67,21 +67,13 @@ namespace SysKit.ODG.SampleData
             var firstValue = GetRandomValue(primaryCollection);
             var secondValue = GetRandomValue(secondaryCollection);
 
-            if (DateTime.Now.Ticks % 2 == 0)
-            {
-                return new RandomValueWithComponents()
-                {
-                    Components = new List<string>() { firstValue, secondValue },
-                    RandomValue = $"{firstValue} {secondValue}"
-                };
-            }
-
             return new RandomValueWithComponents()
             {
-                Components = new List<string>() { secondValue, firstValue },
-                RandomValue = $"{secondValue} {firstValue}"
+                Components = new List<string>() { firstValue, secondValue },
+                RandomValue = $"{firstValue} {secondValue}"
             };
         }
+
 
         #region Helpers
 
