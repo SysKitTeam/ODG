@@ -67,14 +67,17 @@
   <ItemGroup>
     <Compile Include="Authentication\AuthToken.cs" />
     <Compile Include="Authentication\SimpleUserCredentials.cs" />
+    <Compile Include="DTO\Generation\Address.cs" />
     <Compile Include="DTO\Generation\ContentEntry.cs" />
     <Compile Include="DTO\Generation\GroupEntry.cs" />
     <Compile Include="DTO\Generation\IAssociatedSPGroups.cs" />
     <Compile Include="DTO\Generation\IRoleAssignments.cs" />
     <Compile Include="DTO\Generation\ISharePointContent.cs" />
+    <Compile Include="DTO\Generation\ManagerSubordinatePair.cs" />
     <Compile Include="DTO\Generation\MemberEntry.cs" />
     <Compile Include="DTO\Generation\Options\GenerationOptions.cs" />
     <Compile Include="DTO\Generation\Options\UserGenerationOptions.cs" />
+    <Compile Include="DTO\Generation\RandomValueWithComponents.cs" />
     <Compile Include="DTO\Generation\Results\GenerationResult.cs" />
     <Compile Include="DTO\Generation\Results\GroupGenerationTaskResult.cs" />
     <Compile Include="DTO\Generation\Results\SiteGenerationTaskResult.cs" />
@@ -112,6 +115,8 @@
     <Compile Include="Interfaces\Office365Service\ISharePointService.cs" />
     <Compile Include="Interfaces\Office365Service\ISharePointServiceFactory.cs" />
     <Compile Include="Interfaces\Office365Service\IUserGraphApiClient.cs" />
+    <Compile Include="Interfaces\SampleData\IJobHierarchyService.cs" />
+    <Compile Include="Interfaces\SampleData\IManagerGenerationService.cs" />
     <Compile Include="Interfaces\SampleData\ISampleDataService.cs" />
     <Compile Include="Notifier\INotifier.cs" />
     <Compile Include="Notifier\ProgressUpdater.cs" />

@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Interfaces.SampleData;
+using SysKit.ODG.Common.DTO.Generation;
 
 namespace SysKit.ODG.SampleData
 {
@@ -12,6 +15,9 @@ namespace SysKit.ODG.SampleData
         public ReadOnlyCollection<string> FirstNames { get; }
         public ReadOnlyCollection<string> LastNames { get; }
         public ReadOnlyCollection<string> GroupNames { get; }
+        public ReadOnlyCollection<string> DepartmentNames { get; }
+        public ReadOnlyCollection<string> CompanyNames { get; }
+        public ReadOnlyCollection<Address> StreetAddresses { get; }
 
         private readonly Random _randomGen = new Random();
 
@@ -20,9 +26,12 @@ namespace SysKit.ODG.SampleData
             FirstNames = createSampleCollection("firstName.csv");
             LastNames = createSampleCollection("lastName.csv");
             GroupNames = createSampleCollection("groupName.csv");
+            DepartmentNames = createSampleCollection("departmentName.csv");
+            CompanyNames = createSampleCollection("companyName.csv");
+            StreetAddresses = createAddressCollection("addresses.csv");
         }
 
-        public string GetRandomValue(IList<string> sampleCollection)
+        public T GetRandomValue<T>(IList<T> sampleCollection)
         {
             return sampleCollection[_randomGen.Next(sampleCollection.Count)];
         }
@@ -52,6 +61,24 @@ namespace SysKit.ODG.SampleData
 
             return $"{GetRandomValue(primaryCollection, ternaryCollection)} {GetRandomValue(secondaryCollection)}";
         }
+
+        public RandomValueWithComponents GetRandomValueWithComponents(IList<string> primaryCollection, IList<string> secondaryCollection)
+        {
+            var firstValue = GetRandomValue(primaryCollection);
+            var secondValue = GetRandomValue(secondaryCollection);
+
+            return new RandomValueWithComponents()
+            {
+                Components = new List<string>() { firstValue, secondValue },
+                RandomValue = $"{firstValue} {secondValue}"
+            };
+        }
+
+        public Address GetRandomAddress(IList<Address> addresses)
+        {
+            return GetRandomValue(addresses);
+        }
+
 
         #region Helpers
 
@@ -87,6 +114,22 @@ namespace SysKit.ODG.SampleData
             }
 
             return new ReadOnlyCollection<string>(listA);
+        }
+
+        private static ReadOnlyCollection<Address> createAddressCollection(string csvFileName)
+        {
+            var lines = createSampleCollection(csvFileName);
+            var addresses = lines.Select(line => line.Split(','))
+                .Select(addressParts => new Address()
+                {
+                    StreetAddress = addressParts[0],
+                    PostalCode = addressParts[2], // we skip the 1
+                    City = addressParts[3],
+                    State = addressParts[4],
+                    Country = addressParts[5]
+                }).ToList();
+
+            return new ReadOnlyCollection<Address>(addresses);
         }
 
         #endregion

@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Graph;
+using Newtonsoft.Json.Linq;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Interfaces.Authentication;
 using SysKit.ODG.Base.Interfaces.Office365Service;
@@ -16,7 +15,7 @@ using SysKit.ODG.Office365Service.GraphHttpProvider.Dto;
 
 namespace SysKit.ODG.Office365Service.GraphApiManagers
 {
-    public class UserGraphApiClient: BaseGraphApiClient, IUserGraphApiClient
+    public class UserGraphApiClient : BaseGraphApiClient, IUserGraphApiClient
     {
         private readonly INotifier _notifier;
         public UserGraphApiClient(IAccessTokenManager accessTokenManager,
@@ -77,8 +76,8 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 batchEntries.Add(new GraphBatchRequest(graphUser.UserPrincipalName, "users", HttpMethod.Post, graphUser));
             }
 
-            // there is a limit of around 5k users every 5-10min
-            var maxConcurrentRequests = batchEntries.Count > 4000 ? 2 : 6;
+            // there is a limit of around 4k users every 5-10min
+            var maxConcurrentRequests = batchEntries.Count > 2000 ? 2 : 6;
             await executeActionWithProgress(progressUpdater, batchEntries, maxConcurrentRequests: maxConcurrentRequests, onResult: (key, value) =>
             {
                 var originalUser = userLookup[key];
@@ -106,5 +105,33 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             return new O365CreationResult<UserEntry>(successfullyCreatedUsers, hadErrors);
         }
 
+        /// <inheritdoc />
+        public async Task<bool> CreateUserManagers(
+            List<ManagerSubordinatePair> managerSubordinatePairs)
+        {
+            using var progressUpdater = new ProgressUpdater("Assign Managers", _notifier);
+            var batchEntries = new List<GraphBatchRequest>();
+            var hadErrors = false;
+
+            foreach (var managerSubordinatePair in managerSubordinatePairs)
+            {
+                var managerProp = new JProperty("@odata.id", $"https://graph.microsoft.com/v1.0/users/{managerSubordinatePair.ManagerGuid}");
+                var body = new JObject { managerProp };
+
+                batchEntries.Add(new GraphBatchRequest(managerSubordinatePair.SubordinateGuid, $"/users/{managerSubordinatePair.SubordinateGuid}/manager/$ref", HttpMethod.Put, body.ToString()));
+            }
+            var maxConcurrentRequests = batchEntries.Count > 2000 ? 2 : 6;
+            await executeActionWithProgress(progressUpdater, batchEntries, maxConcurrentRequests: maxConcurrentRequests, onResult: (key, value) =>
+            {
+                if (!value.IsSuccessStatusCode)
+                {
+                    _notifier.Error($"Failed to create manager for: {key}. {getErrorMessage(value)}");
+                    hadErrors = true;
+                }
+            });
+
+            return hadErrors;
+
+        }
     }
 }
