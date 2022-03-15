@@ -18,5 +18,11 @@ namespace SysKit.ODG.Base.Office365
         /// <param name="number"></param>
         /// <returns></returns>
         IEnumerable<MemberEntry> GetRandomEntries(int number);
+
+        /// <summary>
+        /// Gets users and members for single group
+        /// </summary>
+        /// <returns></returns>
+        (List<MemberEntry> members, List<MemberEntry> owners) GetMembersAndOwners();
     }
 }

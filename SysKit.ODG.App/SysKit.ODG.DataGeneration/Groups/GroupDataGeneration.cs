@@ -112,7 +112,7 @@ namespace SysKit.ODG.Generation.Groups
 
             for (int i = 0; i < currentTeamChannels; i++)
             {
-                var isPrivateChannel = RandomThreadSafeGenerator.Next(0, 100) > 80 && numberOfPrivateChannels < maxNumberOfPrivateChannels;
+                var isPrivateChannel = RandomThreadSafeGenerator.Next(0, 100) < 3 && numberOfPrivateChannels < maxNumberOfPrivateChannels;
 
                 var tries = 0;
                 string channelName = null;
@@ -166,7 +166,7 @@ namespace SysKit.ODG.Generation.Groups
             IUserEntryCollection userEntryCollection, UnifiedGroupEntry sampleGroup)
         {
             populateSampleGroupProperties(sampleGroup, userEntryCollection, generationOptions.Template.RandomOptions);
-            sampleGroup.IsPrivate = RandomThreadSafeGenerator.Next(0, 100) > 70;
+            sampleGroup.IsPrivate = RandomThreadSafeGenerator.Next(0, 100) > 5;
 
             string originalGroupMailNick = Regex.Replace(sampleGroup.DisplayName.ToLower(), @"[^a-z0-9]", "");
             // sample values have entries that can produce null here
@@ -185,16 +185,9 @@ namespace SysKit.ODG.Generation.Groups
         private void populateSampleGroupProperties(GroupEntry groupEntry, IUserEntryCollection userEntryCollection, XmlRandomOptions generationOptions)
         {
             groupEntry.DisplayName = _sampleDataService.GetRandomValue(_sampleDataService.GroupNames);
-            var maxOwners = generationOptions.MaxNumberOfOwnersPerGroup <= 0
-                ? 3
-                : generationOptions.MaxNumberOfOwnersPerGroup;
-            var maxMembers = generationOptions.MaxNumberOfMembersPerGroup <= 0
-                ? 15
-                : generationOptions.MaxNumberOfOwnersPerGroup;
-            groupEntry.Owners = userEntryCollection.GetRandomEntries(RandomThreadSafeGenerator.Next(maxOwners))
-                .ToList();
-            groupEntry.Members = userEntryCollection.GetRandomEntries(RandomThreadSafeGenerator.Next(maxMembers))
-                .ToList();
+            var (members, owners) = userEntryCollection.GetMembersAndOwners();
+            groupEntry.Owners = owners;
+            groupEntry.Members = members;
         }
     }
 }
