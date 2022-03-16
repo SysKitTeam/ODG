@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Xml;
+﻿using System.Xml;
 using System.Xml.Serialization;
 
 namespace SysKit.ODG.Base.XmlTemplate.Model
@@ -19,9 +16,6 @@ namespace SysKit.ODG.Base.XmlTemplate.Model
         public int NumberOfTeams { get; set; }
 
         [XmlElement]
-        public int MaxNumberOfOwnersPerGroup { get; set; }
-
-        [XmlElement]
-        public int MaxNumberOfMembersPerGroup { get; set; }
+        public bool CreateDepartmentTeams { get; set; }
     }
 }

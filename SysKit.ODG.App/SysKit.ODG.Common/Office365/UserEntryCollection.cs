@@ -17,12 +17,14 @@ namespace SysKit.ODG.Base.Office365
         private readonly Dictionary<string, List<UserEntry>> _lookUpByDepartment;
         private readonly List<string> _departmentKeys;
         private int _currentDepartmentKeyIndex;
+        private int _numberOfDepartmentTeamsCreated;
 
         public UserEntryCollection(string tenantDomain, IEnumerable<UserEntry> userEntries)
         {
             _tenantDomain = tenantDomain;
             _userEntriesLookup = new Dictionary<string, UserEntry>(StringComparer.OrdinalIgnoreCase);
             _lookUpByDepartment = new Dictionary<string, List<UserEntry>>(StringComparer.OrdinalIgnoreCase);
+            _numberOfDepartmentTeamsCreated = 0;
 
             foreach (var userEntry in userEntries.Where(userEntry => !string.IsNullOrEmpty(userEntry.UserPrincipalName)))
             {
@@ -94,16 +96,18 @@ namespace SysKit.ODG.Base.Office365
         }
 
         /// <inheritdoc />
-        public (List<MemberEntry> members, List<MemberEntry> owners) GetMembersAndOwners()
+        public (List<MemberEntry> members, List<MemberEntry> owners) GetMembersAndOwners(bool createDepartmentTeams)
         {
             var department = getNextDepartmentKey();
+            if (createDepartmentTeams && !AreAllDepartmentTeamsCreated)
+            {
+                return getMembersAndOwnersForDepartmentTeam(department);
+            }
             var members = _lookUpByDepartment[department].GetRandom(RandomThreadSafeGenerator.Next(3, 20)).ToList();
-            var potentialOwners = members.Where(m => m.JobTitle.Contains("Lead") || m.JobTitle.Contains("Head")).ToList();
+            var potentialOwners = members.Where(m => m.JobTitle.Contains("Lead") || m.JobTitle.Contains("Head"));
             var desiredNumberOfOwners = getDesiredNumberOfOwners();
             var owners = new List<UserEntry>();
-            owners.AddRange(potentialOwners.Count >= desiredNumberOfOwners
-                ? potentialOwners.Take(desiredNumberOfOwners)
-                : potentialOwners);
+            owners.AddRange(potentialOwners.Take(desiredNumberOfOwners));
 
             foreach (var member in members)
             {
@@ -124,6 +128,22 @@ namespace SysKit.ODG.Base.Office365
                 members.Select(m => new MemberEntry(m.UserPrincipalName)).ToList(),
                 owners.Select(o => new MemberEntry(o.UserPrincipalName)).ToList()
                 );
+        }
+
+        private bool AreAllDepartmentTeamsCreated => _numberOfDepartmentTeamsCreated >= (_departmentKeys.Count - 1); // We don't count the "default" department
+
+        private (List<MemberEntry> members, List<MemberEntry> owners) getMembersAndOwnersForDepartmentTeam(string departmentKey)
+        {
+            _numberOfDepartmentTeamsCreated++;
+            var members = _lookUpByDepartment[departmentKey];
+            var owners = new List<UserEntry>();
+            owners.AddRange(members.Where(m => m.JobTitle.Contains("Head")));
+            owners.AddRange(members.Where(m => m.JobTitle.Contains("Lead") && m.JobTitle.Contains("Level 1")));
+
+            return (
+                members.Take(24000).Select(m => new MemberEntry(m.UserPrincipalName)).ToList(),
+                owners.Take(5).Select(o => new MemberEntry(o.UserPrincipalName)).ToList()
+            );
         }
 
         private List<UserEntry> getUsersOutsideDepartment(string department, int numberOfUsers)

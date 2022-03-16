@@ -185,7 +185,7 @@ namespace SysKit.ODG.Generation.Groups
         private void populateSampleGroupProperties(GroupEntry groupEntry, IUserEntryCollection userEntryCollection, XmlRandomOptions generationOptions)
         {
             groupEntry.DisplayName = _sampleDataService.GetRandomValue(_sampleDataService.GroupNames);
-            var (members, owners) = userEntryCollection.GetMembersAndOwners();
+            var (members, owners) = userEntryCollection.GetMembersAndOwners(generationOptions.CreateDepartmentTeams);
             groupEntry.Owners = owners;
             groupEntry.Members = members;
         }
