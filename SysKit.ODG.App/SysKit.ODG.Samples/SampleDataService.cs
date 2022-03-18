@@ -18,6 +18,8 @@ namespace SysKit.ODG.SampleData
         public ReadOnlyCollection<string> DepartmentNames { get; }
         public ReadOnlyCollection<string> CompanyNames { get; }
         public ReadOnlyCollection<Address> StreetAddresses { get; }
+        public ReadOnlyCollection<string> GroupNamesPart1 { get; }
+        public ReadOnlyCollection<string> GroupNamesPart2 { get; }
 
         private readonly Random _randomGen = new Random();
 
@@ -29,6 +31,8 @@ namespace SysKit.ODG.SampleData
             DepartmentNames = createSampleCollection("departmentName.csv");
             CompanyNames = createSampleCollection("companyName.csv");
             StreetAddresses = createAddressCollection("addresses.csv");
+            GroupNamesPart1 = createSampleCollection("groupNamePart1.csv");
+            GroupNamesPart2 = createSampleCollection("groupNamePart2.csv");
         }
 
         public T GetRandomValue<T>(IList<T> sampleCollection)
@@ -36,17 +40,17 @@ namespace SysKit.ODG.SampleData
             return sampleCollection[_randomGen.Next(sampleCollection.Count)];
         }
 
-        public string GetRandomValue(IList<string> primaryCollection, IList<string> secondaryCollection)
+        public string GetRandomValue(IList<string> primaryCollection, IList<string> secondaryCollection, bool allowPermutations = true)
         {
             var firstValue = GetRandomValue(primaryCollection);
             var secondValue = GetRandomValue(secondaryCollection);
 
-            if (DateTime.Now.Ticks % 2 == 0)
+            if (allowPermutations && DateTime.Now.Ticks % 2 == 0)
             {
-                return $"{firstValue} {secondValue}";
+                return $"{secondValue} {firstValue}";
             }
 
-            return $"{secondValue} {firstValue}";
+            return $"{firstValue} {secondValue}";
         }
 
         public string GetRandomValue(IList<string> primaryCollection, IList<string> secondaryCollection, IList<string> ternaryCollection)

@@ -13,9 +13,11 @@ namespace SysKit.ODG.Base.Interfaces.SampleData
         ReadOnlyCollection<string> DepartmentNames { get; }
         ReadOnlyCollection<string> CompanyNames { get; }
         ReadOnlyCollection<Address> StreetAddresses { get; }
+        ReadOnlyCollection<string> GroupNamesPart1 { get; }
+        ReadOnlyCollection<string> GroupNamesPart2 { get; }
 
         T GetRandomValue<T>(IList<T> sampleCollection);
-        string GetRandomValue(IList<string> primaryCollection, IList<string> secondaryCollection);
+        string GetRandomValue(IList<string> primaryCollection, IList<string> secondaryCollection, bool allowPermutations = true);
         string GetRandomValue(IList<string> primaryCollection, IList<string> secondaryCollection, IList<string> ternaryCollection);
 
         RandomValueWithComponents GetRandomValueWithComponents(IList<string> primaryCollection, IList<string> secondaryCollection);
