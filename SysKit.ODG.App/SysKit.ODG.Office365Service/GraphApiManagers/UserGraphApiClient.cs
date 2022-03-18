@@ -30,7 +30,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         /// <inheritdoc />
         public async Task<UserEntryCollection> GetAllTenantUsers(string tenantDomain)
         {
-            var userRequest = _graphServiceClient.Users.Request().Select(u => new { u.Id, u.UserPrincipalName, u.CompanyName, u.Department, u.JobTitle }).Top(999);
+            var userRequest = _graphServiceClient.Users.Request().Select(u => new { u.Id, u.UserPrincipalName, u.CompanyName, u.Department, u.JobTitle, u.AccountEnabled }).Top(999);
             var userEntries = new List<UserEntry>();
 
             do

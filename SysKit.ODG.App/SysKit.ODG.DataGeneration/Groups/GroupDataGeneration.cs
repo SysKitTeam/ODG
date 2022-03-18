@@ -144,8 +144,14 @@ namespace SysKit.ODG.Generation.Groups
                 if (channelEntry.IsPrivate)
                 {
                     // for testing purposes I want both channel owners and members to be from group members
-                    channelEntry.Owners = sampleTeam.Members.GetRandom(RandomThreadSafeGenerator.Next(1, 3)).ToList();
-                    channelEntry.Members = sampleTeam.Members.GetRandom(RandomThreadSafeGenerator.Next(5)).ToList();
+                    var memberPool = sampleTeam.Members
+                        .Where(m =>
+                        {
+                            var user = userEntryCollection.FindMember(m);
+                            return user.AccountEnabled == true;
+                        }).ToList();
+                    channelEntry.Owners = memberPool.GetRandom(RandomThreadSafeGenerator.Next(1, 3)).ToList();
+                    channelEntry.Members = memberPool.GetRandom(RandomThreadSafeGenerator.Next(5)).ToList();
                     numberOfPrivateChannels++;
                 }
 
