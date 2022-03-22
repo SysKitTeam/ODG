@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace SysKit.ODG.Base.DTO.Generation
 {
@@ -11,6 +9,7 @@ namespace SysKit.ODG.Base.DTO.Generation
 
         public List<MemberEntry> Owners { get; set; }
         public List<MemberEntry> Members { get; set; }
+        public string Template { get; set; }
 
     }
 }

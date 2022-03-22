@@ -18,6 +18,24 @@ namespace SysKit.ODG.Base.Office365
         private readonly List<string> _departmentKeys;
         private int _currentDepartmentKeyIndex;
         private int _numberOfDepartmentTeamsCreated;
+        private int _temaplateIndex;
+        private static readonly List<string> _teamTemplates = new List<string>()
+        {
+            "com.microsoft.teams.template.ManageAProject",
+            "com.microsoft.teams.template.ManageAnEvent",
+            "com.microsoft.teams.template.OnboardEmployees",
+            "com.microsoft.teams.template.AdoptOffice365",
+            "com.microsoft.teams.template.OrganizeHelpDesk",
+            "com.microsoft.teams.template.CoordinateIncidentResponse",
+            "com.microsoft.teams.template.CollaborateOnAGlobalCrisisOrEvent",
+            "retailStore",
+            "com.microsoft.teams.template.CollaborateWithinABankBranch",
+            "healthcareWard",
+            "healthcareHospital",
+            "com.microsoft.teams.template.QualitySafety",
+            "retailManagerCollaboration",
+            "com.microsoft.teams.template.ManageVolunteers"
+        };
 
         public UserEntryCollection(string tenantDomain, IEnumerable<UserEntry> userEntries)
         {
@@ -41,12 +59,13 @@ namespace SysKit.ODG.Base.Office365
 
             _departmentKeys = _lookUpByDepartment.Keys.ToList();
             _currentDepartmentKeyIndex = 0;
+            _temaplateIndex = 0;
 
         }
 
         private static string getDepartmentKey(UserEntry userEntry)
         {
-            return !string.IsNullOrEmpty(userEntry.CompanyName) && !string.IsNullOrEmpty(userEntry.Department) ? $"{userEntry.CompanyName}-{userEntry.Department}" : "default";
+            return !string.IsNullOrEmpty(userEntry.CompanyName) && !string.IsNullOrEmpty(userEntry.Department) ? $"{userEntry.CompanyName} - {userEntry.Department}" : "default";
         }
 
         /// <inheritdoc />
@@ -96,7 +115,7 @@ namespace SysKit.ODG.Base.Office365
         }
 
         /// <inheritdoc />
-        public (List<MemberEntry> members, List<MemberEntry> owners) GetMembersAndOwners(bool createDepartmentTeams)
+        public MemberAndOwnerGenerationResult GetMembersAndOwners(bool createDepartmentTeams)
         {
             var department = getNextDepartmentKey();
             if (createDepartmentTeams && !AreAllDepartmentTeamsCreated)
@@ -124,15 +143,19 @@ namespace SysKit.ODG.Base.Office365
 
             members.AddRange(getUsersOutsideDepartment(department, RandomThreadSafeGenerator.Next(3, 10)));
 
-            return (
-                members.Select(m => new MemberEntry(m.UserPrincipalName)).ToList(),
-                owners.Select(o => new MemberEntry(o.UserPrincipalName)).ToList()
-                );
+            return new MemberAndOwnerGenerationResult()
+            {
+                Members = members.Select(m => new MemberEntry(m.UserPrincipalName)).ToList(),
+                Owners = owners.Select(o => new MemberEntry(o.UserPrincipalName)).ToList(),
+                IsDepartmentTeam = false,
+                DepartmentTeamName = department,
+                Template = getNextTeamTemplate()
+            };
         }
 
         private bool AreAllDepartmentTeamsCreated => _numberOfDepartmentTeamsCreated >= (_departmentKeys.Count - 1); // We don't count the "default" department
 
-        private (List<MemberEntry> members, List<MemberEntry> owners) getMembersAndOwnersForDepartmentTeam(string departmentKey)
+        private MemberAndOwnerGenerationResult getMembersAndOwnersForDepartmentTeam(string departmentKey)
         {
             _numberOfDepartmentTeamsCreated++;
             var members = _lookUpByDepartment[departmentKey];
@@ -140,10 +163,14 @@ namespace SysKit.ODG.Base.Office365
             owners.AddRange(members.Where(m => m.JobTitle.Contains("Head")));
             owners.AddRange(members.Where(m => m.JobTitle.Contains("Lead") && m.JobTitle.Contains("Level 1")));
 
-            return (
-                members.Take(24000).Select(m => new MemberEntry(m.UserPrincipalName)).ToList(),
-                owners.Take(5).Select(o => new MemberEntry(o.UserPrincipalName)).ToList()
-            );
+            return new MemberAndOwnerGenerationResult()
+            {
+                Members = members.Take(24000).Select(m => new MemberEntry(m.UserPrincipalName)).ToList(),
+                Owners = owners.Take(5).Select(o => new MemberEntry(o.UserPrincipalName)).ToList(),
+                IsDepartmentTeam = true,
+                DepartmentTeamName = departmentKey,
+                Template = getNextTeamTemplate()
+            };
         }
 
         private List<UserEntry> getUsersOutsideDepartment(string department, int numberOfUsers)
@@ -191,6 +218,13 @@ namespace SysKit.ODG.Base.Office365
             _currentDepartmentKeyIndex = (_currentDepartmentKeyIndex + 1) % _departmentKeys.Count;
 
             return departmentKey;
+        }
+
+        private string getNextTeamTemplate()
+        {
+            var template = _teamTemplates[_temaplateIndex];
+            _temaplateIndex = (_temaplateIndex + 1) % _teamTemplates.Count;
+            return template;
         }
     }
 }

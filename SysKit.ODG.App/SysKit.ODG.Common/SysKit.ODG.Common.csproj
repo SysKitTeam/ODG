@@ -122,6 +122,7 @@
     <Compile Include="Notifier\ProgressUpdater.cs" />
     <Compile Include="Office365\CreatedGroupsResult.cs" />
     <Compile Include="Office365\IUserEntryCollection.cs" />
+    <Compile Include="Office365\MemberAndOwnerGenerationResult.cs" />
     <Compile Include="Office365\O365CreationResult.cs" />
     <Compile Include="Office365\UserEntryCollection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
