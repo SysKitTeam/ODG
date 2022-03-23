@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.DTO.Generation.Results;
 using SysKit.ODG.Base.Interfaces.Generation;
@@ -36,55 +38,83 @@ namespace SysKit.ODG.Generation.Groups
                 return null;
             }
 
-            var createdGroups = await groupGraphApiClient.CreateUnifiedGroups(groups, users);
-            var createdTeams = await groupGraphApiClient.CreateTeamsFromGroups(createdGroups.TeamsToCreate, users);
-            var channelsCreated = await groupGraphApiClient.CreatePrivateTeamChannels(createdTeams.CreatedEntries, users);
+            var totalGroupsCreated = 0;
+            var totalTeamsCreated = 0;
+            var totalChannelsCreatedOk = true;
+            var totalOwnersRemovedOk = true;
+            var allCreatedGroups = new List<UnifiedGroupEntry>();
+            var hadGroupErrors = false;
+            var hadTeamsErrors = false;
 
-            using (var progress = new ProgressUpdater("Populate Group Content", notifier))
+            var batchSize = 10;
+            var page = 0;
+
+            while (true)
             {
-                progress.SetTotalCount(createdGroups.CreatedGroups.Count);
-                foreach (var group in createdGroups.CreatedGroups)
+                var groupBatch = groups.Skip(batchSize * page).Take(batchSize).ToList();
+                page++;
+                if (!groupBatch.Any())
                 {
-                    try
-                    {
-                        if (group.ProvisionFailed)
-                        {
-                            notifier.Error($"Failed to create content for {group.DisplayName} because group didn't provision");
-                            continue;
-                        }
+                    break;
+                }
+                var createdGroups = await groupGraphApiClient.CreateUnifiedGroups(groupBatch, users);
+                totalGroupsCreated += createdGroups.CreatedGroups.Count;
+                allCreatedGroups.AddRange(createdGroups.CreatedGroups);
+                hadGroupErrors = hadGroupErrors || createdGroups.HasErrors;
 
-                        group.SiteGuid = await sharePointService.GetSiteCollectionGuid(group.SiteUrl);
-                        await sharePointService.EnableAnonymousSharing(group.Url);
-                        await sharePointService.SetMembershipOfDefaultSharePointGroups(group);
-                        await sharePointService.CreateSharePointStructure(group);
-                    }
-                    catch (Exception ex)
+                var createdTeams = await groupGraphApiClient.CreateTeamsFromGroups(createdGroups.TeamsToCreate, users);
+                totalTeamsCreated += createdTeams.CreatedEntries.Count();
+                hadTeamsErrors = hadGroupErrors || createdTeams.HadErrors;
+                var channelsCreated = await groupGraphApiClient.CreatePrivateTeamChannels(createdTeams.CreatedEntries, users);
+                totalChannelsCreatedOk = totalChannelsCreatedOk && channelsCreated;
+
+                using (var progress = new ProgressUpdater("Populate Group Content", notifier))
+                {
+                    progress.SetTotalCount(createdGroups.CreatedGroups.Count);
+                    foreach (var group in createdGroups.CreatedGroups)
                     {
-                        notifier.Error($"Failed to create content for {group.DisplayName}", ex);
-                        createdGroups.HasErrors = true;
-                    }
-                    finally
-                    {
-                        progress.UpdateProgress(1);
+                        try
+                        {
+                            if (group.ProvisionFailed)
+                            {
+                                notifier.Error($"Failed to create content for {group.DisplayName} because group didn't provision");
+                                continue;
+                            }
+
+                            group.SiteGuid = await sharePointService.GetSiteCollectionGuid(group.SiteUrl);
+                            await sharePointService.EnableAnonymousSharing(group.Url);
+                            await sharePointService.SetMembershipOfDefaultSharePointGroups(group);
+                            await sharePointService.CreateSharePointStructure(group);
+                        }
+                        catch (Exception ex)
+                        {
+                            notifier.Error($"Failed to create content for {group.DisplayName}", ex);
+                            createdGroups.HasErrors = true;
+                        }
+                        finally
+                        {
+                            progress.UpdateProgress(1);
+                        }
                     }
                 }
-            }
 
-            // we needed to add ourselfs to owners so we can create teams
-            var groupsToRemoveOwners = createdGroups.GroupsWithAddedOwners;
-            var ownersRemovedOk = true;
-            if (groupsToRemoveOwners.Any())
-            {
-                // just in case, if there is some provisioning (public channels behaved strangely(don't get created))
-                await Task.Delay(TimeSpan.FromSeconds(10));
-                ownersRemovedOk = await groupGraphApiClient.RemoveGroupOwners(createdGroups.GroupsWithAddedOwners);
+                // we needed to add ourselfs to owners so we can create teams
+                var groupsToRemoveOwners = createdGroups.GroupsWithAddedOwners;
+                var ownersRemovedOk = true;
+                if (groupsToRemoveOwners.Any())
+                {
+                    // just in case, if there is some provisioning (public channels behaved strangely(don't get created))
+                    await Task.Delay(TimeSpan.FromSeconds(10));
+                    ownersRemovedOk = await groupGraphApiClient.RemoveGroupOwners(createdGroups.GroupsWithAddedOwners);
+                }
+                totalOwnersRemovedOk = totalOwnersRemovedOk && ownersRemovedOk;
+                notifier.Info($"Batch: Created Office365 groups: {createdGroups.CreatedGroups.Count}; Created Teams: {createdTeams.CreatedEntries.Count()}; Channels created ok: {channelsCreated}; Owners removed ok: {ownersRemovedOk}");
+                notifier.Info($"Total: Created Office365 groups: {totalGroupsCreated}; Created Teams: {totalTeamsCreated}; Channels created ok: {totalChannelsCreatedOk}; Owners removed ok: {totalOwnersRemovedOk}");
             }
-
-            notifier.Info($"Created Office365 groups: {createdGroups.CreatedGroups.Count}; Created Teams: {createdTeams.CreatedEntries.Count()}; Channels created ok: {channelsCreated}; Owners removed ok: {ownersRemovedOk}");
 
             // lts say channel errors are ok for now
-            var hadErrors = createdGroups.HasErrors && createdTeams.HadErrors && !ownersRemovedOk;
-            return new GroupGenerationTaskResult(createdGroups.CreatedGroups, hadErrors);
+            var hadErrors = hadGroupErrors && hadTeamsErrors && !totalOwnersRemovedOk;
+            return new GroupGenerationTaskResult(allCreatedGroups, hadErrors);
         }
     }
 }
