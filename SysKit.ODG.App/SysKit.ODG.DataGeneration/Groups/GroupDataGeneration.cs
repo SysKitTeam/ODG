@@ -151,7 +151,6 @@ namespace SysKit.ODG.Generation.Groups
                     }).ToList();
                 channelEntry.Owners = memberPool.GetRandom(RandomThreadSafeGenerator.Next(1, 3)).ToList();
                 channelEntry.Members = memberPool.GetRandom(RandomThreadSafeGenerator.Next(5)).ToList();
-                numberOfPrivateChannels++;
 
                 sampleTeam.Channels.Add(channelEntry);
             }
