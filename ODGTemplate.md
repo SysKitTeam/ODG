@@ -31,8 +31,7 @@ Represents the root element for generating random Office 365 data. Data is popul
     <NumberOfUsers />
     <NumberOfUnifiedGroups />
     <NumberOfTeams />
-    <MaxNumberOfOwnersPerGroup />
-    <MaxNumberOfMembersPerGroup />
+    <CreateDepartmentTeams />
   </RandomOptions>
 
 ```
@@ -44,8 +43,7 @@ Element|Type|Description|Optional
 NumberOfUsers|xs:int|Number of users that will be generated|Yes
 NumberOfUnifiedGroups|xs:int|Number of Office 365 groups that will be generated|Yes
 NumberOfTeams|xs:int|Number of Microsoft Teams that will be generated|Yes
-MaxNumberOfOwnersPerGroup|xs:int|Maximum number of owners per generated Office 365 Group or Microsoft Team. If element is not specified, default value will be used (3)|Yes
-MaxNumberOfMembersPerGroup|xs:int|Maximum number of members per generated Office 365 Group or Microsoft Team. If element is not specified, default value will be used (15)|Yes
+CreateDepartmentTeams|xs:boolean|Should teams with all the users from a department be created|Yes
 
 ` Important:  If you don't specify NumberOfUsers/NumberOfUnifiedGroups/NumberOfTeams, those types of objects won't be created. `
 
