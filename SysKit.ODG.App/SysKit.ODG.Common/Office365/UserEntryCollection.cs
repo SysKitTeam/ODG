@@ -177,9 +177,11 @@ namespace SysKit.ODG.Base.Office365
         {
             var values = _userEntriesLookup.Values.ToList();
             var usersOutsideDepartment = new List<UserEntry>();
+            var tryCounter = 50;
 
-            while (usersOutsideDepartment.Count < numberOfUsers)
+            while (tryCounter > 0 && usersOutsideDepartment.Count < numberOfUsers)
             {
+                tryCounter--;
                 var user = values[RandomThreadSafeGenerator.Next(values.Count)];
                 if (string.Compare(getDepartmentKey(user), department, StringComparison.OrdinalIgnoreCase) != 0 && !usersOutsideDepartment.Contains(user))
                 {
