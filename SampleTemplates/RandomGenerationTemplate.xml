@@ -4,7 +4,6 @@
     <NumberOfUsers>5000</NumberOfUsers>
     <NumberOfUnifiedGroups>1000</NumberOfUnifiedGroups>
     <NumberOfTeams>100</NumberOfTeams>
-    <MaxNumberOfOwnersPerGroup>5</MaxNumberOfOwnersPerGroup>
-    <MaxNumberOfMembersPerGroup>14</MaxNumberOfMembersPerGroup>
+    <CreateDepartmentTeams>false</CreateDepartmentTeams>
   </RandomOptions>
 </ODGTemplate>

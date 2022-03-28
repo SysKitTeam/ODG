@@ -102,18 +102,18 @@ namespace SysKit.ODG.Generation.Groups
         {
             var sampleTeam = new TeamEntry();
             populateSampleUnifiedGroupProperties(generationOptions, userEntryCollection, sampleTeam);
-            var maxChannels = 10;
-            // TODO: there is some limit on the Graph API endpoint where it starts falling if we try to add more than 2 private channels at once. Try to add retry logic
-            var maxNumberOfPrivateChannels = 2;
-            var numberOfPrivateChannels = 0;
-            var currentTeamChannels = RandomThreadSafeGenerator.Next(maxChannels);
+
             // there can be no duplicate channel names
             var channelNames = new HashSet<string>();
+            var doesTeamHaveAPrivateChannel = RandomThreadSafeGenerator.Next(0, 100) < 5;
+            // TODO: there is some limit on the Graph API endpoint where it starts falling if we try to add more than 2 private channels at once. Try to add retry logic
+            var numberOfPrivateChannels = doesTeamHaveAPrivateChannel
+                ? (RandomThreadSafeGenerator.Next(0, 100) < 20 ? 1 : 2)
+                : 0;
 
-            for (int i = 0; i < currentTeamChannels; i++)
+            // We only create private channels because standard channels come from templates
+            for (var i = 0; i < numberOfPrivateChannels; i++)
             {
-                var isPrivateChannel = RandomThreadSafeGenerator.Next(0, 100) > 80 && numberOfPrivateChannels < maxNumberOfPrivateChannels;
-
                 var tries = 0;
                 string channelName = null;
 
@@ -121,7 +121,8 @@ namespace SysKit.ODG.Generation.Groups
                 {
                     // 50 is max
                     var maxChannelName = 49;
-                    var cleanChannelName = Regex.Replace(_sampleDataService.GetRandomValue(_sampleDataService.GroupNames), @"[^a-zA-Z0-9]", "");
+                    var cleanChannelName = _sampleDataService.GetRandomValue(_sampleDataService.GroupNamesPart1,
+                        _sampleDataService.GroupNamesPart2, false);
                     cleanChannelName = cleanChannelName.Length <= maxChannelName ? cleanChannelName : cleanChannelName.Substring(0, maxChannelName);
 
                     if (!channelNames.Contains(cleanChannelName))
@@ -139,15 +140,17 @@ namespace SysKit.ODG.Generation.Groups
                     throw new ArgumentException("Failed to create random channelName");
                 }
 
-                var channelEntry = new TeamChannelEntry(channelName, isPrivateChannel);
+                var channelEntry = new TeamChannelEntry(channelName, true);
 
-                if (channelEntry.IsPrivate)
-                {
-                    // for testing purposes I want both channel owners and members to be from group members
-                    channelEntry.Owners = sampleTeam.Members.GetRandom(RandomThreadSafeGenerator.Next(1, 3)).ToList();
-                    channelEntry.Members = sampleTeam.Members.GetRandom(RandomThreadSafeGenerator.Next(5)).ToList();
-                    numberOfPrivateChannels++;
-                }
+                // for testing purposes I want both channel owners and members to be from group members
+                var memberPool = sampleTeam.Members
+                    .Where(m =>
+                    {
+                        var user = userEntryCollection.FindMember(m);
+                        return user.AccountEnabled == true;
+                    }).ToList();
+                channelEntry.Owners = memberPool.GetRandom(RandomThreadSafeGenerator.Next(1, 3)).ToList();
+                channelEntry.Members = memberPool.GetRandom(RandomThreadSafeGenerator.Next(5)).ToList();
 
                 sampleTeam.Channels.Add(channelEntry);
             }
@@ -166,7 +169,7 @@ namespace SysKit.ODG.Generation.Groups
             IUserEntryCollection userEntryCollection, UnifiedGroupEntry sampleGroup)
         {
             populateSampleGroupProperties(sampleGroup, userEntryCollection, generationOptions.Template.RandomOptions);
-            sampleGroup.IsPrivate = RandomThreadSafeGenerator.Next(0, 100) > 70;
+            sampleGroup.IsPrivate = RandomThreadSafeGenerator.Next(0, 100) > 5;
 
             string originalGroupMailNick = Regex.Replace(sampleGroup.DisplayName.ToLower(), @"[^a-z0-9]", "");
             // sample values have entries that can produce null here
@@ -184,17 +187,14 @@ namespace SysKit.ODG.Generation.Groups
 
         private void populateSampleGroupProperties(GroupEntry groupEntry, IUserEntryCollection userEntryCollection, XmlRandomOptions generationOptions)
         {
-            groupEntry.DisplayName = _sampleDataService.GetRandomValue(_sampleDataService.GroupNames);
-            var maxOwners = generationOptions.MaxNumberOfOwnersPerGroup <= 0
-                ? 3
-                : generationOptions.MaxNumberOfOwnersPerGroup;
-            var maxMembers = generationOptions.MaxNumberOfMembersPerGroup <= 0
-                ? 15
-                : generationOptions.MaxNumberOfOwnersPerGroup;
-            groupEntry.Owners = userEntryCollection.GetRandomEntries(RandomThreadSafeGenerator.Next(maxOwners))
-                .ToList();
-            groupEntry.Members = userEntryCollection.GetRandomEntries(RandomThreadSafeGenerator.Next(maxMembers))
-                .ToList();
+
+            var memberAndOwnerGenerationResult = userEntryCollection.GetMembersAndOwners(generationOptions.CreateDepartmentTeams);
+            groupEntry.DisplayName = memberAndOwnerGenerationResult.IsDepartmentTeam
+                ? memberAndOwnerGenerationResult.DepartmentTeamName
+                : _sampleDataService.GetRandomValue(_sampleDataService.GroupNamesPart1, _sampleDataService.GroupNamesPart2, false);
+            groupEntry.Owners = memberAndOwnerGenerationResult.Owners;
+            groupEntry.Members = memberAndOwnerGenerationResult.Members;
+            groupEntry.Template = memberAndOwnerGenerationResult.Template;
         }
     }
 }

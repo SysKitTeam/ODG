@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Graph;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using OfficeDevPnP.Core.Framework.Graph;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Exceptions;
@@ -132,7 +133,18 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     if (createdTeam.IsSuccessStatusCode)
                     {
                         // wait for team to provision
-                        return await waitForTeamProvisioning(newTeam.GroupId);
+                        var teamProvisioned = await waitForTeamProvisioning(newTeam.GroupId);
+
+                        // wait until memberships are provisioned, otherwise we can't create private channels later
+                        if (newTeam.Channels.Any(c => c.IsPrivate))
+                        {
+                            var expectedMembers = newTeam.Members.Select(users.FindMember).Where(m => m.AccountEnabled == true).Select(m => m.Id);
+                            var expectedOwners = newTeam.Owners.Select(users.FindMember).Where(m => m.AccountEnabled == true).Select(m => m.Id);
+                            var expectedMembersCount = expectedMembers.Concat(expectedOwners).Distinct().Count();
+                            await waitForTeamMembershipsProvisioning(newTeam.GroupId, expectedMembersCount);
+                        }
+
+                        return teamProvisioned;
                     }
 
                     if (!isKnownError(HttpStatusCode.NotFound, createdTeam) && !isKnownError(HttpStatusCode.BadGateway, createdTeam))
@@ -321,7 +333,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             var waitPeriod = 15;
             if (retryAttempt > _maxProvisioningAttempts)
             {
-                _notifier.Warning($"Failed to provision team fro group: {groupId}");
+                _notifier.Warning($"Failed to provision team from group: {groupId}");
                 return false;
             }
 
@@ -343,6 +355,39 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             }
 
             return await waitForTeamProvisioning(groupId, retryAttempt + 1);
+        }
+
+        private async Task<bool> waitForTeamMembershipsProvisioning(string groupId, int expectedMemberCount, int retryAttempt = 0)
+        {
+            var waitPeriod = 15;
+            if (retryAttempt > _maxProvisioningAttempts)
+            {
+                _notifier.Warning($"Team membership provisioning timeout exceeded for group: {groupId}");
+                return false;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(waitPeriod * retryAttempt));
+
+            try
+            {
+                var requestUrl = HttpUtils.CreateGraphUrl($"teams/{groupId}/members", true);
+                var teamProvisioned = await _httpProvider.SendAsync(await HttpUtils.CreateRequest(requestUrl, HttpMethod.Get, _accessTokenManager));
+                if (teamProvisioned.IsSuccessStatusCode)
+                {
+                    var content = await teamProvisioned.Content.ReadAsStringAsync();
+                    var obj = JObject.Parse(content);
+                    if (int.TryParse(obj["@odata.count"].ToString(), out var membershipCount) && membershipCount >= expectedMemberCount)
+                    {
+                        return true;
+                    };
+                }
+            }
+            catch
+            {
+                // do nothing
+            }
+
+            return await waitForTeamMembershipsProvisioning(groupId, expectedMemberCount, retryAttempt + 1);
         }
 
         /// <summary>
@@ -475,7 +520,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             }
 
             teamLookup.Add(team.MailNickname, team);
-            var graphTeam = new TeamExtended(team.GroupId);
+            var graphTeam = new TeamExtended(team.GroupId, team.Template);
 
             if (team?.Channels.Any() == true)
             {
@@ -651,11 +696,12 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             public string GroupBind { get; }
 
             [JsonProperty("template@odata.bind", NullValueHandling = NullValueHandling.Ignore)]
-            public string TemplateBind => "https://graph.microsoft.com/beta/teamsTemplates('standard')";
+            public string TemplateBind { get; }
 
-            public TeamExtended(string groupId)
+            public TeamExtended(string groupId, string template)
             {
                 GroupBind = $"https://graph.microsoft.com/v1.0/groups('{groupId}')";
+                TemplateBind = $"https://graph.microsoft.com/beta/teamsTemplates('{template}')";
             }
         }
 
