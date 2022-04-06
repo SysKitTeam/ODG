@@ -12,6 +12,7 @@ using Microsoft.Graph;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OfficeDevPnP.Core.Framework.Graph;
+using SysKit.ODG.Base.DTO;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.Exceptions;
 using SysKit.ODG.Base.Interfaces.Authentication;
@@ -135,15 +136,6 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                         // wait for team to provision
                         var teamProvisioned = await waitForTeamProvisioning(newTeam.GroupId);
 
-                        // wait until memberships are provisioned, otherwise we can't create private channels later
-                        if (newTeam.Channels.Any(c => c.IsPrivate))
-                        {
-                            var expectedMembers = newTeam.Members.Select(users.FindMember).Where(m => m.AccountEnabled == true).Select(m => m.Id);
-                            var expectedOwners = newTeam.Owners.Select(users.FindMember).Where(m => m.AccountEnabled == true).Select(m => m.Id);
-                            var expectedMembersCount = expectedMembers.Concat(expectedOwners).Distinct().Count();
-                            await waitForTeamMembershipsProvisioning(newTeam.GroupId, expectedMembersCount);
-                        }
-
                         return teamProvisioned;
                     }
 
@@ -181,35 +173,29 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         }
 
         /// <inheritdoc />
-        public async Task<bool> CreatePrivateTeamChannels(IEnumerable<TeamEntry> teams, UserEntryCollection users)
+        public async Task<bool> CreatePrivateTeamChannels(IEnumerable<PrivateTeamChannelCreationOptions> channels)
         {
             using var progressUpdater = new ProgressUpdater("Create Private Channels", _notifier);
             var batchEntries = new List<GraphBatchRequest>();
-            var channelLookup = new Dictionary<string, TeamChannelEntry>();
-            var failedChannels = new ConcurrentBag<TeamChannelEntry>();
+            var channelLookup = new Dictionary<string, PrivateTeamChannelCreationOptions>();
+            var failedChannels = new ConcurrentBag<PrivateTeamChannelCreationOptions>();
 
             var i = 0;
-            foreach (var team in teams)
-            {
-                if (team?.Channels?.Any() != true)
-                {
-                    continue;
-                }
 
-                foreach (var teamChannelEntry in team.Channels.Where(c => c.IsPrivate))
+            foreach (var channel in channels)
+            {
+
+                try
                 {
-                    try
-                    {
-                        var graphChannel = createGraphChannel(users, teamChannelEntry);
-                        var requestKey = $"{++i}/{team.GroupId}";
-                        channelLookup.Add(requestKey, teamChannelEntry);
-                        batchEntries.Add(new GraphBatchRequest(requestKey, $"teams/{team.GroupId}/channels",
-                            HttpMethod.Post, graphChannel));
-                    }
-                    catch (Exception ex)
-                    {
-                        _notifier.Error(ex.Message);
-                    }
+                    var graphChannel = createPrivateGraphChannel(channel.MemberIds, channel.OwnerIds, channel.ChannelName);
+                    var requestKey = $"{++i}/{channel.GroupId}";
+                    channelLookup.Add(requestKey, channel);
+                    batchEntries.Add(new GraphBatchRequest(requestKey, $"teams/{channel.GroupId}/channels",
+                        HttpMethod.Post, graphChannel));
+                }
+                catch (Exception ex)
+                {
+                    _notifier.Error(ex.Message);
                 }
             }
 
@@ -219,12 +205,56 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                 var teamId = key.Split('/')[1];
                 if (!value.IsSuccessStatusCode)
                 {
-                    _notifier.Error($"Failed to create {(channelEntry.IsPrivate ? "Private" : "Standard")} Channel {channelEntry.DisplayName}(teamId: {teamId}). {getErrorMessage(value)}");
+                    _notifier.Error($"Failed to create Private Channel {channelEntry.ChannelName}(teamId: {teamId}). {getErrorMessage(value)}");
                     failedChannels.Add(channelEntry);
                 }
             }, 1);
 
             return !failedChannels.Any();
+        }
+
+        /// <inheritdoc />
+        public async Task<List<string>> GetAllTenantTeamIds()
+        {
+            var teamIdRequest = _graphServiceBetaClient.Groups.Request().Filter("resourceProvisioningOptions/Any(x:x eq 'Team')").Top(999);
+            var teamIds = new List<string>();
+            do
+            {
+                var teams = await teamIdRequest.GetAsync();
+                teamIds.AddRange(teams.Select(t => t.Id));
+                teamIdRequest = teams.NextPageRequest;
+
+            } while (teamIdRequest != null);
+
+            return teamIds;
+        }
+
+        /// <inheritdoc />
+        public async Task<Dictionary<string, List<string>>> GetTeamMembers(List<string> groupIds)
+        {
+            using var progressUpdater = new ProgressUpdater("Get team members for private channels", _notifier);
+            var membersLookup = new Dictionary<string, List<string>>();
+
+            var batchEntries = groupIds.Select(groupId => new GraphBatchRequest(groupId, $"/teams/{groupId}/members", HttpMethod.Get)).ToList();
+
+            await executeActionWithProgress(progressUpdater, batchEntries, true, onResult: (key, value) =>
+             {
+                 if (!value.IsSuccessStatusCode)
+                 {
+                     _notifier.Error($"Failed to get Team members for team id {key}. {getErrorMessage(value)}");
+                 }
+                 else
+                 {
+                     var content = value.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                     var obj = JObject.Parse(content);
+
+                     var members = JsonConvert.DeserializeObject<List<Beta.AadUserConversationMember>>(obj["value"].ToString());
+                     membersLookup[key] = members.Select(m => m.UserId).ToList();
+                 }
+
+             }, 1);
+
+            return membersLookup;
         }
 
         /// <inheritdoc />
@@ -562,6 +592,52 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             return newChannel;
         }
 
+        private Beta.Channel createPrivateGraphChannel(List<string> memberIds, List<string> ownerIds, string channelName)
+        {
+            var newChannel = new Beta.Channel()
+            {
+                DisplayName = channelName,
+                MembershipType = Beta.ChannelMembershipType.Private
+            };
+
+            var channelMembers = new Beta.ChannelMembersCollectionPage();
+
+            var owners = createChannelMemberCollection(ownerIds, "owner");
+            owners.ForEach(o => channelMembers.Add(o));
+
+            var members = createChannelMemberCollection(memberIds, "member");
+            members.ForEach(o => channelMembers.Add(o));
+
+            newChannel.Members = channelMembers;
+
+            return newChannel;
+        }
+
+        private List<Beta.AadUserConversationMember> createChannelMemberCollection(List<string> userIds, string role)
+        {
+            var members = new List<Beta.AadUserConversationMember>();
+            if (!userIds.Any())
+            {
+                return members;
+            }
+
+            foreach (var userId in userIds)
+            {
+                members.Add(new Beta.AadUserConversationMember
+                {
+                    AdditionalData = new Dictionary<string, object>()
+                    {
+                        {"user@odata.bind", $"https://graph.microsoft.com/beta/users('{userId}')"}
+                    },
+                    Roles = new List<string>()
+                    {
+                        role
+                    }
+                });
+            }
+
+            return members;
+        }
         private List<Beta.AadUserConversationMember> createChannelMemberCollection(UserEntryCollection users, IEnumerable<MemberEntry> memberEntries, string role)
         {
             var members = new List<Beta.AadUserConversationMember>();

@@ -88,6 +88,7 @@
     <Compile Include="DTO\Generation\TeamEntry.cs" />
     <Compile Include="DTO\Generation\UnifiedGroupEntry.cs" />
     <Compile Include="DTO\Generation\UserEntry.cs" />
+    <Compile Include="DTO\PrivateTeamChannelCreationOptions.cs" />
     <Compile Include="Enums\ContentTypeEnum.cs" />
     <Compile Include="Enums\DirectoryElementTypeEnum.cs" />
     <Compile Include="Enums\LogLevelEnum.cs" />
