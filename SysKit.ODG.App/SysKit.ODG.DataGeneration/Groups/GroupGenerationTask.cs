@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SysKit.ODG.Base;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.DTO.Generation.Results;
@@ -33,14 +34,16 @@ namespace SysKit.ODG.Generation.Groups
 
             var groups = _groupDataGeneration.CreateUnifiedGroupsAndTeams(options, users).ToList();
 
-            if (groups.Any() == false)
+            var numberOfPrivateChannels = options.Template.RandomOptions.NumberOfPrivateChannels;
+            var createPrivateChannels = numberOfPrivateChannels > 0;
+
+            if (groups.Any() == false && createPrivateChannels == false)
             {
                 return null;
             }
 
             var totalGroupsCreated = 0;
             var totalTeamsCreated = 0;
-            var totalChannelsCreatedOk = true;
             var totalOwnersRemovedOk = true;
             var allCreatedGroups = new List<UnifiedGroupEntry>();
             var hadGroupErrors = false;
@@ -65,8 +68,6 @@ namespace SysKit.ODG.Generation.Groups
                 var createdTeams = await groupGraphApiClient.CreateTeamsFromGroups(createdGroups.TeamsToCreate, users);
                 totalTeamsCreated += createdTeams.CreatedEntries.Count();
                 hadTeamsErrors = hadGroupErrors || createdTeams.HadErrors;
-                var channelsCreated = await groupGraphApiClient.CreatePrivateTeamChannels(createdTeams.CreatedEntries, users);
-                totalChannelsCreatedOk = totalChannelsCreatedOk && channelsCreated;
 
                 using (var progress = new ProgressUpdater("Populate Group Content", notifier))
                 {
@@ -108,8 +109,17 @@ namespace SysKit.ODG.Generation.Groups
                     ownersRemovedOk = await groupGraphApiClient.RemoveGroupOwners(createdGroups.GroupsWithAddedOwners);
                 }
                 totalOwnersRemovedOk = totalOwnersRemovedOk && ownersRemovedOk;
-                notifier.Info($"Batch: Created Office365 groups: {createdGroups.CreatedGroups.Count}; Created Teams: {createdTeams.CreatedEntries.Count()}; Channels created ok: {channelsCreated}; Owners removed ok: {ownersRemovedOk}");
-                notifier.Info($"Total: Created Office365 groups: {totalGroupsCreated}; Created Teams: {totalTeamsCreated}; Channels created ok: {totalChannelsCreatedOk}; Owners removed ok: {totalOwnersRemovedOk}");
+                notifier.Info($"Batch: Created Office365 groups: {createdGroups.CreatedGroups.Count}; Created Teams: {createdTeams.CreatedEntries.Count()}; Owners removed ok: {ownersRemovedOk}");
+                notifier.Info($"Total: Created Office365 groups: {totalGroupsCreated}; Created Teams: {totalTeamsCreated}; Owners removed ok: {totalOwnersRemovedOk}");
+            }
+
+            if (createPrivateChannels)
+            {
+                var teamIds = await groupGraphApiClient.GetAllTenantTeamIds();
+                var teamsForPrivateChannels = teamIds.GetRandom(numberOfPrivateChannels);
+                var membershipLookup = await groupGraphApiClient.GetTeamMembers(teamsForPrivateChannels.ToList());
+                var privateChannelsToCreate = _groupDataGeneration.CreatePrivateChannels(membershipLookup);
+                var channelsCreated = await groupGraphApiClient.CreatePrivateTeamChannels(privateChannelsToCreate);
             }
 
             // lts say channel errors are ok for now

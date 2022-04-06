@@ -17,5 +17,8 @@ namespace SysKit.ODG.Base.XmlTemplate.Model
 
         [XmlElement]
         public bool CreateDepartmentTeams { get; set; }
+
+        [XmlElement]
+        public int NumberOfPrivateChannels { get; set; }
     }
 }
