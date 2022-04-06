@@ -173,12 +173,13 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
         }
 
         /// <inheritdoc />
-        public async Task<bool> CreatePrivateTeamChannels(IEnumerable<PrivateTeamChannelCreationOptions> channels)
+        public async Task<List<TeamChannelResult>> CreatePrivateTeamChannels(IEnumerable<PrivateTeamChannelCreationOptions> channels)
         {
             using var progressUpdater = new ProgressUpdater("Create Private Channels", _notifier);
             var batchEntries = new List<GraphBatchRequest>();
             var channelLookup = new Dictionary<string, PrivateTeamChannelCreationOptions>();
             var failedChannels = new ConcurrentBag<PrivateTeamChannelCreationOptions>();
+            var createdChannels = new ConcurrentBag<TeamChannelResult>();
 
             var i = 0;
 
@@ -208,9 +209,16 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     _notifier.Error($"Failed to create Private Channel {channelEntry.ChannelName}(teamId: {teamId}). {getErrorMessage(value)}");
                     failedChannels.Add(channelEntry);
                 }
+                else
+                {
+                    var content = value.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+
+                    var channelId = JsonConvert.DeserializeObject<Channel>(content).Id;
+                    createdChannels.Add(new TeamChannelResult() { GroupId = teamId, ChannelId = channelId });
+                }
             }, 1);
 
-            return !failedChannels.Any();
+            return createdChannels.ToList();
         }
 
         /// <inheritdoc />
@@ -257,79 +265,71 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             return membersLookup;
         }
 
-        public async Task EnablePrivateChannelSiteProvisioning(List<string> groupIds)
+        public async Task ProvisionPrivateChannelSites(List<TeamChannelResult> privateChannelCreation)
         {
             var generalChannelIds = new ConcurrentBag<Tuple<string, string>>();
-            using var progressUpdater = new ProgressUpdater("Get general channel ids", _notifier);
-            var batchEntries = groupIds.Select(groupId => new GraphBatchRequest(groupId, $"/teams/{groupId}/channels?$filter=displayName eq 'General'&$select=id", HttpMethod.Get)).ToList();
-            await executeActionWithProgress(progressUpdater, batchEntries, true, onResult: (key, value) =>
+            using (var progressUpdater = new ProgressUpdater("Get General channel ids", _notifier))
             {
-                if (!value.IsSuccessStatusCode)
+                var batchEntries = privateChannelCreation.Select(channel => new GraphBatchRequest(channel.GroupId,
+                        $"/teams/{channel.GroupId}/channels?$filter=displayName eq 'General'&$select=id",
+                        HttpMethod.Get))
+                    .ToList();
+                await executeActionWithProgress(progressUpdater, batchEntries, true, onResult: (key, value) =>
                 {
-                    _notifier.Error($"Failed to enable PC site provisioning for team with id {key}. {getErrorMessage(value)}");
-                }
-                else
-                {
-                    var content = value.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                    var obj = JObject.Parse(content);
-
-                    var channelIds = JsonConvert.DeserializeObject<List<Channel>>(obj["value"].ToString()).Select(c => c.Id);
-                    foreach (var channelId in channelIds)
+                    if (!value.IsSuccessStatusCode)
                     {
-                        generalChannelIds.Add((new Tuple<string, string>(key, channelId)));
+                        _notifier.Error(
+                            $"Failed to get General channel id for team with id {key}. {getErrorMessage(value)}");
                     }
-                }
-
-            }, 1);
-
-            using var progressUpdater2 = new ProgressUpdater("Enable PC site provisioning", _notifier);
-            var generalChannelBatchEntries = generalChannelIds.Select(generalId => new GraphBatchRequest(generalId.Item1, $"/teams/{generalId.Item1}/channels/{generalId.Item2}/filesFolder", HttpMethod.Get)).ToList();
-            await executeActionWithProgress(progressUpdater2, generalChannelBatchEntries, true, onResult: (key, value) =>
-            {
-                if (!value.IsSuccessStatusCode)
-                {
-                    _notifier.Error($"Failed to enable PC site provisioning for team with id {key}. {getErrorMessage(value)}");
-                }
-
-            }, 1);
-
-            // ovo bi trebalo doći iz kreiranja PCova
-            using var progressUpdater3 = new ProgressUpdater("Get private channels", _notifier);
-            var privateChannelIds = new ConcurrentBag<Tuple<string, string>>();
-            var privateChannelBatchEntries = groupIds.Select(groupId => new GraphBatchRequest(groupId, $"/teams/{groupId}/channels?$filter=membershipType eq 'private'&$select=id", HttpMethod.Get)).ToList();
-            await executeActionWithProgress(progressUpdater3, privateChannelBatchEntries, true, onResult: (key, value) =>
-            {
-                if (!value.IsSuccessStatusCode)
-                {
-                    _notifier.Error($"Failed to enable PC site provisioning for team with id {key}. {getErrorMessage(value)}");
-                }
-                else
-                {
-                    var content = value.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                    var obj = JObject.Parse(content);
-
-                    var channelIds = JsonConvert.DeserializeObject<List<Channel>>(obj["value"].ToString()).Select(c => c.Id);
-                    foreach (var channelId in channelIds)
+                    else
                     {
-                        privateChannelIds.Add((new Tuple<string, string>(key, channelId)));
+                        var content = value.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                        var obj = JObject.Parse(content);
+
+                        var channelIds = JsonConvert.DeserializeObject<List<Channel>>(obj["value"].ToString())
+                            .Select(c => c.Id);
+                        foreach (var channelId in channelIds)
+                        {
+                            generalChannelIds.Add((new Tuple<string, string>(key, channelId)));
+                        }
                     }
-                }
 
-            }, 1);
-            var i = 0;
-            // treba se korsititi lsita idjeva koja se dobije izvana
-            using var progressUpdater4 = new ProgressUpdater("Provision PC site", _notifier);
-            var privateChannelCreationBatchEntries = privateChannelIds.Select(generalId => new GraphBatchRequest($"{++i}/{generalId.Item1}", $"/teams/{generalId.Item1}/channels/{generalId.Item2}/filesFolder", HttpMethod.Get)).ToList();
-            await executeActionWithProgress(progressUpdater4, privateChannelCreationBatchEntries, true, onResult: (key, value) =>
+                }, 1);
+            }
+
+            using (var progressUpdater2 = new ProgressUpdater("Enable PC site provisioning on team", _notifier))
             {
-                if (!value.IsSuccessStatusCode)
+                var generalChannelBatchEntries = generalChannelIds.Select(generalId =>
+                    new GraphBatchRequest(generalId.Item1,
+                        $"/teams/{generalId.Item1}/channels/{generalId.Item2}/filesFolder", HttpMethod.Get)).ToList();
+                await executeActionWithProgress(progressUpdater2, generalChannelBatchEntries, true,
+                    onResult: (key, value) =>
+                    {
+                        if (!value.IsSuccessStatusCode)
+                        {
+                            _notifier.Error(
+                                $"Failed to enable PC site provisioning for team with id {key}. {getErrorMessage(value)}");
+                        }
+
+                    }, 1);
+            }
+
+            await Task.Delay(30 * 1000);
+
+            using (var progressUpdater4 = new ProgressUpdater("Provision PC site", _notifier))
+            {
+                var i = 0;
+                var privateChannelCreationBatchEntries = privateChannelCreation.Select(channel => new GraphBatchRequest($"{++i}/{channel.GroupId}", $"/teams/{channel.GroupId}/channels/{channel.ChannelId}/filesFolder", HttpMethod.Get)).ToList();
+                await executeActionWithProgress(progressUpdater4, privateChannelCreationBatchEntries, true, onResult: (key, value) =>
                 {
-                    var teamId = key.Split('/')[1];
-                    _notifier.Error($"Failed to Provision PC site for team {teamId}. {getErrorMessage(value)}");
-                }
+                    if (!value.IsSuccessStatusCode)
+                    {
+                        var teamId = key.Split('/')[1];
+                        _notifier.Error($"Failed to Provision PC site for team {teamId}. {getErrorMessage(value)}");
+                    }
 
-            }, 1);
-
+                }, 1);
+            }
 
         }
 

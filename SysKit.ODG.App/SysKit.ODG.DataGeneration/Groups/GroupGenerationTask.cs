@@ -119,10 +119,9 @@ namespace SysKit.ODG.Generation.Groups
                 var teamsForPrivateChannels = teamIds.GetRandom(numberOfPrivateChannels);
                 var membershipLookup = await groupGraphApiClient.GetTeamMembers(teamsForPrivateChannels.ToList());
                 var privateChannelsToCreate = _groupDataGeneration.CreatePrivateChannels(membershipLookup);
-                var channelsCreated = await groupGraphApiClient.CreatePrivateTeamChannels(privateChannelsToCreate);
-
-                //Ovdje mora ić teams for private channels
-                await groupGraphApiClient.EnablePrivateChannelSiteProvisioning(teamIds);
+                var createdChannels = await groupGraphApiClient.CreatePrivateTeamChannels(privateChannelsToCreate);
+                await Task.Delay(15 * 1000);
+                await groupGraphApiClient.ProvisionPrivateChannelSites(createdChannels);
             }
 
             // lts say channel errors are ok for now

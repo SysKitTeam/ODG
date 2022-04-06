@@ -27,7 +27,7 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         /// <summary>
         /// Creates private channels for existing teams
         /// </summary>
-        Task<bool> CreatePrivateTeamChannels(IEnumerable<PrivateTeamChannelCreationOptions> channels);
+        Task<List<TeamChannelResult>> CreatePrivateTeamChannels(IEnumerable<PrivateTeamChannelCreationOptions> channels);
 
         /// <summary>
         /// Removes group owners. Key =>userId, Value => group from which to remove owner
@@ -54,6 +54,6 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         /// <returns></returns>
         Task<Dictionary<string, List<string>>> GetTeamMembers(List<string> groupIds);
 
-        Task EnablePrivateChannelSiteProvisioning(List<string> groupIds);
+        Task ProvisionPrivateChannelSites(List<TeamChannelResult> privateChannelCreation);
     }
 }
