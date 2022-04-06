@@ -53,5 +53,7 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         /// <param name="groupIds"></param>
         /// <returns></returns>
         Task<Dictionary<string, List<string>>> GetTeamMembers(List<string> groupIds);
+
+        Task EnablePrivateChannelSiteProvisioning(List<string> groupIds);
     }
 }
