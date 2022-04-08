@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using AutoMapper;
 using SysKit.ODG.Base;
+using SysKit.ODG.Base.DTO;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Interfaces.Generation;
@@ -103,59 +103,42 @@ namespace SysKit.ODG.Generation.Groups
             var sampleTeam = new TeamEntry();
             populateSampleUnifiedGroupProperties(generationOptions, userEntryCollection, sampleTeam);
 
-            // there can be no duplicate channel names
-            var channelNames = new HashSet<string>();
-            var doesTeamHaveAPrivateChannel = RandomThreadSafeGenerator.Next(0, 100) < 5;
-            // TODO: there is some limit on the Graph API endpoint where it starts falling if we try to add more than 2 private channels at once. Try to add retry logic
-            var numberOfPrivateChannels = doesTeamHaveAPrivateChannel
-                ? (RandomThreadSafeGenerator.Next(0, 100) < 20 ? 1 : 2)
-                : 0;
-
-            // We only create private channels because standard channels come from templates
-            for (var i = 0; i < numberOfPrivateChannels; i++)
-            {
-                var tries = 0;
-                string channelName = null;
-
-                while (tries < 100)
-                {
-                    // 50 is max
-                    var maxChannelName = 49;
-                    var cleanChannelName = _sampleDataService.GetRandomValue(_sampleDataService.GroupNamesPart1,
-                        _sampleDataService.GroupNamesPart2, false);
-                    cleanChannelName = cleanChannelName.Length <= maxChannelName ? cleanChannelName : cleanChannelName.Substring(0, maxChannelName);
-
-                    if (!channelNames.Contains(cleanChannelName))
-                    {
-                        channelNames.Add(cleanChannelName);
-                        channelName = cleanChannelName;
-                        break;
-                    }
-
-                    tries++;
-                }
-
-                if (channelName == null)
-                {
-                    throw new ArgumentException("Failed to create random channelName");
-                }
-
-                var channelEntry = new TeamChannelEntry(channelName, true);
-
-                // for testing purposes I want both channel owners and members to be from group members
-                var memberPool = sampleTeam.Members
-                    .Where(m =>
-                    {
-                        var user = userEntryCollection.FindMember(m);
-                        return user.AccountEnabled == true;
-                    }).ToList();
-                channelEntry.Owners = memberPool.GetRandom(RandomThreadSafeGenerator.Next(1, 3)).ToList();
-                channelEntry.Members = memberPool.GetRandom(RandomThreadSafeGenerator.Next(5)).ToList();
-
-                sampleTeam.Channels.Add(channelEntry);
-            }
 
             return sampleTeam;
+        }
+
+        public IEnumerable<PrivateTeamChannelCreationOptions> CreatePrivateChannels(Dictionary<string, List<string>> teamMembershipLookup)
+        {
+            var teamIds = teamMembershipLookup.Keys;
+
+
+            return teamIds.Select(teamId =>
+            {
+                var ownerIds = teamMembershipLookup[teamId].GetRandom(RandomThreadSafeGenerator.Next(1, 3)).ToList();
+                var memberIds = teamMembershipLookup[teamId].GetRandom(RandomThreadSafeGenerator.Next(1, 8)).Where(m => !ownerIds.Contains(m)).ToList();
+
+                return new PrivateTeamChannelCreationOptions
+                {
+                    ChannelName = getChannelName(),
+                    GroupId = teamId,
+                    OwnerIds = ownerIds,
+                    MemberIds = memberIds
+                };
+            });
+
+        }
+
+        private string getChannelName()
+        {
+            // 50 is max
+            var maxChannelName = 49;
+            var cleanChannelName = _sampleDataService.GetRandomValue(_sampleDataService.GroupNamesPart1,
+                _sampleDataService.GroupNamesPart2, false);
+
+            return
+                cleanChannelName.Length <= maxChannelName
+                ? cleanChannelName
+                : cleanChannelName.Substring(0, maxChannelName);
         }
 
         private UnifiedGroupEntry createSampleUnifiedGroupEntry(GenerationOptions generationOptions, IUserEntryCollection userEntryCollection)
