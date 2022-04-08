@@ -314,7 +314,7 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
                     }, 1);
             }
 
-            await Task.Delay(30 * 1000);
+            await Task.Delay(TimeSpan.FromSeconds(30));
 
             using (var progressUpdater4 = new ProgressUpdater("Provision PC site", _notifier))
             {

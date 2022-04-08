@@ -120,7 +120,7 @@ namespace SysKit.ODG.Generation.Groups
                 var membershipLookup = await groupGraphApiClient.GetTeamMembers(teamsForPrivateChannels.ToList());
                 var privateChannelsToCreate = _groupDataGeneration.CreatePrivateChannels(membershipLookup);
                 var createdChannels = await groupGraphApiClient.CreatePrivateTeamChannels(privateChannelsToCreate);
-                await Task.Delay(15 * 1000);
+                await Task.Delay(TimeSpan.FromSeconds(15));
                 await groupGraphApiClient.ProvisionPrivateChannelSites(createdChannels);
             }
 
