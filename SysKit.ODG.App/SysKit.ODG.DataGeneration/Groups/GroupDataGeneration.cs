@@ -14,6 +14,7 @@ using SysKit.ODG.Base.Utils;
 using SysKit.ODG.Base.XmlCleanupTemplate;
 using SysKit.ODG.Base.XmlTemplate.Model;
 using SysKit.ODG.Base.XmlTemplate.Model.Groups;
+using SysKit.ODG.Common.DTO.Generation;
 
 namespace SysKit.ODG.Generation.Groups
 {
@@ -243,9 +244,7 @@ namespace SysKit.ODG.Generation.Groups
             {
                 var name = _sampleDataService.GetRandomValue(_sampleDataService.GroupNamesPart1,
                     _sampleDataService.GroupNamesPart1, _sampleDataService.GroupNamesPart2);
-                var extension = ".docx";
-                var fileName = name + extension;
-                var file = new ContentEntry(fileName, ContentTypeEnum.File)
+                var file = new FileEntry(name, getFileExtension())
                 {
                     HasUniqueRoleAssignments = false,
                     Assignments = new Dictionary<RoleTypeEnum, HashSet<MemberEntry>>(),
@@ -255,6 +254,18 @@ namespace SysKit.ODG.Generation.Groups
             }
 
             return rootNodes;
+        }
+        private static readonly List<string> _fileExtensions = new List<string>()
+        {
+            ".xlsx",
+            ".docx",
+            ".vsdx",
+            ".pptx",
+            ".txt"
+        };
+        private static string getFileExtension()
+        {
+            return _fileExtensions.GetRandom(1).First();
         }
 
     }

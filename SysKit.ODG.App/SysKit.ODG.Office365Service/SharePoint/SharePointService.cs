@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Online.SharePoint.TenantAdministration;
@@ -17,6 +17,7 @@ using SysKit.ODG.Base.Enums;
 using SysKit.ODG.Base.Exceptions;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Base.Notifier;
+using SysKit.ODG.Common.DTO.Generation;
 
 namespace SysKit.ODG.Office365Service.SharePoint
 {
@@ -273,28 +274,44 @@ namespace SysKit.ODG.Office365Service.SharePoint
             ClientContext context)
         {
             Microsoft.SharePoint.Client.File newFile;
-            UnicodeEncoding uniEncoding = new UnicodeEncoding();
-            String message = "Random file message";
 
-            using (MemoryStream ms = new MemoryStream())
+            var extension = ".txt";
+            var name = fileContent.Name;
+            if (fileContent is FileEntry fileEntry)
             {
-                var sw = new StreamWriter(ms, uniEncoding);
-                try
-                {
-                    sw.Write(message);
-                    sw.Flush(); //otherwise you are risking empty stream
-                    ms.Seek(0, SeekOrigin.Begin);
+                extension = fileEntry.Extension;
+                name = fileEntry.NameWithExtension;
+            }
 
-                    newFile = parentFolder.UploadFile(fileContent.Name, ms, false);
-                }
-                finally
-                {
-                    sw.Dispose();
-                }
+            using (var ms = getStreamForExtension(extension))
+            {
+                newFile = parentFolder.UploadFile(name, ms, false);
             }
 
             assignPermissions(newFile.ListItemAllFields, fileContent);
             assignSharingLinks(parentWeb, newFile.ServerRelativeUrl, fileContent);
+        }
+
+        private static readonly Dictionary<string, string> _extensionFileNamesLookup = new Dictionary<string, string>()
+        {
+            {".xlsx","Book.xlsx"},
+            {".docx","Document.docx"},
+            {".vsdx","Drawing.vsdx"},
+            {".pptx","Presentation.pptx"},
+            {".txt","Text.txt"}
+        };
+
+        private Stream getStreamForExtension(string extension)
+        {
+            string[] resourceNames =
+                Assembly.GetExecutingAssembly().GetManifestResourceNames();
+            var fileName = _extensionFileNamesLookup.TryGetValue(extension, out var fileNameOut)
+                ? fileNameOut
+                : _extensionFileNamesLookup[".txt"];
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceName = $"SysKit.ODG.Office365Service.SharePoint.FileTemplates.{fileName}";
+
+            return assembly.GetManifestResourceStream(resourceName);
         }
 
         private void assignPermissions(SecurableObject secObject, IRoleAssignments secInfo, bool isRootWeb = false)
