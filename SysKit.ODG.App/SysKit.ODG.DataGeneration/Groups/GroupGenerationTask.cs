@@ -37,7 +37,9 @@ namespace SysKit.ODG.Generation.Groups
             var numberOfPrivateChannels = options.Template.RandomOptions.NumberOfPrivateChannels;
             var createPrivateChannels = numberOfPrivateChannels > 0;
 
-            if (groups.Any() == false && createPrivateChannels == false)
+            var createStructure = true;
+
+            if (groups.Any() == false && createPrivateChannels == false && createStructure == false)
             {
                 return null;
             }
@@ -122,6 +124,12 @@ namespace SysKit.ODG.Generation.Groups
                 var createdChannels = await groupGraphApiClient.CreatePrivateTeamChannels(privateChannelsToCreate);
                 await Task.Delay(TimeSpan.FromSeconds(15));
                 await groupGraphApiClient.ProvisionPrivateChannelSites(createdChannels);
+            }
+
+            if (createStructure)
+            {
+                var structure = _groupDataGeneration.GenerateDocumentsFolderStructure(1000);
+                sharePointService.CreateSharePointFolderStructure("", structure);
             }
 
             // lts say channel errors are ok for now

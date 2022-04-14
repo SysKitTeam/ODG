@@ -6,6 +6,7 @@ using SysKit.ODG.Base;
 using SysKit.ODG.Base.DTO;
 using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
+using SysKit.ODG.Base.Enums;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.SampleData;
 using SysKit.ODG.Base.Office365;
@@ -179,5 +180,82 @@ namespace SysKit.ODG.Generation.Groups
             groupEntry.Members = memberAndOwnerGenerationResult.Members;
             groupEntry.Template = memberAndOwnerGenerationResult.Template;
         }
+
+        public List<ContentEntry> GenerateDocumentsFolderStructure(int itemsPerSite)
+        {
+            var itemCounter = 0;
+            var folderCounter = 0;
+            var rootNodes = new List<ContentEntry>();
+
+            var numberOfRootFolders = RandomThreadSafeGenerator.Next(4, 6);
+            var numberOfRootFiles = RandomThreadSafeGenerator.Next(4);
+            rootNodes.AddRange(generateNodeList(numberOfRootFolders, numberOfRootFiles));
+            itemCounter += rootNodes.Count;
+
+
+            var folderQueue = new Queue<ContentEntry>();
+            foreach (var rootFolder in rootNodes.Where(n => n.Type == ContentTypeEnum.Folder))
+            {
+                folderQueue.Enqueue(rootFolder);
+                folderCounter++;
+            }
+
+            while (itemCounter <= itemsPerSite)
+            {
+                var numberOfFolders = folderCounter * 10 < itemsPerSite ? RandomThreadSafeGenerator.Next(3, 6) : 0;
+                var numberOfFiles = folderCounter * 10 < itemsPerSite ? RandomThreadSafeGenerator.Next(4) : ((itemsPerSite - itemCounter) / folderQueue.Count) + 1;
+
+                var currentFolder = folderQueue.Dequeue();
+                currentFolder.Children = generateNodeList(numberOfFolders, numberOfFiles);
+
+                foreach (var childFolder in currentFolder.Children.Where(c => c.Type == ContentTypeEnum.Folder))
+                {
+                    folderQueue.Enqueue(childFolder);
+                    folderCounter++;
+                }
+
+                itemCounter += currentFolder.Children.Count;
+
+            }
+
+            return rootNodes;
+        }
+
+        private List<ContentEntry> generateNodeList(int numberOfFolders, int numberOfFiles)
+        {
+            var rootNodes = new List<ContentEntry>();
+
+            for (var i = 0; i < numberOfFolders; i++)
+            {
+                var name = _sampleDataService.GetRandomValue(_sampleDataService.GroupNamesPart1,
+                    _sampleDataService.GroupNamesPart1, _sampleDataService.GroupNamesPart2);
+                var folder = new ContentEntry(name, ContentTypeEnum.Folder)
+                {
+                    HasUniqueRoleAssignments = false,
+                    Assignments = new Dictionary<RoleTypeEnum, HashSet<MemberEntry>>(),
+                    Children = new List<ContentEntry>(),
+                    SharingLinks = new List<SharingLinkEntry>()
+                };
+                rootNodes.Add(folder);
+            }
+
+            for (var i = 0; i < numberOfFiles; i++)
+            {
+                var name = _sampleDataService.GetRandomValue(_sampleDataService.GroupNamesPart1,
+                    _sampleDataService.GroupNamesPart1, _sampleDataService.GroupNamesPart2);
+                var extension = ".docx";
+                var fileName = name + extension;
+                var file = new ContentEntry(fileName, ContentTypeEnum.File)
+                {
+                    HasUniqueRoleAssignments = false,
+                    Assignments = new Dictionary<RoleTypeEnum, HashSet<MemberEntry>>(),
+                    SharingLinks = new List<SharingLinkEntry>()
+                };
+                rootNodes.Add(file);
+            }
+
+            return rootNodes;
+        }
+
     }
 }

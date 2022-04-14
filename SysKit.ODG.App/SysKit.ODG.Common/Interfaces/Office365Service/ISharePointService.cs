@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using SysKit.ODG.Base.DTO.Generation;
 
@@ -19,6 +20,13 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         /// <param name="content"></param>
         /// <returns></returns>
         Task CreateSharePointStructure(ISharePointContent content);
+
+        /// <summary>
+        /// Creates a folder structure in default document library
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="contentOfRootFolder"></param>
+        void CreateSharePointFolderStructure(string url, List<ContentEntry> contentOfRootFolder);
 
         /// <summary>
         /// Sets membership for Owners, Visitors and Members group

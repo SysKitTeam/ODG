@@ -62,7 +62,7 @@ namespace SysKit.ODG.Office365Service.SharePoint
                     if (site.SiteAdmins?.Any() == true)
                     {
                         newSite.Web.AddAdministrators(site.SiteAdmins.Select(admin => new UserEntity
-                            {LoginName = SharePointUtils.GetLoginNameFromEntry(admin, site.Url)}).ToList());
+                        { LoginName = SharePointUtils.GetLoginNameFromEntry(admin, site.Url) }).ToList());
                     }
                 }
             }
@@ -166,6 +166,33 @@ namespace SysKit.ODG.Office365Service.SharePoint
                             break;
                         case ContentTypeEnum.DocumentLibrary:
                             createDocumentLibrary(rootWeb, content, context);
+                            break;
+                    }
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public void CreateSharePointFolderStructure(string url, List<ContentEntry> contentOfRootFolder)
+        {
+            if (contentOfRootFolder == null || contentOfRootFolder.Count == 0)
+            {
+                return;
+            }
+
+            using (var context = SharePointUtils.CreateClientContext(url, _userCredentials))
+            {
+                var rootWeb = context.Site.RootWeb;
+                var documentLibrary = context.Site.RootWeb.DefaultDocumentLibrary();
+                foreach (var content in contentOfRootFolder)
+                {
+                    switch (content.Type)
+                    {
+                        case ContentTypeEnum.Folder:
+                            createFolder(rootWeb, documentLibrary, documentLibrary.RootFolder, content, context);
+                            break;
+                        case ContentTypeEnum.File:
+                            createFile(rootWeb, documentLibrary, documentLibrary.RootFolder, content, context);
                             break;
                     }
                 }
