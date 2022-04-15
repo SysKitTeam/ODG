@@ -8,6 +8,7 @@ using SysKit.ODG.Base.DTO.Generation;
 using SysKit.ODG.Base.DTO.Generation.Options;
 using SysKit.ODG.Base.Enums;
 using SysKit.ODG.Base.Interfaces.Generation;
+using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Base.Interfaces.SampleData;
 using SysKit.ODG.Base.Office365;
 using SysKit.ODG.Base.Utils;
@@ -24,12 +25,14 @@ namespace SysKit.ODG.Generation.Groups
         private readonly ISampleDataService _sampleDataService;
         private readonly GroupXmlMapper _groupXmlMapper;
         private readonly HashSet<string> _usedGroupUPNs = new HashSet<string>();
+        private readonly ISharePointService _sharePointService;
 
-        public GroupDataGeneration(IMapper mapper, ISampleDataService sampleDataService)
+        public GroupDataGeneration(IMapper mapper, ISampleDataService sampleDataService, ISharePointService sharePointService)
         {
             _mapper = mapper;
             _sampleDataService = sampleDataService;
             _groupXmlMapper = new GroupXmlMapper(mapper);
+            _sharePointService = sharePointService;
         }
 
         public IEnumerable<UnifiedGroupEntry> CreateUnifiedGroupsAndTeams(GenerationOptions generationOptions, IUserEntryCollection userEntryCollection)
@@ -255,17 +258,10 @@ namespace SysKit.ODG.Generation.Groups
 
             return rootNodes;
         }
-        private static readonly List<string> _fileExtensions = new List<string>()
+
+        private string getFileExtension()
         {
-            ".xlsx",
-            ".docx",
-            ".vsdx",
-            ".pptx",
-            ".txt"
-        };
-        private static string getFileExtension()
-        {
-            return _fileExtensions.GetRandom(1).First();
+            return _sharePointService.GetFileExtensions().GetRandom(1).First();
         }
 
     }

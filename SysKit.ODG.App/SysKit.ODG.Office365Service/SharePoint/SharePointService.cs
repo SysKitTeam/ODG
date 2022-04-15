@@ -301,6 +301,18 @@ namespace SysKit.ODG.Office365Service.SharePoint
             {".txt","Text.txt"}
         };
 
+        private static List<string> _fileExtensions;
+
+        public List<string> GetFileExtensions()
+        {
+            if (_fileExtensions == null)
+            {
+                _fileExtensions = _extensionFileNamesLookup.Keys.ToList();
+            }
+
+            return _fileExtensions;
+        }
+
         private Stream getStreamForExtension(string extension)
         {
             string[] resourceNames =
