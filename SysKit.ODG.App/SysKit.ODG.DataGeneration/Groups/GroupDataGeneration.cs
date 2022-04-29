@@ -25,14 +25,14 @@ namespace SysKit.ODG.Generation.Groups
         private readonly ISampleDataService _sampleDataService;
         private readonly GroupXmlMapper _groupXmlMapper;
         private readonly HashSet<string> _usedGroupUPNs = new HashSet<string>();
-        private readonly ISharePointService _sharePointService;
+        private readonly ISharePointFileService _sharePointFileService;
 
-        public GroupDataGeneration(IMapper mapper, ISampleDataService sampleDataService, ISharePointService sharePointService)
+        public GroupDataGeneration(IMapper mapper, ISampleDataService sampleDataService, ISharePointFileService sharePointFileService)
         {
             _mapper = mapper;
             _sampleDataService = sampleDataService;
+            _sharePointFileService = sharePointFileService;
             _groupXmlMapper = new GroupXmlMapper(mapper);
-            _sharePointService = sharePointService;
         }
 
         public IEnumerable<UnifiedGroupEntry> CreateUnifiedGroupsAndTeams(GenerationOptions generationOptions, IUserEntryCollection userEntryCollection)
@@ -233,12 +233,14 @@ namespace SysKit.ODG.Generation.Groups
             {
                 var name = _sampleDataService.GetRandomValue(_sampleDataService.GroupNamesPart1,
                     _sampleDataService.GroupNamesPart1, _sampleDataService.GroupNamesPart2);
+                var sharingLinks = getLinksForListItem();
                 var folder = new ContentEntry(name, ContentTypeEnum.Folder)
                 {
-                    HasUniqueRoleAssignments = false,
+                    HasUniqueRoleAssignments = sharingLinks.Count > 0,
                     Assignments = new Dictionary<RoleTypeEnum, HashSet<MemberEntry>>(),
                     Children = new List<ContentEntry>(),
-                    SharingLinks = new List<SharingLinkEntry>()
+                    SharingLinks = sharingLinks,
+                    CopyFromParent = true
                 };
                 rootNodes.Add(folder);
             }
@@ -247,11 +249,13 @@ namespace SysKit.ODG.Generation.Groups
             {
                 var name = _sampleDataService.GetRandomValue(_sampleDataService.GroupNamesPart1,
                     _sampleDataService.GroupNamesPart1, _sampleDataService.GroupNamesPart2);
+                var sharingLinks = getLinksForListItem();
                 var file = new FileEntry(name, getFileExtension())
                 {
-                    HasUniqueRoleAssignments = false,
+                    HasUniqueRoleAssignments = sharingLinks.Count > 0,
                     Assignments = new Dictionary<RoleTypeEnum, HashSet<MemberEntry>>(),
-                    SharingLinks = new List<SharingLinkEntry>()
+                    SharingLinks = sharingLinks,
+                    CopyFromParent = true
                 };
                 rootNodes.Add(file);
             }
@@ -259,9 +263,57 @@ namespace SysKit.ODG.Generation.Groups
             return rootNodes;
         }
 
+        private List<SharingLinkEntry> getLinksForListItem()
+        {
+            var hasALink = RandomThreadSafeGenerator.Next(100) < 2;
+            var hasASecondLink = hasALink && RandomThreadSafeGenerator.Next(100) < 2;
+
+            var sharingLinks = new List<SharingLinkEntry>();
+            if (hasALink)
+            {
+                sharingLinks.Add(getSharingLink());
+            }
+
+            if (hasASecondLink)
+            {
+                sharingLinks.Add(getSharingLink());
+            }
+
+            return sharingLinks;
+        }
+
+        private SharingLinkEntry getSharingLink()
+        {
+            var rand = RandomThreadSafeGenerator.Next(100);
+            var isEdit = RandomThreadSafeGenerator.Next(100) < 50;
+            if (rand < 2)
+            {
+                return new SharingLinkEntry()
+                {
+                    SharingLinkType = SharingLinkType.Anonymous,
+                    IsEdit = isEdit
+                };
+            }
+
+            if (rand < 35)
+            {
+                return new SharingLinkEntry()
+                {
+                    SharingLinkType = SharingLinkType.Specific, //specific with who?
+                    IsEdit = isEdit
+                };
+            }
+
+            return new SharingLinkEntry()
+            {
+                SharingLinkType = SharingLinkType.Company,
+                IsEdit = isEdit
+            };
+        }
+
         private string getFileExtension()
         {
-            return _sharePointService.GetFileExtensions().GetRandom(1).First();
+            return _sharePointFileService.GetFileExtensions().GetRandom(1).First();
         }
 
     }

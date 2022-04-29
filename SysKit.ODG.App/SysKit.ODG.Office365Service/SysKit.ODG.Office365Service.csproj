@@ -227,6 +227,7 @@
     <Compile Include="GraphHttpProvider\GraphHttpProvider.cs" />
     <Compile Include="GraphHttpProvider\GraphHttpProviderFactory.cs" />
     <Compile Include="SharePoint\ElevatedSharePointScope.cs" />
+    <Compile Include="SharePoint\SharePointFileService.cs" />
     <Compile Include="SharePoint\SharePointService.cs" />
     <Compile Include="SharePoint\SharePointServiceFactory.cs" />
     <Compile Include="SharePoint\SharePointUtils.cs" />

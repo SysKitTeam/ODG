@@ -55,11 +55,5 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         /// <param name="siteUrl"></param>
         /// <returns></returns>
         Task<Guid> GetSiteCollectionGuid(string siteUrl);
-
-        /// <summary>
-        /// Returns a list of file extensions that can be created
-        /// </summary>
-        /// <returns></returns>
-        List<string> GetFileExtensions();
     }
 }

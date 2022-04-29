@@ -131,7 +131,7 @@ namespace SysKit.ODG.Generation.Groups
             {
                 var structure = _groupDataGeneration.GenerateDocumentsFolderStructure(1000);
                 // To try this out run ODG on your Tenant and just paste the site URL below. It should take around 5 min
-                sharePointService.CreateSharePointFolderStructure("", structure);
+                sharePointService.CreateSharePointFolderStructure("https://m365x65450967.sharepoint.com/sites/anthonys", structure);
             }
 
             // lts say channel errors are ok for now

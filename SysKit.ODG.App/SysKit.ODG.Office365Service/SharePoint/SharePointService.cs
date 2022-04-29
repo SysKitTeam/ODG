@@ -18,6 +18,7 @@ using SysKit.ODG.Base.Exceptions;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Base.Notifier;
 using SysKit.ODG.Common.DTO.Generation;
+using SharingLinkType = SysKit.ODG.Common.DTO.Generation.SharingLinkType;
 
 namespace SysKit.ODG.Office365Service.SharePoint
 {
@@ -25,11 +26,13 @@ namespace SysKit.ODG.Office365Service.SharePoint
     {
         private readonly SimpleUserCredentials _userCredentials;
         private readonly INotifier _notifier;
+        private readonly ISharePointFileService _fileService;
 
-        public SharePointService(SimpleUserCredentials userCredentials, INotifier notifier)
+        public SharePointService(SimpleUserCredentials userCredentials, INotifier notifier, ISharePointFileService fileService)
         {
             _userCredentials = userCredentials;
             _notifier = notifier;
+            _fileService = fileService;
         }
 
         /// <inheritdoc />
@@ -292,34 +295,13 @@ namespace SysKit.ODG.Office365Service.SharePoint
             assignSharingLinks(parentWeb, newFile.ServerRelativeUrl, fileContent);
         }
 
-        private static readonly Dictionary<string, string> _extensionFileNamesLookup = new Dictionary<string, string>()
-        {
-            {".xlsx","Book.xlsx"},
-            {".docx","Document.docx"},
-            {".vsdx","Drawing.vsdx"},
-            {".pptx","Presentation.pptx"},
-            {".txt","Text.txt"}
-        };
-
-        private static List<string> _fileExtensions;
-
-        public List<string> GetFileExtensions()
-        {
-            if (_fileExtensions == null)
-            {
-                _fileExtensions = _extensionFileNamesLookup.Keys.ToList();
-            }
-
-            return _fileExtensions;
-        }
-
         private Stream getStreamForExtension(string extension)
         {
             string[] resourceNames =
                 Assembly.GetExecutingAssembly().GetManifestResourceNames();
-            var fileName = _extensionFileNamesLookup.TryGetValue(extension, out var fileNameOut)
+            var fileName = _fileService.GetExtensionFileNamesLookup().TryGetValue(extension, out var fileNameOut)
                 ? fileNameOut
-                : _extensionFileNamesLookup[".txt"];
+                : _fileService.GetExtensionFileNamesLookup()[".txt"];
             var assembly = Assembly.GetExecutingAssembly();
             var resourceName = $"SysKit.ODG.Office365Service.SharePoint.FileTemplates.{fileName}";
 
@@ -368,10 +350,20 @@ namespace SysKit.ODG.Office365Service.SharePoint
             var fullItemUrl = $"https://{siteUri.Host}{itemServerRelativeUrl}";
             foreach (var sharingLink in secInfo.SharingLinks)
             {
-                parentWeb.CreateAnonymousLinkForDocument(fullItemUrl,
-                    sharingLink.IsEdit ? ExternalSharingDocumentOption.Edit : ExternalSharingDocumentOption.View);
-                // you need to click on this link to be visible so for now we don't try to create them
-                // parentWeb.ShareDocument(fullItemUrl, _userCredentials.Username, ExternalSharingDocumentOption.View);
+                switch (sharingLink.SharingLinkType)
+                {
+                    case SharingLinkType.Anonymous:
+                        parentWeb.CreateAnonymousLinkForDocument(fullItemUrl,
+                            sharingLink.IsEdit ? ExternalSharingDocumentOption.Edit : ExternalSharingDocumentOption.View);
+                        break;
+                    case SharingLinkType.Company:
+                        Web.CreateOrganizationSharingLink(parentWeb.Context, fullItemUrl, sharingLink.IsEdit);
+                        break;
+                    case SharingLinkType.Specific:
+                        // you need to click on this link to be visible so for now we don't try to create them
+                        parentWeb.ShareDocument(fullItemUrl, _userCredentials.Username, sharingLink.IsEdit ? ExternalSharingDocumentOption.Edit : ExternalSharingDocumentOption.View);
+                        break;
+                }
             }
         }
 
