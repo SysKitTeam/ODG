@@ -129,7 +129,7 @@ namespace SysKit.ODG.Generation.Groups
             //TODO The condition is hardcoded on top, this needs to come from Random XML options
             if (createStructure)
             {
-                var structure = _groupDataGeneration.GenerateDocumentsFolderStructure(1000);
+                var structure = _groupDataGeneration.GenerateDocumentsFolderStructure(1000, users);
                 // To try this out run ODG on your Tenant and just paste the site URL below. It should take around 5 min
                 sharePointService.CreateSharePointFolderStructure("https://m365x65450967.sharepoint.com/sites/anthonys", structure);
             }

@@ -16,6 +16,6 @@ namespace SysKit.ODG.Base.Interfaces.Generation
         IEnumerable<PrivateTeamChannelCreationOptions> CreatePrivateChannels(
             Dictionary<string, List<string>> teamMembershipLookup);
 
-        List<ContentEntry> GenerateDocumentsFolderStructure(int itemsPerSite);
+        List<ContentEntry> GenerateDocumentsFolderStructure(int itemsPerSite, IUserEntryCollection userEntryCollection);
     }
 }

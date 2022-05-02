@@ -185,7 +185,7 @@ namespace SysKit.ODG.Generation.Groups
             groupEntry.Template = memberAndOwnerGenerationResult.Template;
         }
 
-        public List<ContentEntry> GenerateDocumentsFolderStructure(int itemsPerSite)
+        public List<ContentEntry> GenerateDocumentsFolderStructure(int itemsPerSite, IUserEntryCollection userEntryCollection)
         {
             var itemCounter = 0;
             var folderCounter = 0;
@@ -193,7 +193,7 @@ namespace SysKit.ODG.Generation.Groups
 
             var numberOfRootFolders = RandomThreadSafeGenerator.Next(4, 6);
             var numberOfRootFiles = RandomThreadSafeGenerator.Next(4);
-            rootNodes.AddRange(generateNodeList(numberOfRootFolders, numberOfRootFiles));
+            rootNodes.AddRange(generateNodeList(numberOfRootFolders, numberOfRootFiles, userEntryCollection));
             itemCounter += rootNodes.Count;
 
 
@@ -210,7 +210,7 @@ namespace SysKit.ODG.Generation.Groups
                 var numberOfFiles = folderCounter * 10 < itemsPerSite ? RandomThreadSafeGenerator.Next(4) : ((itemsPerSite - itemCounter) / folderQueue.Count) + 1;
 
                 var currentFolder = folderQueue.Dequeue();
-                currentFolder.Children = generateNodeList(numberOfFolders, numberOfFiles);
+                currentFolder.Children = generateNodeList(numberOfFolders, numberOfFiles, userEntryCollection);
 
                 foreach (var childFolder in currentFolder.Children.Where(c => c.Type == ContentTypeEnum.Folder))
                 {
@@ -225,7 +225,7 @@ namespace SysKit.ODG.Generation.Groups
             return rootNodes;
         }
 
-        private List<ContentEntry> generateNodeList(int numberOfFolders, int numberOfFiles)
+        private List<ContentEntry> generateNodeList(int numberOfFolders, int numberOfFiles, IUserEntryCollection userEntryCollection)
         {
             var rootNodes = new List<ContentEntry>();
 
@@ -233,7 +233,7 @@ namespace SysKit.ODG.Generation.Groups
             {
                 var name = _sampleDataService.GetRandomValue(_sampleDataService.GroupNamesPart1,
                     _sampleDataService.GroupNamesPart1, _sampleDataService.GroupNamesPart2);
-                var sharingLinks = getLinksForListItem();
+                var sharingLinks = getLinksForListItem(userEntryCollection);
                 var folder = new ContentEntry(name, ContentTypeEnum.Folder)
                 {
                     HasUniqueRoleAssignments = sharingLinks.Count > 0,
@@ -249,7 +249,7 @@ namespace SysKit.ODG.Generation.Groups
             {
                 var name = _sampleDataService.GetRandomValue(_sampleDataService.GroupNamesPart1,
                     _sampleDataService.GroupNamesPart1, _sampleDataService.GroupNamesPart2);
-                var sharingLinks = getLinksForListItem();
+                var sharingLinks = getLinksForListItem(userEntryCollection);
                 var file = new FileEntry(name, getFileExtension())
                 {
                     HasUniqueRoleAssignments = sharingLinks.Count > 0,
@@ -263,7 +263,7 @@ namespace SysKit.ODG.Generation.Groups
             return rootNodes;
         }
 
-        private List<SharingLinkEntry> getLinksForListItem()
+        private List<SharingLinkEntry> getLinksForListItem(IUserEntryCollection userEntryCollection)
         {
             var hasALink = RandomThreadSafeGenerator.Next(100) < 2;
             var hasASecondLink = hasALink && RandomThreadSafeGenerator.Next(100) < 2;
@@ -271,18 +271,18 @@ namespace SysKit.ODG.Generation.Groups
             var sharingLinks = new List<SharingLinkEntry>();
             if (hasALink)
             {
-                sharingLinks.Add(getSharingLink());
+                sharingLinks.Add(getSharingLink(userEntryCollection));
             }
 
             if (hasASecondLink)
             {
-                sharingLinks.Add(getSharingLink());
+                sharingLinks.Add(getSharingLink(userEntryCollection));
             }
 
             return sharingLinks;
         }
 
-        private SharingLinkEntry getSharingLink()
+        private SharingLinkEntry getSharingLink(IUserEntryCollection userEntryCollection)
         {
             var rand = RandomThreadSafeGenerator.Next(100);
             var isEdit = RandomThreadSafeGenerator.Next(100) < 50;
@@ -297,10 +297,13 @@ namespace SysKit.ODG.Generation.Groups
 
             if (rand < 35)
             {
-                return new SharingLinkEntry()
+                var user = userEntryCollection.GetRandomEntries(1).FirstOrDefault();
+
+                return new SpecificSharingLinkEntry()
                 {
                     SharingLinkType = SharingLinkType.Specific, //specific with who?
-                    IsEdit = isEdit
+                    IsEdit = isEdit,
+                    SharedWithEmail = user?.Name
                 };
             }
 

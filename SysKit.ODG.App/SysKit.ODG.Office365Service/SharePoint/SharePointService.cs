@@ -360,8 +360,12 @@ namespace SysKit.ODG.Office365Service.SharePoint
                         Web.CreateOrganizationSharingLink(parentWeb.Context, fullItemUrl, sharingLink.IsEdit);
                         break;
                     case SharingLinkType.Specific:
-                        // you need to click on this link to be visible so for now we don't try to create them
-                        parentWeb.ShareDocument(fullItemUrl, _userCredentials.Username, sharingLink.IsEdit ? ExternalSharingDocumentOption.Edit : ExternalSharingDocumentOption.View);
+                        var userEmail = _userCredentials.Username;
+                        if (sharingLink is SpecificSharingLinkEntry specificLink)
+                        {
+                            userEmail = specificLink.SharedWithEmail;
+                        }
+                        parentWeb.ShareDocument(fullItemUrl, userEmail, sharingLink.IsEdit ? ExternalSharingDocumentOption.Edit : ExternalSharingDocumentOption.View);
                         break;
                 }
             }

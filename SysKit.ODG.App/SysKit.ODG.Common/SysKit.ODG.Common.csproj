@@ -86,6 +86,7 @@
     <Compile Include="DTO\Generation\SharingLinkEntry.cs" />
     <Compile Include="DTO\Generation\SharingLinkType.cs" />
     <Compile Include="DTO\Generation\SiteEntry.cs" />
+    <Compile Include="DTO\Generation\SpecificSharingLinkEntry.cs" />
     <Compile Include="DTO\Generation\TeamChannelEntry.cs" />
     <Compile Include="DTO\Generation\TeamEntry.cs" />
     <Compile Include="DTO\Generation\UnifiedGroupEntry.cs" />
