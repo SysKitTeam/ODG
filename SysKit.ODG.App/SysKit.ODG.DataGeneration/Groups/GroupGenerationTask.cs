@@ -153,7 +153,7 @@ namespace SysKit.ODG.Generation.Groups
                     {
                         var siteEntry = new SiteEntry()
                         {
-                            Owner = new MemberEntry(options.UserCredentials.Username),
+                            Owner = new MemberEntry("mock.owner"),
                             Url = siteUrl
                         };
 
