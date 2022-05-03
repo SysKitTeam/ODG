@@ -38,7 +38,7 @@ namespace SysKit.ODG.Generation.Groups
             var numberOfPrivateChannels = options.Template.RandomOptions.NumberOfPrivateChannels;
             var createPrivateChannels = numberOfPrivateChannels > 0;
 
-            var createStructure = true;
+            var createStructure = options.Template.RandomOptions.FillSitesWithContent;
 
             if (groups.Any() == false && createPrivateChannels == false && createStructure == false)
             {
@@ -127,7 +127,6 @@ namespace SysKit.ODG.Generation.Groups
                 await groupGraphApiClient.ProvisionPrivateChannelSites(createdChannels);
             }
 
-            //TODO The condition is hardcoded on top, this needs to come from Random XML options
             if (createStructure)
             {
                 await createSiteStructures(sharePointService, users, notifier, options);

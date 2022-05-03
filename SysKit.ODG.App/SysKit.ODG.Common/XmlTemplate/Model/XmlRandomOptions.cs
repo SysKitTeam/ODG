@@ -20,5 +20,8 @@ namespace SysKit.ODG.Base.XmlTemplate.Model
 
         [XmlElement]
         public int NumberOfPrivateChannels { get; set; }
+
+        [XmlElement]
+        public bool FillSitesWithContent { get; set; }
     }
 }

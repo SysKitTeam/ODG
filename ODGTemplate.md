@@ -33,6 +33,7 @@ Represents the root element for generating random Office 365 data. Data is popul
     <NumberOfTeams />
     <CreateDepartmentTeams />
     <NumberOfPrivateChannels />
+    <FillSitesWithContent />
   </RandomOptions>
 
 ```
@@ -46,6 +47,7 @@ NumberOfUnifiedGroups|xs:int|Number of Office 365 groups that will be generated|
 NumberOfTeams|xs:int|Number of Microsoft Teams that will be generated|Yes
 CreateDepartmentTeams|xs:boolean|Should teams with all the users from a department be created|Yes
 NumberOfPrivateChannels|xs:int|Number of private Microsoft Teams channels that will be generated|Yes
+FillSitesWithContent|xs:boolean|Should sites with too few items be filled with content|Yes
 
 ` Important:  If you don't specify NumberOfUsers/NumberOfUnifiedGroups/NumberOfTeams, those types of objects won't be created. `
 
