@@ -130,7 +130,7 @@ namespace SysKit.ODG.Generation.Groups
             //TODO The condition is hardcoded on top, this needs to come from Random XML options
             if (createStructure)
             {
-                await createSiteStructures(sharePointService, users);
+                await createSiteStructures(sharePointService, users, notifier);
             }
 
             // lts say channel errors are ok for now
@@ -140,19 +140,40 @@ namespace SysKit.ODG.Generation.Groups
 
         private const int IsContentGeneratedThreshold = 500;
 
-        private async Task createSiteStructures(ISharePointService sharePointService, UserEntryCollection users)
+        private async Task createSiteStructures(ISharePointService sharePointService, UserEntryCollection users, INotifier notifier)
         {
             var siteUrls = await sharePointService.GetAllSiteCollectionUrls();
-
-            foreach (var siteUrl in siteUrls)
+            using (var progress = new ProgressUpdater("Populate Site Content", notifier))
             {
-                var isDefaultDocumentLibraryFilledWithData = await sharePointService.IsDefaultDocumentLibraryFilledWithData(siteUrl, IsContentGeneratedThreshold);
-                if (isDefaultDocumentLibraryFilledWithData)
+                progress.SetTotalCount(siteUrls.Count);
+
+                foreach (var siteUrl in siteUrls)
                 {
-                    continue;
+                    try
+                    {
+                        var isDefaultDocumentLibraryFilledWithData =
+                            await sharePointService.IsDefaultDocumentLibraryFilledWithData(
+                                siteUrl,
+                                IsContentGeneratedThreshold);
+                        if (isDefaultDocumentLibraryFilledWithData)
+                        {
+                            notifier.Warning($"Skipped site {siteUrl}. It is filled with data.");
+                            continue;
+                        }
+
+                        var structure = _groupDataGeneration.GenerateDocumentsFolderStructure(1000, users);
+                        notifier.Info($"Generating content for {siteUrl}");
+                        sharePointService.CreateSharePointFolderStructure(siteUrl, structure);
+                    }
+                    catch (Exception ex)
+                    {
+                        notifier.Error($"Failed to create content for {siteUrl}", ex);
+                    }
+                    finally
+                    {
+                        progress.UpdateProgress(1);
+                    }
                 }
-                var structure = _groupDataGeneration.GenerateDocumentsFolderStructure(1000, users);
-                sharePointService.CreateSharePointFolderStructure(siteUrl, structure);
             }
         }
     }
