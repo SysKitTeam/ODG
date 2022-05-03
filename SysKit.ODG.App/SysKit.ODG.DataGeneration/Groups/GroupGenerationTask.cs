@@ -130,7 +130,7 @@ namespace SysKit.ODG.Generation.Groups
             //TODO The condition is hardcoded on top, this needs to come from Random XML options
             if (createStructure)
             {
-                await createSiteStructures(sharePointService, users, notifier);
+                await createSiteStructures(sharePointService, users, notifier, options);
             }
 
             // lts say channel errors are ok for now
@@ -140,7 +140,7 @@ namespace SysKit.ODG.Generation.Groups
 
         private const int IsContentGeneratedThreshold = 500;
 
-        private async Task createSiteStructures(ISharePointService sharePointService, UserEntryCollection users, INotifier notifier)
+        private async Task createSiteStructures(ISharePointService sharePointService, UserEntryCollection users, INotifier notifier, GenerationOptions options)
         {
             var siteUrls = await sharePointService.GetAllSiteCollectionUrls();
             using (var progress = new ProgressUpdater("Populate Site Content", notifier))
@@ -151,19 +151,28 @@ namespace SysKit.ODG.Generation.Groups
                 {
                     try
                     {
-                        var isDefaultDocumentLibraryFilledWithData =
+                        var siteEntry = new SiteEntry()
+                        {
+                            Owner = new MemberEntry(options.UserCredentials.Username),
+                            Url = siteUrl
+                        };
+
+                        using (_sharePointServiceFactory.CreateElevatedScope(options.UserCredentials, siteEntry))
+                        {
+                            var isDefaultDocumentLibraryFilledWithData =
                             await sharePointService.IsDefaultDocumentLibraryFilledWithData(
                                 siteUrl,
                                 IsContentGeneratedThreshold);
-                        if (isDefaultDocumentLibraryFilledWithData)
-                        {
-                            notifier.Warning($"Skipped site {siteUrl}. It is filled with data.");
-                            continue;
-                        }
+                            if (isDefaultDocumentLibraryFilledWithData)
+                            {
+                                notifier.Warning($"Skipped site {siteUrl}. It is filled with data.");
+                                continue;
+                            }
 
-                        var structure = _groupDataGeneration.GenerateDocumentsFolderStructure(1000, users);
-                        notifier.Info($"Generating content for {siteUrl}");
-                        sharePointService.CreateSharePointFolderStructure(siteUrl, structure);
+                            var structure = _groupDataGeneration.GenerateDocumentsFolderStructure(1000, users);
+                            notifier.Info($"Generating content for {siteUrl}");
+                            sharePointService.CreateSharePointFolderStructure(siteUrl, structure);
+                        }
                     }
                     catch (Exception ex)
                     {
