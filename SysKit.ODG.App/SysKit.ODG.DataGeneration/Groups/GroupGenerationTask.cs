@@ -9,6 +9,7 @@ using SysKit.ODG.Base.DTO.Generation.Results;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Base.Notifier;
+using SysKit.ODG.Base.Office365;
 
 namespace SysKit.ODG.Generation.Groups
 {
@@ -129,14 +130,30 @@ namespace SysKit.ODG.Generation.Groups
             //TODO The condition is hardcoded on top, this needs to come from Random XML options
             if (createStructure)
             {
-                var structure = _groupDataGeneration.GenerateDocumentsFolderStructure(1000, users);
-                // To try this out run ODG on your Tenant and just paste the site URL below. It should take around 5 min
-                sharePointService.CreateSharePointFolderStructure("https://m365x65450967.sharepoint.com/sites/anthonys", structure);
+                await createSiteStructures(sharePointService, users);
             }
 
             // lts say channel errors are ok for now
             var hadErrors = hadGroupErrors && hadTeamsErrors && !totalOwnersRemovedOk;
             return new GroupGenerationTaskResult(allCreatedGroups, hadErrors);
+        }
+
+        private const int IsContentGeneratedThreshold = 500;
+
+        private async Task createSiteStructures(ISharePointService sharePointService, UserEntryCollection users)
+        {
+            var siteUrls = await sharePointService.GetAllSiteCollectionUrls();
+
+            foreach (var siteUrl in siteUrls)
+            {
+                var isDefaultDocumentLibraryFilledWithData = await sharePointService.IsDefaultDocumentLibraryFilledWithData(siteUrl, IsContentGeneratedThreshold);
+                if (isDefaultDocumentLibraryFilledWithData)
+                {
+                    continue;
+                }
+                var structure = _groupDataGeneration.GenerateDocumentsFolderStructure(1000, users);
+                sharePointService.CreateSharePointFolderStructure(siteUrl, structure);
+            }
         }
     }
 }

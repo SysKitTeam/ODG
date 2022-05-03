@@ -55,5 +55,19 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         /// <param name="siteUrl"></param>
         /// <returns></returns>
         Task<Guid> GetSiteCollectionGuid(string siteUrl);
+
+        /// <summary>
+        /// Get All site collections url from tenant
+        /// </summary>
+        /// <returns></returns>
+        Task<List<string>> GetAllSiteCollectionUrls();
+
+        /// <summary>
+        /// Returns true if the default document library has more than itemThreshold items
+        /// </summary>
+        /// <param name="siteUrl"></param>
+        /// <param name="itemThreshold"></param>
+        /// <returns></returns>
+        Task<bool> IsDefaultDocumentLibraryFilledWithData(string siteUrl, int itemThreshold);
     }
 }

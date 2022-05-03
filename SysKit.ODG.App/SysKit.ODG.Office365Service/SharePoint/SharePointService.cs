@@ -53,7 +53,6 @@ namespace SysKit.ODG.Office365Service.SharePoint
                     Owner = SharePointUtils.GetLoginNameFromEntry(site.Owner, site.Url)
                 };
 
-
                 var newSite = await SiteCollection.CreateAsync(rootContext, siteInfo, 15);
                 tenant.SetSiteProperties(siteInfo.Url,
                     sharingCapability: SharingCapabilities.ExternalUserAndGuestSharing);
@@ -438,6 +437,37 @@ namespace SysKit.ODG.Office365Service.SharePoint
                 rootContext.Load(site, s => s.Id);
                 await rootContext.ExecuteQueryAsync();
                 return site.Id;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<List<string>> GetAllSiteCollectionUrls()
+        {
+            using (var rootContext = SharePointUtils.CreateAdminContext(_userCredentials))
+            {
+                var tenant = new Tenant(rootContext);
+                var prop = tenant.GetSitePropertiesFromSharePoint("0", true);
+                rootContext.Load(prop);
+                await rootContext.ExecuteQueryAsync();
+                return prop.Select(p => p.Url).ToList();
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<bool> IsDefaultDocumentLibraryFilledWithData(string siteUrl, int itemThreshold)
+        {
+            using (var rootContext = SharePointUtils.CreateAdminContext(_userCredentials))
+            {
+                var tenant = new Tenant(rootContext);
+                var site = tenant.GetSiteByUrl(siteUrl);
+                var docLib = site.RootWeb.DefaultDocumentLibrary();
+
+                rootContext.Load(docLib, dl => dl.ItemCount);
+                await rootContext.ExecuteQueryAsync();
+
+                var itemCount = docLib.ItemCount;
+
+                return itemCount > itemThreshold;
             }
         }
     }

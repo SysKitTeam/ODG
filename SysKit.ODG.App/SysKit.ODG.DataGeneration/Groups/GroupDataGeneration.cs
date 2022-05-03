@@ -301,7 +301,7 @@ namespace SysKit.ODG.Generation.Groups
 
                 return new SpecificSharingLinkEntry()
                 {
-                    SharingLinkType = SharingLinkType.Specific, //specific with who?
+                    SharingLinkType = SharingLinkType.Specific,
                     IsEdit = isEdit,
                     SharedWithEmail = user?.Name
                 };
