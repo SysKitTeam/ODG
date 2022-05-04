@@ -185,7 +185,7 @@ namespace SysKit.ODG.Generation.Groups
             groupEntry.Template = memberAndOwnerGenerationResult.Template;
         }
 
-        public List<ContentEntry> GenerateDocumentsFolderStructure(int itemsPerSite, IUserEntryCollection userEntryCollection)
+        public List<ContentEntry> GenerateDocumentsFolderStructure(int itemsPerSite, IUserEntryCollection userEntryCollection, List<string> groupEmails)
         {
             var itemCounter = 0;
             var folderCounter = 0;
@@ -193,7 +193,7 @@ namespace SysKit.ODG.Generation.Groups
 
             var numberOfRootFolders = RandomThreadSafeGenerator.Next(4, 6);
             var numberOfRootFiles = RandomThreadSafeGenerator.Next(4);
-            rootNodes.AddRange(generateNodeList(numberOfRootFolders, numberOfRootFiles, userEntryCollection));
+            rootNodes.AddRange(generateNodeList(numberOfRootFolders, numberOfRootFiles, userEntryCollection, groupEmails));
             itemCounter += rootNodes.Count;
 
 
@@ -210,7 +210,7 @@ namespace SysKit.ODG.Generation.Groups
                 var numberOfFiles = folderCounter * 10 < itemsPerSite ? RandomThreadSafeGenerator.Next(4) : ((itemsPerSite - itemCounter) / folderQueue.Count) + 1;
 
                 var currentFolder = folderQueue.Dequeue();
-                currentFolder.Children = generateNodeList(numberOfFolders, numberOfFiles, userEntryCollection);
+                currentFolder.Children = generateNodeList(numberOfFolders, numberOfFiles, userEntryCollection, groupEmails);
 
                 foreach (var childFolder in currentFolder.Children.Where(c => c.Type == ContentTypeEnum.Folder))
                 {
@@ -225,7 +225,7 @@ namespace SysKit.ODG.Generation.Groups
             return rootNodes;
         }
 
-        private List<ContentEntry> generateNodeList(int numberOfFolders, int numberOfFiles, IUserEntryCollection userEntryCollection)
+        private List<ContentEntry> generateNodeList(int numberOfFolders, int numberOfFiles, IUserEntryCollection userEntryCollection, List<string> groupEmails)
         {
             var rootNodes = new List<ContentEntry>();
 
@@ -234,10 +234,11 @@ namespace SysKit.ODG.Generation.Groups
                 var name = _sampleDataService.GetRandomValue(_sampleDataService.GroupNamesPart1,
                     _sampleDataService.GroupNamesPart1, _sampleDataService.GroupNamesPart2);
                 var sharingLinks = getLinksForListItem(userEntryCollection);
+                var permissions = getRoleAssignmentsForListItem(userEntryCollection, groupEmails);
                 var folder = new ContentEntry(name, ContentTypeEnum.Folder)
                 {
-                    HasUniqueRoleAssignments = sharingLinks.Count > 0,
-                    Assignments = new Dictionary<RoleTypeEnum, HashSet<MemberEntry>>(),
+                    HasUniqueRoleAssignments = sharingLinks.Count > 0 || permissions.Keys.Count > 0,
+                    Assignments = permissions,
                     Children = new List<ContentEntry>(),
                     SharingLinks = sharingLinks,
                     CopyFromParent = true
@@ -250,10 +251,11 @@ namespace SysKit.ODG.Generation.Groups
                 var name = _sampleDataService.GetRandomValue(_sampleDataService.GroupNamesPart1,
                     _sampleDataService.GroupNamesPart1, _sampleDataService.GroupNamesPart2);
                 var sharingLinks = getLinksForListItem(userEntryCollection);
+                var permissions = getRoleAssignmentsForListItem(userEntryCollection, groupEmails);
                 var file = new FileEntry(name, getFileExtension())
                 {
-                    HasUniqueRoleAssignments = sharingLinks.Count > 0,
-                    Assignments = new Dictionary<RoleTypeEnum, HashSet<MemberEntry>>(),
+                    HasUniqueRoleAssignments = sharingLinks.Count > 0 || permissions.Keys.Count > 0,
+                    Assignments = permissions,
                     SharingLinks = sharingLinks,
                     CopyFromParent = true
                 };
@@ -261,6 +263,52 @@ namespace SysKit.ODG.Generation.Groups
             }
 
             return rootNodes;
+        }
+
+        private Dictionary<RoleTypeEnum, HashSet<MemberEntry>> getRoleAssignmentsForListItem(IUserEntryCollection userEntryCollection, List<string> groupEmails)
+        {
+            var roleAssignments = new Dictionary<RoleTypeEnum, HashSet<MemberEntry>>();
+            var hasDirectAssignment = RandomThreadSafeGenerator.Next(100) < 2;
+            if (!hasDirectAssignment)
+            {
+                return roleAssignments;
+            }
+
+            var isUserAssigned = RandomThreadSafeGenerator.Next(100) < 95;
+            if (isUserAssigned)
+            {
+                var user = getEnabledMemberEntry(userEntryCollection);
+                if (user == null)
+                {
+                    return roleAssignments;
+                }
+                var roleType = (RoleTypeEnum)RandomThreadSafeGenerator.Next(1, 4);
+                roleAssignments.Add(roleType, new HashSet<MemberEntry>() { user });
+
+            }
+            else
+            {
+                var groupEmail = groupEmails.GetRandom(1).FirstOrDefault();
+                var roleType = (RoleTypeEnum)RandomThreadSafeGenerator.Next(1, 4);
+                roleAssignments.Add(roleType, new HashSet<MemberEntry>() { new MemberEntry(groupEmail) });
+            }
+
+            return roleAssignments;
+        }
+
+        private MemberEntry getEnabledMemberEntry(IUserEntryCollection userEntryCollection)
+        {
+            for (var i = 0; i < 50; i++)
+            {
+                var member = userEntryCollection.GetRandomEntries(1).FirstOrDefault();
+                var user = userEntryCollection.FindMember(member);
+                if (user.AccountEnabled.HasValue && user.AccountEnabled.Value)
+                {
+                    return member;
+                }
+            }
+
+            return null;
         }
 
         private List<SharingLinkEntry> getLinksForListItem(IUserEntryCollection userEntryCollection)

@@ -129,7 +129,7 @@ namespace SysKit.ODG.Generation.Groups
 
             if (createStructure)
             {
-                await createSiteStructures(sharePointService, users, notifier, options);
+                await createSiteStructures(sharePointService, groupGraphApiClient, users, notifier, options);
             }
 
             // lts say channel errors are ok for now
@@ -139,9 +139,10 @@ namespace SysKit.ODG.Generation.Groups
 
         private const int IsContentGeneratedThreshold = 500;
 
-        private async Task createSiteStructures(ISharePointService sharePointService, UserEntryCollection users, INotifier notifier, GenerationOptions options)
+        private async Task createSiteStructures(ISharePointService sharePointService, IGroupGraphApiClient graphApiClient, UserEntryCollection users, INotifier notifier, GenerationOptions options)
         {
             var siteUrls = await sharePointService.GetAllSiteCollectionUrls();
+            var groupEmails = await graphApiClient.GetAllTenantGroupEmails();
             using (var progress = new ProgressUpdater("Populate Site Content", notifier))
             {
                 progress.SetTotalCount(siteUrls.Count);
@@ -168,7 +169,7 @@ namespace SysKit.ODG.Generation.Groups
                                 continue;
                             }
 
-                            var structure = _groupDataGeneration.GenerateDocumentsFolderStructure(1000, users);
+                            var structure = _groupDataGeneration.GenerateDocumentsFolderStructure(1000, users, groupEmails);
                             notifier.Info($"Generating content for {siteUrl}");
                             sharePointService.CreateSharePointFolderStructure(siteUrl, structure);
                         }

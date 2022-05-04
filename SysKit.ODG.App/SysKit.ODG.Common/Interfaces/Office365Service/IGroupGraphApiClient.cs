@@ -53,6 +53,11 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         /// <param name="groupIds"></param>
         /// <returns></returns>
         Task<Dictionary<string, List<string>>> GetTeamMembers(List<string> groupIds);
+        /// <summary>
+        /// Get email address from all groups on a tenant
+        /// </summary>
+        /// <returns></returns>
+        Task<List<string>> GetAllTenantGroupEmails();
 
         Task ProvisionPrivateChannelSites(List<TeamChannelResult> privateChannelCreation);
     }
