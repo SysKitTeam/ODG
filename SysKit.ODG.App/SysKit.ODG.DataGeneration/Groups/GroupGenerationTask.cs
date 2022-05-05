@@ -171,7 +171,7 @@ namespace SysKit.ODG.Generation.Groups
 
                             var structure = _groupDataGeneration.GenerateDocumentsFolderStructure(1000, users, groupEmails);
                             notifier.Info($"Generating content for {siteUrl}");
-                            sharePointService.CreateSharePointFolderStructure(siteUrl, structure);
+                            sharePointService.CreateSharePointFolderStructure(siteUrl, structure, notifier);
                         }
                     }
                     catch (Exception ex)

@@ -176,7 +176,7 @@ namespace SysKit.ODG.Office365Service.SharePoint
         }
 
         /// <inheritdoc />
-        public void CreateSharePointFolderStructure(string url, List<ContentEntry> contentOfRootFolder)
+        public void CreateSharePointFolderStructure(string url, List<ContentEntry> contentOfRootFolder, INotifier notifier)
         {
             if (contentOfRootFolder == null || contentOfRootFolder.Count == 0)
             {
@@ -192,10 +192,10 @@ namespace SysKit.ODG.Office365Service.SharePoint
                     switch (content.Type)
                     {
                         case ContentTypeEnum.Folder:
-                            createFolder(rootWeb, documentLibrary, documentLibrary.RootFolder, content, context);
+                            createFolder(rootWeb, documentLibrary, documentLibrary.RootFolder, content, context, notifier);
                             break;
                         case ContentTypeEnum.File:
-                            createFile(rootWeb, documentLibrary, documentLibrary.RootFolder, content, context);
+                            createFile(rootWeb, documentLibrary, documentLibrary.RootFolder, content, context, notifier);
                             break;
                     }
                 }
@@ -251,29 +251,36 @@ namespace SysKit.ODG.Office365Service.SharePoint
         }
 
         private void createFolder(Web parentWeb, List parentList, Folder parentFolder, ContentEntry folderContent,
-            ClientContext context)
+            ClientContext context, INotifier notifier = null)
         {
             var folder = parentFolder.CreateFolder(folderContent.Name);
 
-            assignPermissions(folder.ListItemAllFields, folderContent);
-            assignSharingLinks(parentWeb, folder.ServerRelativeUrl, folderContent);
+            try
+            {
+                assignPermissions(folder.ListItemAllFields, folderContent);
+                assignSharingLinks(parentWeb, folder.ServerRelativeUrl, folderContent);
+            }
+            catch (Exception ex)
+            {
+                notifier?.Warning($"A problem appeared when adding permission to folder {folder.ServerRelativeUrl}. {ex.Message}");
+            }
 
             foreach (var content in folderContent.Children)
             {
                 switch (content.Type)
                 {
                     case ContentTypeEnum.Folder:
-                        createFolder(parentWeb, parentList, folder, content, context);
+                        createFolder(parentWeb, parentList, folder, content, context, notifier);
                         break;
                     case ContentTypeEnum.File:
-                        createFile(parentWeb, parentList, folder, content, context);
+                        createFile(parentWeb, parentList, folder, content, context, notifier);
                         break;
                 }
             }
         }
 
         private void createFile(Web parentWeb, List parentList, Folder parentFolder, ContentEntry fileContent,
-            ClientContext context)
+            ClientContext context, INotifier notifier = null)
         {
             Microsoft.SharePoint.Client.File newFile;
 
@@ -290,8 +297,15 @@ namespace SysKit.ODG.Office365Service.SharePoint
                 newFile = parentFolder.UploadFile(name, ms, false);
             }
 
-            assignPermissions(newFile.ListItemAllFields, fileContent);
-            assignSharingLinks(parentWeb, newFile.ServerRelativeUrl, fileContent);
+            try
+            {
+                assignPermissions(newFile.ListItemAllFields, fileContent);
+                assignSharingLinks(parentWeb, newFile.ServerRelativeUrl, fileContent);
+            }
+            catch (Exception ex)
+            {
+                notifier?.Warning($"A problem appeared when adding permission to file {newFile.ServerRelativeUrl}. {ex.Message}");
+            }
         }
 
         private Stream getStreamForExtension(string extension)
@@ -364,7 +378,7 @@ namespace SysKit.ODG.Office365Service.SharePoint
                         {
                             userEmail = specificLink.SharedWithEmail;
                         }
-                        parentWeb.ShareDocument(fullItemUrl, userEmail, sharingLink.IsEdit ? ExternalSharingDocumentOption.Edit : ExternalSharingDocumentOption.View);
+                        parentWeb.ShareDocument(fullItemUrl, userEmail, sharingLink.IsEdit ? ExternalSharingDocumentOption.Edit : ExternalSharingDocumentOption.View, false);
                         break;
                 }
             }
