@@ -10,6 +10,7 @@ using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Base.Notifier;
 using SysKit.ODG.Base.Office365;
+using SysKit.ODG.Base.Utils;
 
 namespace SysKit.ODG.Generation.Groups
 {
@@ -151,6 +152,7 @@ namespace SysKit.ODG.Generation.Groups
                 {
                     try
                     {
+
                         var siteEntry = new SiteEntry()
                         {
                             Owner = new MemberEntry("mock.owner"),
@@ -169,7 +171,8 @@ namespace SysKit.ODG.Generation.Groups
                                 continue;
                             }
 
-                            var structure = _groupDataGeneration.GenerateDocumentsFolderStructure(1000, users, groupEmails);
+                            var itemsPerSite = RandomThreadSafeGenerator.Next(1000, 1100);
+                            var structure = _groupDataGeneration.GenerateDocumentsFolderStructure(itemsPerSite, users, groupEmails);
                             notifier.Info($"Generating content for {siteUrl}");
                             sharePointService.CreateSharePointFolderStructure(siteUrl, structure, notifier);
                         }
