@@ -9,6 +9,8 @@ using SysKit.ODG.Base.DTO.Generation.Results;
 using SysKit.ODG.Base.Interfaces.Generation;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Base.Notifier;
+using SysKit.ODG.Base.Office365;
+using SysKit.ODG.Base.Utils;
 
 namespace SysKit.ODG.Generation.Groups
 {
@@ -37,7 +39,9 @@ namespace SysKit.ODG.Generation.Groups
             var numberOfPrivateChannels = options.Template.RandomOptions.NumberOfPrivateChannels;
             var createPrivateChannels = numberOfPrivateChannels > 0;
 
-            if (groups.Any() == false && createPrivateChannels == false)
+            var createStructure = options.Template.RandomOptions.FillSitesWithContent;
+
+            if (groups.Any() == false && createPrivateChannels == false && createStructure == false)
             {
                 return null;
             }
@@ -124,9 +128,67 @@ namespace SysKit.ODG.Generation.Groups
                 await groupGraphApiClient.ProvisionPrivateChannelSites(createdChannels);
             }
 
+            if (createStructure)
+            {
+                await createSiteStructures(sharePointService, groupGraphApiClient, users, notifier, options);
+            }
+
             // lts say channel errors are ok for now
             var hadErrors = hadGroupErrors && hadTeamsErrors && !totalOwnersRemovedOk;
             return new GroupGenerationTaskResult(allCreatedGroups, hadErrors);
+        }
+
+        private const int IsContentGeneratedThreshold = 500;
+        private const int MinNumberOfListItemsPerSite = 1000;
+        private const int MaxNumberOfListItemsPerSite = 1100;
+
+        private async Task createSiteStructures(ISharePointService sharePointService, IGroupGraphApiClient graphApiClient, UserEntryCollection users, INotifier notifier, GenerationOptions options)
+        {
+            var siteUrls = await sharePointService.GetAllSiteCollectionUrls();
+            var groupEmails = await graphApiClient.GetAllTenantGroupEmails();
+            using (var progress = new ProgressUpdater("Populate Site Content", notifier))
+            {
+                progress.SetTotalCount(siteUrls.Count);
+
+                foreach (var siteUrl in siteUrls)
+                {
+                    try
+                    {
+
+                        var siteEntry = new SiteEntry()
+                        {
+                            Owner = new MemberEntry("mock.owner"),
+                            Url = siteUrl
+                        };
+
+                        using (_sharePointServiceFactory.CreateElevatedScope(options.UserCredentials, siteEntry))
+                        {
+                            var isDefaultDocumentLibraryFilledWithData =
+                            await sharePointService.IsDefaultDocumentLibraryFilledWithData(
+                                siteUrl,
+                                IsContentGeneratedThreshold);
+                            if (isDefaultDocumentLibraryFilledWithData)
+                            {
+                                notifier.Warning($"Skipped site {siteUrl}. It is filled with data.");
+                                continue;
+                            }
+
+                            var itemsPerSite = RandomThreadSafeGenerator.Next(MinNumberOfListItemsPerSite, MaxNumberOfListItemsPerSite);
+                            var structure = _groupDataGeneration.GenerateDocumentsFolderStructure(itemsPerSite, users, groupEmails);
+                            notifier.Info($"Generating content for {siteUrl}");
+                            sharePointService.CreateSharePointFolderStructure(siteUrl, structure, notifier);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        notifier.Error($"Failed to create content for {siteUrl}", ex);
+                    }
+                    finally
+                    {
+                        progress.UpdateProgress(1);
+                    }
+                }
+            }
         }
     }
 }

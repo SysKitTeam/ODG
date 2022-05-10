@@ -8,9 +8,16 @@ namespace SysKit.ODG.Office365Service.SharePoint
 {
     public class SharePointServiceFactory : ISharePointServiceFactory
     {
+        private readonly ISharePointFileService _sharePointFileService;
+
+        public SharePointServiceFactory(ISharePointFileService sharePointFileService)
+        {
+            _sharePointFileService = sharePointFileService;
+        }
+
         public ISharePointService Create(SimpleUserCredentials credentials, INotifier notifier)
         {
-            return new SharePointService(credentials, notifier);
+            return new SharePointService(credentials, notifier, _sharePointFileService);
         }
 
         public IDisposable CreateElevatedScope(SimpleUserCredentials credentials, SiteEntry site)

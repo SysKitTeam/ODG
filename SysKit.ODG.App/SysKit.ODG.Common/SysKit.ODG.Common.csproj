@@ -69,6 +69,7 @@
     <Compile Include="Authentication\SimpleUserCredentials.cs" />
     <Compile Include="DTO\Generation\Address.cs" />
     <Compile Include="DTO\Generation\ContentEntry.cs" />
+    <Compile Include="DTO\Generation\FileEntry.cs" />
     <Compile Include="DTO\Generation\GroupEntry.cs" />
     <Compile Include="DTO\Generation\IAssociatedSPGroups.cs" />
     <Compile Include="DTO\Generation\IRoleAssignments.cs" />
@@ -83,7 +84,9 @@
     <Compile Include="DTO\Generation\Results\SiteGenerationTaskResult.cs" />
     <Compile Include="DTO\Generation\Results\UserGenerationTaskResult.cs" />
     <Compile Include="DTO\Generation\SharingLinkEntry.cs" />
+    <Compile Include="DTO\Generation\SharingLinkType.cs" />
     <Compile Include="DTO\Generation\SiteEntry.cs" />
+    <Compile Include="DTO\Generation\SpecificSharingLinkEntry.cs" />
     <Compile Include="DTO\Generation\TeamChannelEntry.cs" />
     <Compile Include="DTO\Generation\TeamEntry.cs" />
     <Compile Include="DTO\Generation\UnifiedGroupEntry.cs" />
@@ -113,6 +116,7 @@
     <Compile Include="Interfaces\Office365Service\IGraphApiClientFactory.cs" />
     <Compile Include="Interfaces\Office365Service\IGraphServiceFactory.cs" />
     <Compile Include="Interfaces\Office365Service\IGroupGraphApiClient.cs" />
+    <Compile Include="Interfaces\Office365Service\ISharePointFileService.cs" />
     <Compile Include="Interfaces\Office365Service\ISharePointService.cs" />
     <Compile Include="Interfaces\Office365Service\ISharePointServiceFactory.cs" />
     <Compile Include="Interfaces\Office365Service\IUserGraphApiClient.cs" />

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Online.SharePoint.TenantAdministration;
@@ -17,6 +17,8 @@ using SysKit.ODG.Base.Enums;
 using SysKit.ODG.Base.Exceptions;
 using SysKit.ODG.Base.Interfaces.Office365Service;
 using SysKit.ODG.Base.Notifier;
+using SysKit.ODG.Common.DTO.Generation;
+using SharingLinkType = SysKit.ODG.Common.DTO.Generation.SharingLinkType;
 
 namespace SysKit.ODG.Office365Service.SharePoint
 {
@@ -24,11 +26,13 @@ namespace SysKit.ODG.Office365Service.SharePoint
     {
         private readonly SimpleUserCredentials _userCredentials;
         private readonly INotifier _notifier;
+        private readonly ISharePointFileService _fileService;
 
-        public SharePointService(SimpleUserCredentials userCredentials, INotifier notifier)
+        public SharePointService(SimpleUserCredentials userCredentials, INotifier notifier, ISharePointFileService fileService)
         {
             _userCredentials = userCredentials;
             _notifier = notifier;
+            _fileService = fileService;
         }
 
         /// <inheritdoc />
@@ -49,7 +53,6 @@ namespace SysKit.ODG.Office365Service.SharePoint
                     Owner = SharePointUtils.GetLoginNameFromEntry(site.Owner, site.Url)
                 };
 
-
                 var newSite = await SiteCollection.CreateAsync(rootContext, siteInfo, 15);
                 tenant.SetSiteProperties(siteInfo.Url,
                     sharingCapability: SharingCapabilities.ExternalUserAndGuestSharing);
@@ -62,7 +65,7 @@ namespace SysKit.ODG.Office365Service.SharePoint
                     if (site.SiteAdmins?.Any() == true)
                     {
                         newSite.Web.AddAdministrators(site.SiteAdmins.Select(admin => new UserEntity
-                            {LoginName = SharePointUtils.GetLoginNameFromEntry(admin, site.Url)}).ToList());
+                        { LoginName = SharePointUtils.GetLoginNameFromEntry(admin, site.Url) }).ToList());
                     }
                 }
             }
@@ -172,6 +175,33 @@ namespace SysKit.ODG.Office365Service.SharePoint
             }
         }
 
+        /// <inheritdoc />
+        public void CreateSharePointFolderStructure(string url, List<ContentEntry> contentOfRootFolder, INotifier notifier)
+        {
+            if (contentOfRootFolder == null || contentOfRootFolder.Count == 0)
+            {
+                return;
+            }
+
+            using (var context = SharePointUtils.CreateClientContext(url, _userCredentials))
+            {
+                var rootWeb = context.Site.RootWeb;
+                var documentLibrary = context.Site.RootWeb.DefaultDocumentLibrary();
+                foreach (var content in contentOfRootFolder)
+                {
+                    switch (content.Type)
+                    {
+                        case ContentTypeEnum.Folder:
+                            createFolder(rootWeb, documentLibrary, documentLibrary.RootFolder, content, context, notifier);
+                            break;
+                        case ContentTypeEnum.File:
+                            createFile(rootWeb, documentLibrary, documentLibrary.RootFolder, content, context, notifier);
+                            break;
+                    }
+                }
+            }
+        }
+
         private void createSubsite(Web parentWeb, ContentEntry webContent, ClientContext context)
         {
             // web exists
@@ -221,53 +251,74 @@ namespace SysKit.ODG.Office365Service.SharePoint
         }
 
         private void createFolder(Web parentWeb, List parentList, Folder parentFolder, ContentEntry folderContent,
-            ClientContext context)
+            ClientContext context, INotifier notifier = null)
         {
             var folder = parentFolder.CreateFolder(folderContent.Name);
 
-            assignPermissions(folder.ListItemAllFields, folderContent);
-            assignSharingLinks(parentWeb, folder.ServerRelativeUrl, folderContent);
+            try
+            {
+                assignPermissions(folder.ListItemAllFields, folderContent);
+                assignSharingLinks(parentWeb, folder.ServerRelativeUrl, folderContent);
+            }
+            catch (Exception ex)
+            {
+                notifier?.Warning($"A problem appeared when adding permission to folder {folder.ServerRelativeUrl}. {ex.Message}");
+            }
 
             foreach (var content in folderContent.Children)
             {
                 switch (content.Type)
                 {
                     case ContentTypeEnum.Folder:
-                        createFolder(parentWeb, parentList, folder, content, context);
+                        createFolder(parentWeb, parentList, folder, content, context, notifier);
                         break;
                     case ContentTypeEnum.File:
-                        createFile(parentWeb, parentList, folder, content, context);
+                        createFile(parentWeb, parentList, folder, content, context, notifier);
                         break;
                 }
             }
         }
 
         private void createFile(Web parentWeb, List parentList, Folder parentFolder, ContentEntry fileContent,
-            ClientContext context)
+            ClientContext context, INotifier notifier = null)
         {
             Microsoft.SharePoint.Client.File newFile;
-            UnicodeEncoding uniEncoding = new UnicodeEncoding();
-            String message = "Random file message";
 
-            using (MemoryStream ms = new MemoryStream())
+            var extension = ".txt";
+            var name = fileContent.Name;
+            if (fileContent is FileEntry fileEntry)
             {
-                var sw = new StreamWriter(ms, uniEncoding);
-                try
-                {
-                    sw.Write(message);
-                    sw.Flush(); //otherwise you are risking empty stream
-                    ms.Seek(0, SeekOrigin.Begin);
-
-                    newFile = parentFolder.UploadFile(fileContent.Name, ms, false);
-                }
-                finally
-                {
-                    sw.Dispose();
-                }
+                extension = fileEntry.Extension;
+                name = fileEntry.NameWithExtension;
             }
 
-            assignPermissions(newFile.ListItemAllFields, fileContent);
-            assignSharingLinks(parentWeb, newFile.ServerRelativeUrl, fileContent);
+            using (var ms = getStreamForExtension(extension))
+            {
+                newFile = parentFolder.UploadFile(name, ms, false);
+            }
+
+            try
+            {
+                assignPermissions(newFile.ListItemAllFields, fileContent);
+                assignSharingLinks(parentWeb, newFile.ServerRelativeUrl, fileContent);
+            }
+            catch (Exception ex)
+            {
+                notifier?.Warning($"A problem appeared when adding permission to file {newFile.ServerRelativeUrl}. {ex.Message}");
+            }
+        }
+
+        private Stream getStreamForExtension(string extension)
+        {
+            string[] resourceNames =
+                Assembly.GetExecutingAssembly().GetManifestResourceNames();
+            var fileName = _fileService.GetExtensionFileNamesLookup().TryGetValue(extension, out var fileNameOut)
+                ? fileNameOut
+                : _fileService.GetExtensionFileNamesLookup()[".txt"];
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceName = $"SysKit.ODG.Office365Service.SharePoint.FileTemplates.{fileName}";
+
+            return assembly.GetManifestResourceStream(resourceName);
         }
 
         private void assignPermissions(SecurableObject secObject, IRoleAssignments secInfo, bool isRootWeb = false)
@@ -312,10 +363,24 @@ namespace SysKit.ODG.Office365Service.SharePoint
             var fullItemUrl = $"https://{siteUri.Host}{itemServerRelativeUrl}";
             foreach (var sharingLink in secInfo.SharingLinks)
             {
-                parentWeb.CreateAnonymousLinkForDocument(fullItemUrl,
-                    sharingLink.IsEdit ? ExternalSharingDocumentOption.Edit : ExternalSharingDocumentOption.View);
-                // you need to click on this link to be visible so for now we don't try to create them
-                // parentWeb.ShareDocument(fullItemUrl, _userCredentials.Username, ExternalSharingDocumentOption.View);
+                switch (sharingLink.SharingLinkType)
+                {
+                    case SharingLinkType.Anonymous:
+                        parentWeb.CreateAnonymousLinkForDocument(fullItemUrl,
+                            sharingLink.IsEdit ? ExternalSharingDocumentOption.Edit : ExternalSharingDocumentOption.View);
+                        break;
+                    case SharingLinkType.Company:
+                        Web.CreateOrganizationSharingLink(parentWeb.Context, fullItemUrl, sharingLink.IsEdit);
+                        break;
+                    case SharingLinkType.Specific:
+                        var userEmail = _userCredentials.Username;
+                        if (sharingLink is SpecificSharingLinkEntry specificLink)
+                        {
+                            userEmail = specificLink.SharedWithEmail;
+                        }
+                        parentWeb.ShareDocument(fullItemUrl, userEmail, sharingLink.IsEdit ? ExternalSharingDocumentOption.Edit : ExternalSharingDocumentOption.View, false);
+                        break;
+                }
             }
         }
 
@@ -386,6 +451,37 @@ namespace SysKit.ODG.Office365Service.SharePoint
                 rootContext.Load(site, s => s.Id);
                 await rootContext.ExecuteQueryAsync();
                 return site.Id;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<List<string>> GetAllSiteCollectionUrls()
+        {
+            using (var rootContext = SharePointUtils.CreateAdminContext(_userCredentials))
+            {
+                var tenant = new Tenant(rootContext);
+                var prop = tenant.GetSitePropertiesFromSharePoint("0", true);
+                rootContext.Load(prop);
+                await rootContext.ExecuteQueryAsync();
+                return prop.Select(p => p.Url).ToList();
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<bool> IsDefaultDocumentLibraryFilledWithData(string siteUrl, int itemThreshold)
+        {
+            using (var rootContext = SharePointUtils.CreateAdminContext(_userCredentials))
+            {
+                var tenant = new Tenant(rootContext);
+                var site = tenant.GetSiteByUrl(siteUrl);
+                var docLib = site.RootWeb.DefaultDocumentLibrary();
+
+                rootContext.Load(docLib, dl => dl.ItemCount);
+                await rootContext.ExecuteQueryAsync();
+
+                var itemCount = docLib.ItemCount;
+
+                return itemCount > itemThreshold;
             }
         }
     }

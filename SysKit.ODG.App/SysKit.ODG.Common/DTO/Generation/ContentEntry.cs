@@ -3,7 +3,7 @@ using SysKit.ODG.Base.Enums;
 
 namespace SysKit.ODG.Base.DTO.Generation
 {
-    public class ContentEntry: IRoleAssignments
+    public class ContentEntry : IRoleAssignments
     {
         public string Name { get; }
         public ContentTypeEnum Type { get; }

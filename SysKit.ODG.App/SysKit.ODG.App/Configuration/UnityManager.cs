@@ -59,6 +59,7 @@ namespace SysKit.ODG.App.Configuration
             container.RegisterType<IGraphHttpProviderFactory, GraphHttpProviderFactory>(new PerResolveLifetimeManager());
             container.RegisterSingleton<IGraphServiceFactory, GraphServiceFactory>();
             container.RegisterSingleton<IGraphApiClientFactory, GraphApiClientFactory>();
+            container.RegisterSingleton<ISharePointFileService, SharePointFileService>();
             container.RegisterSingleton<ISharePointServiceFactory, SharePointServiceFactory>();
 
             #endregion Office365 services

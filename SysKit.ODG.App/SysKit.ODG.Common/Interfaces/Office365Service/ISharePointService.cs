@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using SysKit.ODG.Base.DTO.Generation;
+using SysKit.ODG.Base.Notifier;
 
 namespace SysKit.ODG.Base.Interfaces.Office365Service
 {
@@ -19,6 +21,11 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         /// <param name="content"></param>
         /// <returns></returns>
         Task CreateSharePointStructure(ISharePointContent content);
+
+        /// <summary>
+        /// Creates a folder structure in default document library
+        /// </summary>
+        void CreateSharePointFolderStructure(string url, List<ContentEntry> contentOfRootFolder, INotifier notifier);
 
         /// <summary>
         /// Sets membership for Owners, Visitors and Members group
@@ -47,5 +54,19 @@ namespace SysKit.ODG.Base.Interfaces.Office365Service
         /// <param name="siteUrl"></param>
         /// <returns></returns>
         Task<Guid> GetSiteCollectionGuid(string siteUrl);
+
+        /// <summary>
+        /// Get All site collections url from tenant
+        /// </summary>
+        /// <returns></returns>
+        Task<List<string>> GetAllSiteCollectionUrls();
+
+        /// <summary>
+        /// Returns true if the default document library has more than itemThreshold items
+        /// </summary>
+        /// <param name="siteUrl"></param>
+        /// <param name="itemThreshold"></param>
+        /// <returns></returns>
+        Task<bool> IsDefaultDocumentLibraryFilledWithData(string siteUrl, int itemThreshold);
     }
 }

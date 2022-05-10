@@ -227,6 +227,7 @@
     <Compile Include="GraphHttpProvider\GraphHttpProvider.cs" />
     <Compile Include="GraphHttpProvider\GraphHttpProviderFactory.cs" />
     <Compile Include="SharePoint\ElevatedSharePointScope.cs" />
+    <Compile Include="SharePoint\SharePointFileService.cs" />
     <Compile Include="SharePoint\SharePointService.cs" />
     <Compile Include="SharePoint\SharePointServiceFactory.cs" />
     <Compile Include="SharePoint\SharePointUtils.cs" />
@@ -234,12 +235,19 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
+    <EmbeddedResource Include="SharePoint\FileTemplates\Book.xlsx" />
+    <EmbeddedResource Include="SharePoint\FileTemplates\Document.docx" />
+    <EmbeddedResource Include="SharePoint\FileTemplates\Drawing.vsdx" />
+    <EmbeddedResource Include="SharePoint\FileTemplates\Presentation.pptx" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SysKit.ODG.Common\SysKit.ODG.Common.csproj">
       <Project>{4409be17-4c1c-4c23-8bfd-b19f7a2becd3}</Project>
       <Name>SysKit.ODG.Common</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="SharePoint\FileTemplates\Text.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

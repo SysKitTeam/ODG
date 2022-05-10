@@ -265,6 +265,22 @@ namespace SysKit.ODG.Office365Service.GraphApiManagers
             return membersLookup;
         }
 
+        /// <inheritdoc />
+        public async Task<List<string>> GetAllTenantGroupEmails()
+        {
+            var groupEmailRequest = _graphServiceBetaClient.Groups.Request().Select(g => g.Mail).Top(999);
+            var groupEmails = new List<string>();
+            do
+            {
+                var groups = await groupEmailRequest.GetAsync();
+                groupEmails.AddRange(groups.Where(g => !string.IsNullOrEmpty(g.Mail)).Select(t => t.Mail));
+                groupEmailRequest = groups.NextPageRequest;
+
+            } while (groupEmailRequest != null);
+
+            return groupEmails;
+        }
+
         public async Task ProvisionPrivateChannelSites(List<TeamChannelResult> privateChannelCreation)
         {
             var generalChannelIds = new ConcurrentBag<Tuple<string, string>>();
