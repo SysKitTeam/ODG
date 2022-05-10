@@ -185,14 +185,22 @@ namespace SysKit.ODG.Generation.Groups
             groupEntry.Template = memberAndOwnerGenerationResult.Template;
         }
 
+        private const int MinNumberOfRootFolders = 4;
+        private const int MaxNumberOfRootFolders = 6;
+        private const int MaxNumberOfRootFiles = 4;
+
+        private const int MinNumberOfFoldersPerLevel = 4;
+        private const int MaxNumberOfFoldersPerLevel = 6;
+        private const int MaxNumberOfFilesPerLevel = 4; // This isn't respected for the deepest level of hierarchy
+
         public List<ContentEntry> GenerateDocumentsFolderStructure(int itemsPerSite, IUserEntryCollection userEntryCollection, List<string> groupEmails)
         {
             var itemCounter = 0;
             var folderCounter = 0;
             var rootNodes = new List<ContentEntry>();
 
-            var numberOfRootFolders = RandomThreadSafeGenerator.Next(4, 6);
-            var numberOfRootFiles = RandomThreadSafeGenerator.Next(4);
+            var numberOfRootFolders = RandomThreadSafeGenerator.Next(MinNumberOfRootFolders, MaxNumberOfRootFolders);
+            var numberOfRootFiles = RandomThreadSafeGenerator.Next(MaxNumberOfRootFiles);
             rootNodes.AddRange(generateNodeList(numberOfRootFolders, numberOfRootFiles, userEntryCollection, groupEmails));
             itemCounter += rootNodes.Count;
 
@@ -206,8 +214,8 @@ namespace SysKit.ODG.Generation.Groups
 
             while (itemCounter <= itemsPerSite)
             {
-                var numberOfFolders = folderCounter * 10 < itemsPerSite ? RandomThreadSafeGenerator.Next(3, 6) : 0;
-                var numberOfFiles = folderCounter * 10 < itemsPerSite ? RandomThreadSafeGenerator.Next(4) : ((itemsPerSite - itemCounter) / folderQueue.Count) + 1;
+                var numberOfFolders = folderCounter * 10 < itemsPerSite ? RandomThreadSafeGenerator.Next(MinNumberOfFoldersPerLevel, MaxNumberOfFoldersPerLevel) : 0;
+                var numberOfFiles = folderCounter * 10 < itemsPerSite ? RandomThreadSafeGenerator.Next(MaxNumberOfFilesPerLevel) : ((itemsPerSite - itemCounter) / folderQueue.Count) + 1;
 
                 var currentFolder = folderQueue.Dequeue();
                 currentFolder.Children = generateNodeList(numberOfFolders, numberOfFiles, userEntryCollection, groupEmails);
@@ -265,16 +273,18 @@ namespace SysKit.ODG.Generation.Groups
             return rootNodes;
         }
 
+        private const int DirectRoleAssignmentPercentage = 2;
+        private const int DirectRoleAssignmentUserPercentage = 95;
         private Dictionary<RoleTypeEnum, HashSet<MemberEntry>> getRoleAssignmentsForListItem(IUserEntryCollection userEntryCollection, List<string> groupEmails)
         {
             var roleAssignments = new Dictionary<RoleTypeEnum, HashSet<MemberEntry>>();
-            var hasDirectAssignment = RandomThreadSafeGenerator.Next(100) < 2;
+            var hasDirectAssignment = RandomThreadSafeGenerator.Next(100) < DirectRoleAssignmentPercentage;
             if (!hasDirectAssignment)
             {
                 return roleAssignments;
             }
 
-            var isUserAssigned = RandomThreadSafeGenerator.Next(100) < 95;
+            var isUserAssigned = RandomThreadSafeGenerator.Next(100) < DirectRoleAssignmentUserPercentage;
             if (isUserAssigned)
             {
                 var user = getEnabledMemberEntry(userEntryCollection);
@@ -311,10 +321,11 @@ namespace SysKit.ODG.Generation.Groups
             return null;
         }
 
+        private const int SharingLinkPercentage = 2;
         private List<SharingLinkEntry> getLinksForListItem(IUserEntryCollection userEntryCollection)
         {
-            var hasALink = RandomThreadSafeGenerator.Next(100) < 2;
-            var hasASecondLink = hasALink && RandomThreadSafeGenerator.Next(100) < 2;
+            var hasALink = RandomThreadSafeGenerator.Next(100) < SharingLinkPercentage;
+            var hasASecondLink = hasALink && RandomThreadSafeGenerator.Next(100) < SharingLinkPercentage;
 
             var sharingLinks = new List<SharingLinkEntry>();
             if (hasALink)
@@ -330,11 +341,14 @@ namespace SysKit.ODG.Generation.Groups
             return sharingLinks;
         }
 
+        private const int IsEditLinkPercentage = 50;
+        private const int IsAnonymousLinkPercentage = 2;
+        private const int IsSpecificLinkPercentage = 35;
         private SharingLinkEntry getSharingLink(IUserEntryCollection userEntryCollection)
         {
             var rand = RandomThreadSafeGenerator.Next(100);
-            var isEdit = RandomThreadSafeGenerator.Next(100) < 50;
-            if (rand < 2)
+            var isEdit = RandomThreadSafeGenerator.Next(100) < IsEditLinkPercentage;
+            if (rand < IsAnonymousLinkPercentage)
             {
                 return new SharingLinkEntry()
                 {
@@ -343,7 +357,7 @@ namespace SysKit.ODG.Generation.Groups
                 };
             }
 
-            if (rand < 35)
+            if (rand < IsSpecificLinkPercentage)
             {
                 var user = userEntryCollection.GetRandomEntries(1).FirstOrDefault();
 

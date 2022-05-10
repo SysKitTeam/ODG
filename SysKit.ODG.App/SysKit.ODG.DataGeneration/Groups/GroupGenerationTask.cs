@@ -139,6 +139,8 @@ namespace SysKit.ODG.Generation.Groups
         }
 
         private const int IsContentGeneratedThreshold = 500;
+        private const int MinNumberOfListItemsPerSite = 1000;
+        private const int MaxNumberOfListItemsPerSite = 1100;
 
         private async Task createSiteStructures(ISharePointService sharePointService, IGroupGraphApiClient graphApiClient, UserEntryCollection users, INotifier notifier, GenerationOptions options)
         {
@@ -171,7 +173,7 @@ namespace SysKit.ODG.Generation.Groups
                                 continue;
                             }
 
-                            var itemsPerSite = RandomThreadSafeGenerator.Next(1000, 1100);
+                            var itemsPerSite = RandomThreadSafeGenerator.Next(MinNumberOfListItemsPerSite, MaxNumberOfListItemsPerSite);
                             var structure = _groupDataGeneration.GenerateDocumentsFolderStructure(itemsPerSite, users, groupEmails);
                             notifier.Info($"Generating content for {siteUrl}");
                             sharePointService.CreateSharePointFolderStructure(siteUrl, structure, notifier);
