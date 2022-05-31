@@ -144,8 +144,18 @@ namespace SysKit.ODG.Generation.Groups
 
         private async Task createSiteStructures(ISharePointService sharePointService, IGroupGraphApiClient graphApiClient, UserEntryCollection users, INotifier notifier, GenerationOptions options)
         {
-            var siteUrls = await sharePointService.GetAllSiteCollectionUrls();
-            var groupEmails = await graphApiClient.GetAllTenantGroupEmails();
+            List<string> siteUrls;
+            using (var progress = new ProgressUpdater("Fetch site data", notifier))
+            {
+                siteUrls = await sharePointService.GetAllSiteCollectionUrls();
+            }
+
+            List<string> groupEmails;
+            using (var progress = new ProgressUpdater("Fetch group emails", notifier))
+            {
+                groupEmails = await graphApiClient.GetAllTenantGroupEmails();
+            }
+
             using (var progress = new ProgressUpdater("Populate Site Content", notifier))
             {
                 progress.SetTotalCount(siteUrls.Count);
