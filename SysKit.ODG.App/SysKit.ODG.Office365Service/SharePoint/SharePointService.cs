@@ -460,10 +460,32 @@ namespace SysKit.ODG.Office365Service.SharePoint
             using (var rootContext = SharePointUtils.CreateAdminContext(_userCredentials))
             {
                 var tenant = new Tenant(rootContext);
-                var prop = tenant.GetSitePropertiesFromSharePoint("0", true);
-                rootContext.Load(prop);
-                await rootContext.ExecuteQueryAsync();
-                return prop.Select(p => p.Url).ToList();
+                var urls = new List<string>();
+                SPOSitePropertiesEnumerable prop = null;
+                var filter = new SPOSitePropertiesEnumerableFilter
+                {
+                    IncludePersonalSite = PersonalSiteFilter.Include,
+                    StartIndex = null,
+                    IncludeDetail = false,
+                    Filter = "Status -eq \'Active\'"
+                };
+
+                do
+                {
+                    filter.StartIndex = prop?.NextStartIndexFromSharePoint;
+
+                    prop = tenant.GetSitePropertiesFromSharePointByFilters(filter);
+                    rootContext.Load(prop);
+                    await rootContext.ExecuteQueryAsync();
+
+                    if (prop.AreItemsAvailable)
+                    {
+                        urls.AddRange(prop.Select(p => p.Url));
+                    }
+
+                } while (prop.NextStartIndexFromSharePoint != null);
+
+                return urls;
             }
         }
 
