@@ -3,6 +3,7 @@
 To be able to run ODG you will need:
 - Global Admin account
 - App registration in your Azure AD
+- MFA needs to be disabled for used account
 
 ## Create a new App Registration
 1. Go to your Azure AD admin center
