@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Net;
 using SysKit.ODG.App;
 using SysKit.ODG.Base.Authentication;
 using SysKit.ODG.Base.Enums;
@@ -10,6 +11,7 @@ namespace SysKit.ODG.Host
     {
         static void Main(string[] args)
         {
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             var userName = nonNullConsoleRead("Enter Global Admin username:");
             var tenantDomain = userName.Split('@')[1];
 
